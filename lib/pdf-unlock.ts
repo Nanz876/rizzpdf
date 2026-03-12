@@ -14,17 +14,15 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
     // Try to load with password
     let pdfDoc: PDFDocument;
     try {
-      pdfDoc = await PDFDocument.load(arrayBuffer, {
-        password,
-        ignoreEncryption: false,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pdfDoc = await PDFDocument.load(arrayBuffer, { password } as any);
     } catch {
       return { success: false, error: "Incorrect password or unable to unlock this PDF." };
     }
 
     // Save without encryption
     const unlockedBytes = await pdfDoc.save();
-    const blob = new Blob([unlockedBytes], { type: "application/pdf" });
+    const blob = new Blob([unlockedBytes as unknown as BlobPart], { type: "application/pdf" });
 
     const filename = file.name.replace(/\.pdf$/i, "_unlocked.pdf");
     return { success: true, blob, filename };
