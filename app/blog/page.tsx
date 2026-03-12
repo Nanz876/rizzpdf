@@ -1,0 +1,99 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "PDF Tips & Guides | RizzPDF",
+  description:
+    "Free guides on how to unlock, edit and manage PDFs. No fluff, just actionable tips.",
+  alternates: { canonical: "https://www.rizzpdf.com/blog" },
+};
+
+const posts = [
+  {
+    slug: "how-to-remove-pdf-password",
+    title: "How to Remove a Password from a PDF (Free, No Software)",
+    description:
+      "Step-by-step guide to removing PDF password protection for free — no Adobe Acrobat needed, works on Mac, Windows and mobile.",
+    date: "March 12, 2025",
+    readTime: "4 min read",
+  },
+  {
+    slug: "unlock-pdf-online-free",
+    title: "Unlock PDF Online Free — No Email, No Sign Up Required",
+    description:
+      "Unlock any password-protected PDF online for free. No sign up, no email required, files processed entirely in your browser.",
+    date: "March 12, 2025",
+    readTime: "3 min read",
+  },
+  {
+    slug: "best-pdf-password-remover",
+    title: "5 Best Free PDF Password Removers in 2025",
+    description:
+      "Comparing the best free PDF password removal tools in 2025 — features, privacy, price and ease of use.",
+    date: "March 12, 2025",
+    readTime: "5 min read",
+  },
+];
+
+export default function BlogIndex() {
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Header */}
+      <header className="border-b border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="font-bold text-xl text-white hover:text-purple-400 transition-colors">
+            RizzPDF
+          </Link>
+          <Link
+            href="/"
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            ← Back to app
+          </Link>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-16">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold mb-4">PDF Tips &amp; Guides</h1>
+          <p className="text-gray-400 text-lg">
+            Free guides to help you work smarter with PDFs
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="block group"
+            >
+              <article className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-purple-500 transition-colors">
+                <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                  <span>{post.date}</span>
+                  <span>·</span>
+                  <span>{post.readTime}</span>
+                </div>
+                <h2 className="text-xl font-semibold mb-2 group-hover:text-purple-400 transition-colors">
+                  {post.title}
+                </h2>
+                <p className="text-gray-400 leading-relaxed">{post.description}</p>
+                <div className="mt-4 text-purple-400 text-sm font-medium">
+                  Read article →
+                </div>
+              </article>
+            </Link>
+          ))}
+        </div>
+      </main>
+
+      <footer className="border-t border-gray-800 py-8 mt-16">
+        <div className="max-w-4xl mx-auto px-4 text-center text-sm text-gray-500">
+          <p>© {new Date().getFullYear()} RizzPDF ·{" "}
+            <Link href="/" className="hover:text-gray-300 transition-colors">Unlock a PDF</Link>
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}

@@ -381,6 +381,7 @@ export default function Home() {
           </p>
           <p>© {new Date().getFullYear()} RizzPDF. Made with 💜</p>
           <div className="flex gap-4">
+            <a href="/blog" className="hover:text-gray-600 transition-colors">Blog</a>
             <a href="mailto:support@rizzpdf.com" className="hover:text-gray-600 transition-colors">Support</a>
             <a href="#" className="hover:text-gray-600 transition-colors">Privacy</a>
             <a href="#" className="hover:text-gray-600 transition-colors">Terms</a>
