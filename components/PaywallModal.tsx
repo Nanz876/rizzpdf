@@ -68,6 +68,16 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
         >
           No thanks, I&apos;ll stick to 3 files
         </button>
+
+        <p className="text-xs text-gray-400 mt-4">
+          Questions or need a refund?{" "}
+          <a
+            href="mailto:support@rizzpdf.com"
+            className="text-purple-500 hover:text-purple-700 underline transition-colors"
+          >
+            support@rizzpdf.com
+          </a>
+        </p>
       </div>
     </div>
   );

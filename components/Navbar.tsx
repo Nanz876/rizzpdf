@@ -38,6 +38,12 @@ export default function Navbar() {
           >
             Pricing
           </button>
+          <a
+            href="mailto:support@rizzpdf.com"
+            className="hover:text-purple-600 transition-colors hidden sm:block"
+          >
+            Support
+          </a>
 
           {isLoaded && isSignedIn ? (
             <>
