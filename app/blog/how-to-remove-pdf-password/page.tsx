@@ -10,9 +10,35 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": "How to Remove a Password from a PDF (Free, No Software)",
+      "description": "Step-by-step guide to removing PDF password protection for free — no Adobe Acrobat needed, works on Mac, Windows and mobile.",
+      "url": "https://www.rizzpdf.com/blog/how-to-remove-pdf-password",
+      "datePublished": "2026-03-12",
+      "dateModified": "2026-03-12",
+      "author": { "@type": "Organization", "name": "RizzPDF", "url": "https://www.rizzpdf.com" },
+      "publisher": { "@type": "Organization", "name": "RizzPDF", "url": "https://www.rizzpdf.com" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.rizzpdf.com/blog/how-to-remove-pdf-password" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.rizzpdf.com" },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://www.rizzpdf.com/blog" },
+        { "@type": "ListItem", "position": 3, "name": "How to Remove a Password from a PDF", "item": "https://www.rizzpdf.com/blog/how-to-remove-pdf-password" }
+      ]
+    }
+  ]
+};
+
 export default function HowToRemovePdfPassword() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <header className="border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="font-bold text-xl text-white hover:text-purple-400 transition-colors">
@@ -26,7 +52,7 @@ export default function HowToRemovePdfPassword() {
 
       <main className="max-w-3xl mx-auto px-4 py-16">
         <div className="flex items-center gap-3 text-xs text-gray-500 mb-6">
-          <span>March 12, 2025</span>
+          <span>March 12, 2026</span>
           <span>·</span>
           <span>4 min read</span>
         </div>
@@ -115,6 +141,28 @@ export default function HowToRemovePdfPassword() {
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* Cross-links */}
+          <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <h3 className="font-bold text-white mb-3">Related guides</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/blog/how-to-unlock-pdf-without-password" className="text-purple-400 hover:text-purple-300 underline">
+                  How to Unlock a PDF Without the Password (3 Methods) →
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog/remove-pdf-restrictions-online" className="text-purple-400 hover:text-purple-300 underline">
+                  How to Remove PDF Restrictions Online (Free) →
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog/best-pdf-password-remover" className="text-purple-400 hover:text-purple-300 underline">
+                  5 Best Free PDF Password Removers in 2026 →
+                </Link>
+              </li>
+            </ul>
           </section>
 
           {/* CTA */}

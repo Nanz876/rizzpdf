@@ -2,17 +2,43 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "5 Best Free PDF Password Removers in 2025",
+  title: "5 Best Free PDF Password Removers in 2026",
   description:
-    "Comparing the best free PDF password removal tools in 2025 — features, privacy, price and ease of use.",
+    "Comparing the best free PDF password removal tools in 2026 — features, privacy, price and ease of use.",
   alternates: {
     canonical: "https://www.rizzpdf.com/blog/best-pdf-password-remover",
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": "5 Best Free PDF Password Removers in 2026",
+      "description": "Comparing the best free PDF password removal tools in 2026 — features, privacy, price and ease of use.",
+      "url": "https://www.rizzpdf.com/blog/best-pdf-password-remover",
+      "datePublished": "2026-03-12",
+      "dateModified": "2026-03-12",
+      "author": { "@type": "Organization", "name": "RizzPDF", "url": "https://www.rizzpdf.com" },
+      "publisher": { "@type": "Organization", "name": "RizzPDF", "url": "https://www.rizzpdf.com" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.rizzpdf.com/blog/best-pdf-password-remover" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.rizzpdf.com" },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://www.rizzpdf.com/blog" },
+        { "@type": "ListItem", "position": 3, "name": "5 Best Free PDF Password Removers", "item": "https://www.rizzpdf.com/blog/best-pdf-password-remover" }
+      ]
+    }
+  ]
+};
+
 export default function BestPdfPasswordRemover() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <header className="border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="font-bold text-xl text-white hover:text-purple-400 transition-colors">
@@ -26,17 +52,17 @@ export default function BestPdfPasswordRemover() {
 
       <main className="max-w-3xl mx-auto px-4 py-16">
         <div className="flex items-center gap-3 text-xs text-gray-500 mb-6">
-          <span>March 12, 2025</span>
+          <span>March 12, 2026</span>
           <span>·</span>
           <span>5 min read</span>
         </div>
 
         <h1 className="text-4xl font-bold mb-6 leading-tight">
-          5 Best Free PDF Password Removers in 2025
+          5 Best Free PDF Password Removers in 2026
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          Need to unlock a password-protected PDF? There are plenty of tools out there, but most of them hide the good stuff behind a subscription or upload your files to their servers. We tested five of the best options so you can pick the right one for your situation.
+          Need to unlock a password-protected PDF? There are plenty of tools out there, but most of them hide the good stuff behind a subscription or upload your files to their servers. We tested five of the best options in 2026 so you can pick the right one for your situation.
         </p>
 
         <div className="space-y-12">
@@ -139,6 +165,28 @@ export default function BestPdfPasswordRemover() {
             <p className="text-gray-300 leading-relaxed">
               If you unlock PDFs regularly as part of a broader PDF workflow, Smallpdf or ILovePDF offer more tools for a monthly fee. And if you're a power user who needs full editing capabilities, Adobe Acrobat Pro is worth the investment.
             </p>
+          </section>
+
+          {/* Cross-links */}
+          <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <h3 className="font-bold text-white mb-3">Related guides</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/blog/how-to-unlock-pdf-without-password" className="text-purple-400 hover:text-purple-300 underline">
+                  How to Unlock a PDF Without the Password (3 Methods) →
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog/remove-pdf-restrictions-online" className="text-purple-400 hover:text-purple-300 underline">
+                  How to Remove PDF Restrictions Online (Free) →
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog/how-to-remove-pdf-password" className="text-purple-400 hover:text-purple-300 underline">
+                  How to Remove a Password from a PDF (Free, No Software) →
+                </Link>
+              </li>
+            </ul>
           </section>
 
           {/* CTA */}

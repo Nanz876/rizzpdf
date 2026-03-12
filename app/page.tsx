@@ -102,11 +102,6 @@ export default function Home() {
             "description": "Unlimited files always, 100MB per file, full unlock history, CSV bulk unlock"
           }
         ],
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "reviewCount": "2400"
-        }
       },
       {
         "@type": "FAQPage",

@@ -10,11 +10,27 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "how-to-unlock-pdf-without-password",
+    title: "How to Unlock a PDF Without the Password (3 Methods)",
+    description:
+      "Forgot your PDF password? Here are 3 methods to unlock a PDF without knowing the password — including free in-browser tools.",
+    date: "March 12, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "remove-pdf-restrictions-online",
+    title: "How to Remove PDF Restrictions Online — Free, No Software",
+    description:
+      "Remove editing, printing, and copying restrictions from any PDF online for free. No software download, no account required.",
+    date: "March 12, 2026",
+    readTime: "4 min read",
+  },
+  {
     slug: "how-to-remove-pdf-password",
     title: "How to Remove a Password from a PDF (Free, No Software)",
     description:
       "Step-by-step guide to removing PDF password protection for free — no Adobe Acrobat needed, works on Mac, Windows and mobile.",
-    date: "March 12, 2025",
+    date: "March 12, 2026",
     readTime: "4 min read",
   },
   {
@@ -22,15 +38,15 @@ const posts = [
     title: "Unlock PDF Online Free — No Email, No Sign Up Required",
     description:
       "Unlock any password-protected PDF online for free. No sign up, no email required, files processed entirely in your browser.",
-    date: "March 12, 2025",
+    date: "March 12, 2026",
     readTime: "3 min read",
   },
   {
     slug: "best-pdf-password-remover",
-    title: "5 Best Free PDF Password Removers in 2025",
+    title: "5 Best Free PDF Password Removers in 2026",
     description:
-      "Comparing the best free PDF password removal tools in 2025 — features, privacy, price and ease of use.",
-    date: "March 12, 2025",
+      "Comparing the best free PDF password removal tools in 2026 — features, privacy, price and ease of use.",
+    date: "March 12, 2026",
     readTime: "5 min read",
   },
 ];
