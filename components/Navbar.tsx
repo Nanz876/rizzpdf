@@ -50,12 +50,20 @@ export default function Navbar() {
               <UserButton />
             </>
           ) : (
-            <Link
-              href="/sign-up"
-              className="bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              Sign up free
-            </Link>
+            <>
+              <Link
+                href="/sign-in"
+                className="hover:text-purple-600 transition-colors hidden sm:block"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/sign-up"
+                className="bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Sign up free
+              </Link>
+            </>
           )}
         </div>
       </div>
