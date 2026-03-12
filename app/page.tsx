@@ -69,8 +69,99 @@ export default function Home() {
 
   const hasFiles = files.length > 0;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "RizzPDF",
+        "url": "https://www.rizzpdf.com",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any",
+        "description": "Remove PDF password protection instantly. Free for up to 3 files. No account needed. Files never leave your browser.",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "Up to 3 PDF files, 10MB per file"
+          },
+          {
+            "@type": "Offer",
+            "name": "One-time Drop",
+            "price": "1",
+            "priceCurrency": "USD",
+            "description": "Unlimited files for 24 hours, 50MB per file"
+          },
+          {
+            "@type": "Offer",
+            "name": "Pro",
+            "price": "7",
+            "priceCurrency": "USD",
+            "description": "Unlimited files always, 100MB per file, full unlock history, CSV bulk unlock"
+          }
+        ],
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "2400"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is RizzPDF free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! RizzPDF is free for up to 3 PDF files per session. No account required. For unlimited files, you can get a one-time $1 bulk session or upgrade to Pro for $7/month."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is it safe to unlock my PDFs with RizzPDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "100% safe. All PDF processing happens entirely inside your browser — your files are never uploaded to any server. We never see your files or passwords."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I remove a password from a PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Simply drag and drop your password-protected PDF onto RizzPDF, enter the password you already know, and click Unlock. The unlocked PDF downloads instantly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can RizzPDF crack or guess PDF passwords?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. RizzPDF removes password protection from PDFs when you already know the correct password. It does not brute-force or crack unknown passwords."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the maximum file size for PDF unlocking?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Free users can unlock PDFs up to 10MB. Drop ($1) users get up to 50MB. Pro ($7/month) users get up to 100MB per file."
+            }
+          }
+        ]
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
 
       <main className="flex-1">
