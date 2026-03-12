@@ -9,7 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.0.4",
     "@stripe/stripe-js": "^8.9.0",
+    "@supabase/supabase-js": "^2.99.1",
+    "jszip": "^3.10.1",
     "next": "16.1.6",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.5.207",
