@@ -214,9 +214,9 @@ export default function Home() {
         <section id="pricing" className="py-20">
           <div className="max-w-3xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-black text-gray-900 mb-4">Pricing that slaps</h2>
-            <p className="text-gray-500 mb-12">No subscriptions. No hidden fees. Just vibes.</p>
+            <p className="text-gray-500 mb-12">Simple pricing. No surprises.</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {/* Free */}
               <div className="border border-gray-200 rounded-3xl p-8 text-left">
                 <p className="text-sm font-semibold text-gray-500 mb-1">Free forever</p>
@@ -236,11 +236,8 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Bulk */}
-              <div className="border-2 border-purple-500 rounded-3xl p-8 text-left relative overflow-hidden">
-                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  POPULAR
-                </div>
+              {/* Drop */}
+              <div className="border border-gray-200 rounded-3xl p-8 text-left">
                 <p className="text-sm font-semibold text-purple-600 mb-1">One-time drop</p>
                 <p className="text-4xl font-black text-gray-900 mb-4">$1</p>
                 <ul className="space-y-2 text-sm text-gray-700 mb-6">
@@ -252,10 +249,33 @@ export default function Home() {
                 </ul>
                 <button
                   onClick={() => setShowPaywall(true)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-2xl py-2.5 text-sm font-bold hover:opacity-90 transition-opacity"
+                  className="w-full border border-gray-200 rounded-2xl py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Unlock bulk →
                 </button>
+              </div>
+
+              {/* Pro */}
+              <div className="border-2 border-purple-500 rounded-3xl p-8 text-left relative overflow-hidden">
+                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  PRO
+                </div>
+                <p className="text-sm font-semibold text-purple-600 mb-1">Pro plan</p>
+                <p className="text-4xl font-black text-gray-900 mb-1">$7<span className="text-lg font-semibold text-gray-500">/mo</span></p>
+                <p className="text-xs text-gray-400 mb-4">Cancel anytime</p>
+                <ul className="space-y-2 text-sm text-gray-700 mb-6">
+                  {["Unlimited files always", "Up to 100MB per file", "Full unlock history", "CSV bulk unlock + ZIP", "Priority support"].map((f) => (
+                    <li key={f} className="flex items-center gap-2">
+                      <span className="text-purple-500">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href="/sign-up"
+                  className="block w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-2xl py-2.5 text-sm font-bold hover:opacity-90 transition-opacity text-center"
+                >
+                  Get Pro →
+                </a>
               </div>
             </div>
           </div>
