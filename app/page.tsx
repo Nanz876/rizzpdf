@@ -8,6 +8,23 @@ import PaywallModal from "@/components/PaywallModal";
 
 const FREE_LIMIT = 3;
 
+const PDF_TOOLS = [
+  { name: "Unlock PDF", href: "/", icon: "🔓" },
+  { name: "Merge PDF", href: "/tools/merge", icon: "🔗" },
+  { name: "Split PDF", href: "/tools/split", icon: "✂️" },
+  { name: "Compress PDF", href: "/tools/compress", icon: "📦" },
+  { name: "Rotate PDF", href: "/tools/rotate", icon: "🔄" },
+  { name: "PDF to JPG", href: "/tools/pdf-to-jpg", icon: "🖼️" },
+  { name: "JPG to PDF", href: "/tools/jpg-to-pdf", icon: "📄" },
+  { name: "Watermark PDF", href: "/tools/watermark", icon: "💧" },
+  { name: "Organize PDF", href: "/tools/organize", icon: "🗂️" },
+  { name: "Page Numbers", href: "/tools/page-numbers", icon: "🔢" },
+  { name: "Sign PDF", href: "/tools/sign", icon: "✍️" },
+  { name: "Delete Pages", href: "/tools/delete-pages", icon: "🗑️" },
+  { name: "PDF to PNG", href: "/tools/pdf-to-png", icon: "🎨" },
+  { name: "Repair PDF", href: "/tools/repair", icon: "🔧" },
+];
+
 export default function Home() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -293,6 +310,32 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* PDF Tools Grid */}
+        <section className="py-20">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-3xl font-black text-gray-900 mb-3">All PDF Tools</h2>
+            <p className="text-gray-500 mb-10">Everything you need — free, private, browser-based.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {PDF_TOOLS.map((tool) => (
+                <a
+                  key={tool.href}
+                  href={tool.href}
+                  className="flex flex-col items-center gap-2 bg-white border border-gray-200 rounded-2xl p-5 hover:border-purple-400 hover:shadow-md transition-all group"
+                >
+                  <span className="text-3xl">{tool.icon}</span>
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">{tool.name}</span>
+                </a>
+              ))}
+            </div>
+            <a
+              href="/tools"
+              className="inline-block mt-8 text-sm font-semibold text-purple-600 hover:underline"
+            >
+              View all tools →
+            </a>
           </div>
         </section>
 
