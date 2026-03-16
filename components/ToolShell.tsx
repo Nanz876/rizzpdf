@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 interface ToolShellProps {
   name: string;
@@ -12,11 +13,11 @@ interface ToolShellProps {
 
 export default function ToolShell({ name, description, icon, children }: ToolShellProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F9F7FF] flex flex-col">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 py-12">
-        {/* Breadcrumb */}
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12">
+        {/* Breadcrumb — flex-1 on main ensures footer is pushed to bottom */}
         <nav className="flex items-center gap-2 text-sm text-gray-400 mb-8">
           <Link href="/" className="hover:text-purple-600 transition-colors">Home</Link>
           <span>›</span>
@@ -59,6 +60,8 @@ export default function ToolShell({ name, description, icon, children }: ToolShe
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
