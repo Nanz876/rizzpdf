@@ -5,7 +5,8 @@
   "framework": "nextjs",
   "build": {
     "env": {
-      "NEXT_PUBLIC_IS_CLIENT": "true"
+      "NEXT_PUBLIC_IS_CLIENT": "true",
+      "TURBOPACK": "0"
     }
   }
 }
