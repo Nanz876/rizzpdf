@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Allow crawling of all pages
+Allow: /blog/
+Allow: /success/
+Allow: /tools/
+Allow: /tools/*
+
+# Sitemap location
+Sitemap: https://www.rizzpdf.com/sitemap.xml
+
+# Disallow admin/development paths
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /sign-in/
+Disallow: /sign-up/

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:Userskael_OneDriveDesktoprizzpdf-appapptools -type f -name *.tsx)",
+      "Bash(npm run:*)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Read(//c/Users/kael_/.claude/**)",
+      "Bash(npm install:*)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
+      "Bash(vercel login:*)",
+      "Bash(vercel:*)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__upload_file",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
+      "Bash(ls -la C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.js C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.mjs)"
+    ]
+  }
+}

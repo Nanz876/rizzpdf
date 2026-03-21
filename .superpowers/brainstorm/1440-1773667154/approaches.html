@@ -1,0 +1,67 @@
+<h2>How much do we replicate?</h2>
+<p class="subtitle">Three approaches — pick the scope that feels right</p>
+
+<div class="options" style="margin-top:20px;">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full Replica — Homepage + Navbar + Tool Pages + Footer</h3>
+      <p>Everything gets the iLovePDF treatment. New tool-grid homepage, ALL CAPS nav, iLovePDF-style tool pages (centered title + big upload button), dark multi-column footer. Most complete, most work.</p>
+      <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">app/page.tsx</span>
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">Navbar.tsx</span>
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">ToolShell.tsx</span>
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">Footer (new)</span>
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">globals.css</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Homepage + Navbar Only — Tool pages stay as-is</h3>
+      <p>Replace the homepage with the tool grid and update the navbar. Individual tool pages keep their current design for now. Fast, high-impact, minimal risk to working tools.</p>
+      <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">app/page.tsx</span>
+        <span style="background:#EDE9FE;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px;">Navbar.tsx</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Full Replica — Recommended ⭐</h3>
+      <p>Same as A but done in two phases. Phase 1: homepage + navbar (ships fast, looks great immediately). Phase 2: tool pages + footer. Each phase is a clean deploy.</p>
+      <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span style="background:#D1FAE5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px;">Phase 1 → ships immediately</span>
+        <span style="background:#D1FAE5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px;">Phase 2 → follow-up</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px; background:#F9F7FF; border-radius:12px; padding:16px; border:1px solid #EDE9FE;">
+  <p style="margin:0; font-size:13px; color:#5b21b6; font-weight:600;">What "Full Replica" means for RizzPDF (purple brand):</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+    <div style="font-size:12px; color:#444;">
+      <strong>Navbar</strong><br>
+      White bg · RizzPDF gradient logo · ALL CAPS bold links (Merge PDF, Split PDF, Compress PDF, All Tools ▾) · user icon + grid icon
+    </div>
+    <div style="font-size:12px; color:#444;">
+      <strong>Homepage</strong><br>
+      Light purple-tinted bg · "Your PDF toolkit" heading · category filter pills · 4-col tool grid with colored icon cards
+    </div>
+    <div style="font-size:12px; color:#444;">
+      <strong>Tool Pages</strong><br>
+      Centered h1 + subtitle · Big purple "Select PDF files" button · "or drop here" text · minimal chrome
+    </div>
+    <div style="font-size:12px; color:#444;">
+      <strong>Footer</strong><br>
+      Dark charcoal bg · Product / Resources / Legal / Company columns · social icons
+    </div>
+  </div>
+</div>

@@ -1,0 +1,103 @@
+// ICC ELITE - Complete Visual Elements That Should Appear
+
+// =====================================================
+// 1. AOI ZONE (Blue or Orange Rectangle)
+// =====================================================
+Chart.DrawRectangle(
+    "AOI",                    // Name
+    Bars.OpenTimes.Last(30), // Start: 30 bars ago
+    upper,                   // Top: PI + AOIBuffer
+    Server.Time.AddHours(12),// End: London session end
+    lower,                   // Bottom: PI - AOIBuffer
+    zoneColor                // Color: Blue (bullish) or Orange (bearish)
+);
+
+// =====================================================
+// 2. POINT OF INDICATION (PI) - DRAW THIS!
+// =====================================================
+// The swing high/low that defines the zone
+Chart.DrawDottedLine(
+    $"PI {PointOfIndicationIndex}",  // Dotted line to PI point
+    PointOfIndicationPrice,
+    Color.Orange, 0.5
+);
+
+Chart.DrawText(
+    $"PI",                    // Label
+    PointOfIndicationPrice + 0.0001,
+    Bars.OpenTimes[PointOfIndicationIndex],
+    HorizontalAlignment.Center,
+    VerticalAlignment.Top,
+    Color.Yellow,
+    fontSize: 14,
+    bold: true
+);
+
+// =====================================================
+// 3. CORRECTION LEVEL - DRAW THIS!
+// =====================================================
+// The midpoint between PI and previous swing
+Chart.DrawDottedLine(
+    $"Correction",
+    correctionLevel,
+    Color.Lime, 0.5
+);
+
+Chart.DrawText(
+    $"Corr",                 // Label
+    correctionLevel - 0.0001,
+    Server.Time.AddHours(13),
+    HorizontalAlignment.Center,
+    VerticalAlignment.Bottom,
+    Color.Lime,
+    fontSize: 12
+);
+
+// =====================================================
+// 4. CONTINUATION LEVEL - DRAW THIS!
+// =====================================================
+// The other swing point (opposite of PI)
+Chart.DrawDottedLine(
+    $"Continuation",
+    continuationLevel,
+    Color.Teal, 0.5
+);
+
+Chart.DrawText(
+    $"Cont",                 // Label
+    continuationLevel + 0.0001,
+    Server.Time.AddHours(12),
+    HorizontalAlignment.Center,
+    VerticalAlignment.Top,
+    Color.Teal,
+    fontSize: 12
+);
+
+// =====================================================
+// 5. ENTRY ARROWS (Cyan or Red)
+// =====================================================
+Chart.DrawIcon(
+    $"entry{index}",
+    bullish ? ChartIconType.UpArrow : ChartIconType.DownArrow,
+    Bars.OpenTimes[index],
+    entryPrice,
+    Color.Cyan  // Up arrow = cyan, Down arrow = red
+);
+
+// =====================================================
+// 6. TP/SL LINES (Green and Red)
+// =====================================================
+Chart.DrawHorizontalLine($"tp{index}", tp, Color.Lime, 2);  // Green take profit
+Chart.DrawHorizontalLine($"sl{index}", sl, Color.Red, 2);   // Red stop loss
+
+// =====================================================
+// 7. DASHBOARD (Top Right)
+// =====================================================
+Chart.DrawStaticText(
+    "panel",
+    $"ICC ELITE\nBias: {bullish ? "BULLISH" : "BEARISH"}\nWins: {wins}\nLosses: {losses}",
+    VerticalAlignment.Top,
+    HorizontalAlignment.Right,
+    Color.White
+);
+
