@@ -625,24 +625,39 @@ export async function pdfToWord(
       }
       const bodyFontSize = [...fontCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 10;
 
-      // ── 4. Detect column layout ───────────────────────────────────────────
-      // Collect the x-position of the second item in multi-item lines
-      const col2Xs: number[] = lines
-        .filter((l) => l.length >= 2)
-        .map((l) => l[1].x);
+      // ── 4. Detect column layout (gap-based) ──────────────────────────────
+      // For each multi-item line, find the largest x-gap between consecutive
+      // items. The x-position AFTER that gap is the candidate column-2 start.
+      const col2Candidates: number[] = [];
+      for (const l of lines) {
+        if (l.length < 2) continue;
+        let maxGap = 0;
+        let col2Candidate = -1;
+        for (let i = 1; i < l.length; i++) {
+          const gap = l[i].x - (l[i - 1].x + (l[i - 1].str.length * l[i - 1].fontSize * 0.5));
+          if (gap > maxGap) {
+            maxGap = gap;
+            col2Candidate = l[i].x;
+          }
+        }
+        // Only count gaps that look like a real column split (>20px)
+        if (maxGap > 20 && col2Candidate > 0) {
+          col2Candidates.push(col2Candidate);
+        }
+      }
 
-      // Find the most common second-column x (within 15px tolerance)
+      // Cluster candidates within 20px tolerance; pick dominant cluster
       let col2X = -1;
-      if (col2Xs.length > 0) {
+      if (col2Candidates.length > 0) {
         const xClusters = new Map<number, number>();
-        for (const x of col2Xs) {
-          const key = Math.round(x / 15) * 15;
+        for (const x of col2Candidates) {
+          const key = Math.round(x / 20) * 20;
           xClusters.set(key, (xClusters.get(key) ?? 0) + 1);
         }
         const topCluster = [...xClusters.entries()].sort((a, b) => b[1] - a[1])[0];
-        // Use two-column table if >40% of multi-item lines share a column2 x
         const twoColLines = lines.filter((l) => l.length >= 2);
-        if (topCluster[1] / twoColLines.length > 0.4) {
+        // Require at least 30% of multi-item lines to agree on the split point
+        if (topCluster[1] / twoColLines.length > 0.3) {
           col2X = topCluster[0];
         }
       }
