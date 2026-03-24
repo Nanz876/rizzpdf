@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
@@ -78,7 +79,8 @@ export default function RotatePage() {
             </button>
           </WorkspaceBar>
           {error && <p className="text-red-500 text-sm px-5 py-3">{error}</p>}
-          <div className="p-5 bg-gray-50">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-5 bg-gray-50 border-t border-gray-100">
             <ThumbnailGrid pages={pages} showRotateButtons
               onRotateLeft={p => rotate(p, -90)} onRotateRight={p => rotate(p, 90)} columns={4} />
           </div>

@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, addPageNumbers, downloadBlob } from "@/lib/pdf-tools";
 import type { PageNumberOptions } from "@/lib/pdf-tools";
 
@@ -116,6 +117,7 @@ export default function PageNumbersPage() {
             onPrimary={status === "done" ? reset : handleApply}
             primaryDisabled={status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <PdfPreviewArea files={[file]} />
           <SidebarWorkspace sidebar={sidebar}>
             {previewUrl ? (
               <div className="relative inline-block">

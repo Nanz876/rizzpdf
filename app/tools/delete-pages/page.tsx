@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, deletePages, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
@@ -55,7 +56,8 @@ export default function DeletePagesPage() {
             onPrimary={status === "done" ? reset : handleDelete}
             primaryDisabled={selected.size === 0 || status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
-          <div className="p-5 bg-gray-50">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-5 bg-gray-50 border-t border-gray-100">
             <p className="text-xs text-gray-400 mb-3">Click a page to select it for deletion</p>
             <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={4} />
           </div>

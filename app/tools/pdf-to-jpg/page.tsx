@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, pdfToJpg, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
@@ -60,7 +61,8 @@ export default function PdfToJpgPage() {
             onPrimary={status === "done" ? reset : handleConvert}
             primaryDisabled={selected.size === 0 || status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
-          <div className="p-5 bg-gray-50">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-5 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-gray-400">Click pages to select / deselect</p>
               <div className="flex gap-2">

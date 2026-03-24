@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, watermarkPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
@@ -115,6 +116,7 @@ export default function WatermarkPage() {
             onPrimary={status === "done" ? reset : handleApply}
             primaryDisabled={!text.trim() || status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <PdfPreviewArea files={[file]} />
           <SidebarWorkspace sidebar={sidebar}>
             {previewUrl ? (
               <div className="relative inline-block max-w-full">

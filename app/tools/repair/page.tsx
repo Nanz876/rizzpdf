@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { repairPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
@@ -45,7 +46,8 @@ export default function RepairPage() {
             onPrimary={status === "done" ? reset : handleRepair}
             primaryDisabled={status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
-          <div className="p-8 bg-gray-50 flex flex-col items-center justify-center gap-4">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col items-center justify-center gap-4">
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
               <svg width="32" height="32" fill="none" viewBox="0 0 24 24">
                 <path d="M12 4l1.4 4.2H18l-3.7 2.7 1.4 4.2L12 12.4l-3.7 2.7 1.4-4.2L6 8.2h4.6L12 4z" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.5" strokeLinejoin="round"/>

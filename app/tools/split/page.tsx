@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, splitPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Mode = "every-page" | "range";
@@ -80,6 +81,7 @@ export default function SplitPage() {
             onPrimary={status === "done" ? reset : handleSplit}
             primaryDisabled={status === "processing" || (mode === "range" && !rangeStr.trim())} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <PdfPreviewArea files={[file]} />
           <SidebarWorkspace sidebar={sidebar}>
             <div className="flex items-stretch gap-1 overflow-x-auto pb-2">
               {thumbs.map((url, i) => (

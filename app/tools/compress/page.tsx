@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { compressPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Quality = "low" | "medium" | "high";
@@ -61,7 +62,8 @@ export default function CompressPage() {
               Saved {Math.round((1 - newSize / origSize) * 100)}% · {fmt(origSize)} → {fmt(newSize)}
             </div>
           )}
-          <div className="p-5 bg-gray-50">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-5 bg-gray-50 border-t border-gray-100">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Quality Level</p>
             <div className="grid grid-cols-3 gap-3">
               {QUALITY_OPTS.map(opt => (

@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
+import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { protectPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
@@ -55,7 +56,8 @@ export default function ProtectPage() {
             primaryDisabled={status === "processing" || !password.trim()}
           />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
-          <div className="p-6 bg-gray-50 space-y-4">
+          <PdfPreviewArea files={[file]} />
+          <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
               <div className="relative">
