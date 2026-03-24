@@ -566,40 +566,177 @@ export async function pdfToWord(
 ): Promise<ToolResult> {
   try {
     const pdfjsLib = await getPdfjsLib();
-    const { Document, Packer, Paragraph, TextRun } = await import("docx");
+    const {
+      Document, Packer, Paragraph, TextRun,
+      Table, TableRow, TableCell, WidthType,
+      HeadingLevel, BorderStyle,
+    } = await import("docx");
+
+    type PdfItem = { str: string; x: number; y: number; fontSize: number };
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-    const paragraphs: InstanceType<typeof Paragraph>[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allChildren: any[] = [];
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const content = await page.getTextContent();
 
-      // Group items into lines by y-position
-      const lineMap = new Map<number, string[]>();
-      for (const item of content.items) {
-        if ("str" in item && (item as { str: string }).str.trim()) {
-          const y = Math.round((item as { transform: number[] }).transform[5]);
-          if (!lineMap.has(y)) lineMap.set(y, []);
-          lineMap.get(y)!.push((item as { str: string }).str);
+      // ── 1. Collect items with full position data ──────────────────────────
+      const items: PdfItem[] = [];
+      for (const raw of content.items) {
+        if (!("str" in raw)) continue;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const it = raw as any;
+        const str = (it.str as string).replace(/\s+/g, " ").trim();
+        if (!str) continue;
+        items.push({
+          str,
+          x: Math.round(it.transform[4]),
+          y: Math.round(it.transform[5]),
+          fontSize: Math.round(Math.abs(it.transform[0])),
+        });
+      }
+
+      // ── 2. Group into visual lines (y-tolerance = 4) ─────────────────────
+      const Y_TOLERANCE = 4;
+      const lines: PdfItem[][] = [];
+      const sortedItems = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+
+      for (const item of sortedItems) {
+        const match = lines.find(
+          (line) => Math.abs(line[0].y - item.y) <= Y_TOLERANCE
+        );
+        if (match) {
+          match.push(item);
+          match.sort((a, b) => a.x - b.x);
+        } else {
+          lines.push([item]);
         }
       }
 
-      // Sort lines top-to-bottom (descending y in PDF coords)
-      const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
-      for (const y of sortedYs) {
-        const text = lineMap.get(y)!.join(" ").trim();
-        if (text) paragraphs.push(new Paragraph({ children: [new TextRun(text)] }));
+      // ── 3. Detect dominant font size (body text baseline) ─────────────────
+      const fontCounts = new Map<number, number>();
+      for (const line of lines) {
+        for (const it of line) {
+          fontCounts.set(it.fontSize, (fontCounts.get(it.fontSize) ?? 0) + 1);
+        }
+      }
+      const bodyFontSize = [...fontCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 10;
+
+      // ── 4. Detect column layout ───────────────────────────────────────────
+      // Collect the x-position of the second item in multi-item lines
+      const col2Xs: number[] = lines
+        .filter((l) => l.length >= 2)
+        .map((l) => l[1].x);
+
+      // Find the most common second-column x (within 15px tolerance)
+      let col2X = -1;
+      if (col2Xs.length > 0) {
+        const xClusters = new Map<number, number>();
+        for (const x of col2Xs) {
+          const key = Math.round(x / 15) * 15;
+          xClusters.set(key, (xClusters.get(key) ?? 0) + 1);
+        }
+        const topCluster = [...xClusters.entries()].sort((a, b) => b[1] - a[1])[0];
+        // Use two-column table if >40% of multi-item lines share a column2 x
+        const twoColLines = lines.filter((l) => l.length >= 2);
+        if (topCluster[1] / twoColLines.length > 0.4) {
+          col2X = topCluster[0];
+        }
+      }
+
+      // ── 5. Build docx children ────────────────────────────────────────────
+      const noBorder = {
+        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+      };
+
+      for (const line of lines) {
+        const fullText = line.map((i) => i.str).join(" ");
+        const maxFs = Math.max(...line.map((i) => i.fontSize));
+        const isBold = maxFs > bodyFontSize * 1.15;
+
+        // Heading detection: significantly larger than body
+        if (maxFs >= bodyFontSize * 1.5 && line.length <= 4) {
+          allChildren.push(
+            new Paragraph({
+              heading: HeadingLevel.HEADING_1,
+              children: [new TextRun({ text: fullText, bold: true })],
+            })
+          );
+          continue;
+        }
+
+        if (maxFs >= bodyFontSize * 1.2 && line.length <= 6) {
+          allChildren.push(
+            new Paragraph({
+              heading: HeadingLevel.HEADING_2,
+              children: [new TextRun({ text: fullText, bold: true })],
+            })
+          );
+          continue;
+        }
+
+        // Two-column table row: split at col2X boundary
+        if (col2X > 0 && line.length >= 2) {
+          const leftItems = line.filter((i) => i.x < col2X - 10);
+          const rightItems = line.filter((i) => i.x >= col2X - 10);
+          const leftText = leftItems.map((i) => i.str).join(" ").trim();
+          const rightText = rightItems.map((i) => i.str).join(" ").trim();
+
+          if (leftText || rightText) {
+            allChildren.push(
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: [
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        borders: noBorder,
+                        width: { size: 45, type: WidthType.PERCENTAGE },
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: leftText, bold: isBold })],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        borders: noBorder,
+                        width: { size: 55, type: WidthType.PERCENTAGE },
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: rightText })],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              })
+            );
+            continue;
+          }
+        }
+
+        // Default: plain paragraph
+        allChildren.push(
+          new Paragraph({
+            children: [new TextRun({ text: fullText, bold: isBold })],
+          })
+        );
       }
 
       // Page break between pages
       if (pageNum < pdf.numPages) {
-        paragraphs.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+        allChildren.push(new Paragraph({ pageBreakBefore: true, children: [] }));
       }
     }
 
-    const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+    const doc = new Document({ sections: [{ properties: {}, children: allChildren }] });
     const blob = await Packer.toBlob(doc);
     return {
       success: true,
