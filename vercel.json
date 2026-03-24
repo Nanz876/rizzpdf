@@ -1,7 +1,6 @@
 {
   "functions": {
     "api/pdf-to-word.py": {
-      "runtime": "@vercel/python",
       "maxDuration": 60
     }
   }
