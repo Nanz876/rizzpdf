@@ -40,7 +40,7 @@ export default async function DashboardPage({
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
-            className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent"
+            className="text-xl font-black text-gray-900"
           >
             RizzPDF
           </Link>
@@ -70,7 +70,7 @@ export default async function DashboardPage({
               <span
                 className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   tier === "pro"
-                    ? "bg-purple-100 text-purple-700"
+                    ? "bg-red-100 text-red-700"
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
@@ -94,7 +94,7 @@ export default async function DashboardPage({
           {tier === "pro" && (
             <Link
               href="/dashboard/bulk"
-              className="bg-gradient-to-r from-purple-600 to-pink-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity text-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors text-center"
             >
               CSV Bulk Unlock →
             </Link>
@@ -104,25 +104,25 @@ export default async function DashboardPage({
         {/* Quick actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
-            href="/"
-            className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-purple-300 transition-colors group"
+            href="/tools"
+            className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-red-300 transition-colors group"
           >
-            <div className="text-2xl mb-2">🔓</div>
-            <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
-              Unlock a PDF
+            <div className="text-2xl mb-2">🛠️</div>
+            <h3 className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors">
+              All PDF Tools
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              Go to the main page to unlock files
+              Merge, split, compress, convert &amp; more
             </p>
           </Link>
 
           {tier === "pro" ? (
             <Link
               href="/dashboard/bulk"
-              className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-purple-300 transition-colors group"
+              className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-red-300 transition-colors group"
             >
               <div className="text-2xl mb-2">📋</div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+              <h3 className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors">
                 CSV Bulk Unlock
               </h3>
               <p className="text-sm text-gray-500 mt-1">
@@ -140,10 +140,10 @@ export default async function DashboardPage({
           )}
         </div>
 
-        {/* Unlock history */}
+        {/* File history */}
         <div className="bg-white rounded-2xl border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Unlock History</h2>
+            <h2 className="font-semibold text-gray-900">File History</h2>
             <span className="text-sm text-gray-400">
               {unlocks?.length ?? 0} files
             </span>
@@ -152,9 +152,9 @@ export default async function DashboardPage({
             <div className="px-6 py-10 text-center text-gray-400">
               <div className="text-3xl mb-2">📂</div>
               <p>
-                No unlocks yet. Go{" "}
-                <Link href="/" className="text-purple-600 hover:underline">
-                  unlock your first PDF
+                No files yet. Go{" "}
+                <Link href="/tools" className="text-red-600 hover:underline">
+                  use a PDF tool
                 </Link>
                 !
               </p>
@@ -176,7 +176,7 @@ export default async function DashboardPage({
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         u.tier === "pro"
-                          ? "bg-purple-100 text-purple-700"
+                          ? "bg-red-100 text-red-700"
                           : u.tier === "drop"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-gray-100 text-gray-600"

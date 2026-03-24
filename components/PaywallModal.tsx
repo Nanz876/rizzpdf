@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface PaywallModalProps {
   onClose: () => void;
@@ -23,32 +24,35 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-fadeIn text-center">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl text-center">
         {/* Icon */}
-        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-          <span className="text-3xl">🔓</span>
+        <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14 2v6h6M12 18v-6M9 15h6" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
-        <h2 className="text-2xl font-black text-gray-900 mb-2">
-          Going bulk? Respect.
+        <h2 className="text-[22px] font-black text-gray-900 mb-2">
+          Free limit reached
         </h2>
-        <p className="text-gray-500 text-sm mb-6">
-          Free tier is limited to 3 files. Upgrade for just{" "}
-          <span className="font-bold text-purple-600">$1</span> to unlock unlimited
-          files for 24 hours — no subscription, no account needed.
+        <p className="text-gray-500 text-[13px] mb-6 leading-relaxed">
+          The free tier allows 3 files per tool. Get a{" "}
+          <span className="font-bold text-red-600">$1 day pass</span> for
+          unlimited files for 24 hours — no account needed.
         </p>
 
         {/* Features */}
         <ul className="text-left space-y-2 mb-6">
           {[
-            "Unlimited files per session",
+            "Unlimited files for 24 hours",
+            "All 16 PDF tools included",
             "Up to 50MB per file",
-            "Access for 24 hours",
-            "No subscription ever",
+            "No subscription, no account",
             "Files never leave your browser",
           ].map((f) => (
-            <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-              <span className="text-purple-500 font-bold">✓</span>
+            <li key={f} className="flex items-center gap-2 text-[13px] text-gray-700">
+              <span className="w-4 h-4 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[9px] font-black shrink-0">✓</span>
               {f}
             </li>
           ))}
@@ -57,23 +61,30 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
         <button
           onClick={handlePay}
           disabled={loading}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-2xl font-bold text-lg hover:opacity-90 transition-opacity mb-3 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold text-[15px] transition-colors mb-3 disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(220,38,38,0.3)]"
         >
-          {loading ? "Redirecting to Stripe..." : "Unlock for $1 →"}
+          {loading ? "Redirecting to Stripe…" : "Get day pass — $1 →"}
         </button>
+
+        <Link
+          href="/pricing"
+          className="block text-[12px] text-red-600 font-semibold hover:underline mb-3"
+        >
+          See all plans including Pro ($5/mo) →
+        </Link>
 
         <button
           onClick={onClose}
-          className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors"
         >
           No thanks, I&apos;ll stick to 3 files
         </button>
 
-        <p className="text-xs text-gray-400 mt-4">
-          Questions or need a refund?{" "}
+        <p className="text-[11px] text-gray-400 mt-4">
+          Questions?{" "}
           <a
             href="mailto:support@rizzpdf.com"
-            className="text-purple-500 hover:text-purple-700 underline transition-colors"
+            className="text-red-500 hover:underline"
           >
             support@rizzpdf.com
           </a>
