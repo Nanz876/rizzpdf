@@ -85,7 +85,7 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
             {isDragging ? "Drop it like it&apos;s hot 🔥" : "Drop your PDFs here"}
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            or <span className="text-red-600 font-semibold">click to browse</span> — up to 10MB per file (free)
+            or <span className="text-red-600 font-semibold">click to browse</span> — up to 200MB per file
           </p>
         </div>
 

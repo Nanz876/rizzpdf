@@ -16,6 +16,9 @@ const MORE_TOOLS = [
   { name: "PDF to JPG", href: "/tools/pdf-to-jpg" },
   { name: "JPG to PDF", href: "/tools/jpg-to-pdf" },
   { name: "Repair PDF", href: "/tools/repair" },
+  { name: "Protect PDF", href: "/tools/protect" },
+  { name: "PDF to Word", href: "/tools/pdf-to-word" },
+  { name: "Batch Processing", href: "/tools/batch" },
 ];
 
 interface ToolShellProps {
@@ -27,7 +30,7 @@ interface ToolShellProps {
   children: React.ReactNode;
 }
 
-export default function ToolShell({ name, description, svgIcon, steps, children }: ToolShellProps) {
+export default function ToolShell({ name, description, icon, svgIcon, steps, children }: ToolShellProps) {
   const defaultIcon = (
     <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
       <rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.8"/>
