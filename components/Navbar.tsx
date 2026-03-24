@@ -62,7 +62,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/sign-in"
-                className="hidden sm:block text-[13px] font-semibold text-gray-600 border border-gray-300 px-4 py-1.5 rounded-full hover:border-red-400 hover:text-red-600 transition-colors"
+                className="text-[13px] font-semibold text-gray-600 border border-gray-300 px-4 py-1.5 rounded-full hover:border-red-400 hover:text-red-600 transition-colors"
               >
                 Sign in
               </Link>
