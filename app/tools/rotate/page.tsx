@@ -38,13 +38,13 @@ export default function RotatePage() {
     if (!file) return;
     setStatus("processing");
     try {
-      const { PDFDocument } = await import("pdf-lib");
+      const { PDFDocument, degrees } = await import("pdf-lib");
       const bytes = await file.arrayBuffer();
       const doc = await PDFDocument.load(bytes);
       const pgList = doc.getPages();
       pgList.forEach((pg, i) => {
         const deg = rotations[i + 1] ?? 0;
-        if (deg !== 0) pg.setRotation({ type: "degrees", angle: (pg.getRotation().angle + deg) % 360 });
+        if (deg !== 0) pg.setRotation(degrees((pg.getRotation().angle + deg) % 360));
       });
       const out = await doc.save();
       downloadBlob(new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }), file.name.replace(/\.pdf$/i, "_rotated.pdf"));
