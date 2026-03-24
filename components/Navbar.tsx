@@ -13,8 +13,8 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link href="/" className="shrink-0">
-          <span className="text-xl font-black bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-            RizzPDF
+          <span className="text-xl font-black">
+            <span className="text-gray-900">Rizz</span><span className="text-red-600">PDF</span>
           </span>
         </Link>
 
@@ -22,25 +22,25 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-6 flex-1">
           <Link
             href="/tools/merge"
-            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-purple-600 transition-colors whitespace-nowrap"
+            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
           >
             Merge PDF
           </Link>
           <Link
             href="/tools/split"
-            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-purple-600 transition-colors whitespace-nowrap"
+            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
           >
             Split PDF
           </Link>
           <Link
             href="/tools/compress"
-            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-purple-600 transition-colors whitespace-nowrap"
+            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
           >
             Compress PDF
           </Link>
           <Link
             href="/tools"
-            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-purple-600 transition-colors whitespace-nowrap"
+            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
           >
             All PDF Tools ▾
           </Link>
@@ -52,7 +52,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/dashboard"
-                className="hidden sm:block text-[13px] font-semibold text-gray-600 hover:text-purple-600 transition-colors"
+                className="hidden sm:block text-[13px] font-semibold text-gray-600 hover:text-red-600 transition-colors"
               >
                 Dashboard
               </Link>
@@ -62,13 +62,13 @@ export default function Navbar() {
             <>
               <Link
                 href="/sign-in"
-                className="hidden sm:block text-[13px] font-semibold text-gray-600 border border-gray-300 px-4 py-1.5 rounded-full hover:border-purple-400 hover:text-purple-600 transition-colors"
+                className="hidden sm:block text-[13px] font-semibold text-gray-600 border border-gray-300 px-4 py-1.5 rounded-full hover:border-red-400 hover:text-red-600 transition-colors"
               >
                 Sign in
               </Link>
               <Link
                 href="/sign-up"
-                className="text-[13px] font-bold bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+                className="text-[13px] font-bold bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full transition-colors"
               >
                 Sign up free
               </Link>

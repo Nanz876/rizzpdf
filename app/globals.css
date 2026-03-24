@@ -21,8 +21,8 @@ body {
 }
 
 @keyframes pulse-border {
-  0%, 100% { border-color: #a855f7; }
-  50% { border-color: #ec4899; }
+  0%, 100% { border-color: #dc2626; }
+  50% { border-color: #f97316; }
 }
 
 .drag-active {

@@ -48,8 +48,8 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
       className={`
         relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-200 cursor-pointer
         ${isDragging
-          ? "border-purple-500 bg-purple-50 drag-active scale-[1.01]"
-          : "border-gray-200 bg-gray-50 hover:border-purple-400 hover:bg-purple-50/30"
+          ? "border-red-500 bg-red-50 drag-active scale-[1.01]"
+          : "border-gray-200 bg-gray-50 hover:border-red-400 hover:bg-red-50/30"
         }
         ${disabled ? "opacity-50 pointer-events-none" : ""}
       `}
@@ -64,9 +64,9 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
       />
 
       <div className="flex flex-col items-center gap-3 pointer-events-none">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center">
           <svg
-            className="w-8 h-8 text-purple-500"
+            className="w-8 h-8 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -85,7 +85,7 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
             {isDragging ? "Drop it like it&apos;s hot 🔥" : "Drop your PDFs here"}
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            or <span className="text-purple-600 font-semibold">click to browse</span> — up to 10MB per file (free)
+            or <span className="text-red-600 font-semibold">click to browse</span> — up to 10MB per file (free)
           </p>
         </div>
 
