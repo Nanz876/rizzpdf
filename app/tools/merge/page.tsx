@@ -139,7 +139,7 @@ export default function MergePage() {
             <p className="text-center text-green-600 font-semibold">
               Merged successfully! Download started automatically.
             </p>
-            <button onClick={reset} className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors">
+            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors">
               Merge more PDFs
             </button>
           </div>
@@ -151,7 +151,7 @@ export default function MergePage() {
             <button
               onClick={handleMerge}
               disabled={files.length < 2 || status === "processing"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "processing"
                 ? "Merging..."

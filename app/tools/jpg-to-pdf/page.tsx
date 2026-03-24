@@ -76,8 +76,8 @@ export default function JpgToPdfPage() {
           onClick={() => inputRef.current?.click()}
           className={`w-full border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
             dragging
-              ? "border-purple-500 bg-purple-50"
-              : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50"
+              ? "border-red-500 bg-red-50"
+              : "border-gray-300 bg-gray-50 hover:border-red-400 hover:bg-red-50"
           }`}
         >
           <input
@@ -104,7 +104,7 @@ export default function JpgToPdfPage() {
             </svg>
             <p className="text-gray-600 font-medium text-sm">
               Drag &amp; drop images here, or{" "}
-              <span className="text-purple-600 font-semibold">browse</span>
+              <span className="text-red-600 font-semibold">browse</span>
             </p>
             <p className="text-gray-400 text-xs">JPEG and PNG files accepted</p>
           </div>
@@ -135,7 +135,7 @@ export default function JpgToPdfPage() {
             <button
               onClick={handleConvert}
               disabled={loading || images.length === 0}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {loading ? "Converting…" : "Convert to PDF"}
             </button>

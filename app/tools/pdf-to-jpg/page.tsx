@@ -71,8 +71,8 @@ export default function PdfToJpgPage() {
                     onClick={() => setDpi(opt.value)}
                     className={
                       dpi === opt.value
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {opt.label}
@@ -84,7 +84,7 @@ export default function PdfToJpgPage() {
             <button
               onClick={handleConvert}
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {loading ? "Converting…" : "Convert to JPG"}
             </button>

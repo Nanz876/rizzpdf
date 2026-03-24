@@ -97,8 +97,8 @@ export default function RotatePage() {
                     onClick={() => setAngle(opt.value)}
                     className={
                       angle === opt.value
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {opt.label}
@@ -117,8 +117,8 @@ export default function RotatePage() {
                     onClick={() => setPageMode(mode)}
                     className={
                       pageMode === mode
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {mode === "all" ? "All pages" : "Specific pages"}
@@ -131,7 +131,7 @@ export default function RotatePage() {
                   value={pageInput}
                   onChange={(e) => setPageInput(e.target.value)}
                   placeholder="e.g. 1,3,5-7"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-purple-400"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-red-400"
                 />
               )}
             </div>
@@ -139,7 +139,7 @@ export default function RotatePage() {
             <button
               onClick={handleRotate}
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {loading ? "Rotating…" : "Rotate PDF"}
             </button>

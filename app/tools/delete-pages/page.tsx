@@ -88,7 +88,7 @@ export default function DeletePagesPage() {
                 value={rangeInput}
                 onChange={(e) => { setRangeInput(e.target.value); setStatus("idle"); }}
                 placeholder="e.g. 1, 3, 5-7, 10"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400 transition-colors"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-400 transition-colors"
               />
               <p className="text-xs text-gray-400 mt-1">
                 Separate pages with commas. Use hyphens for ranges (e.g., 5-7).
@@ -111,7 +111,7 @@ export default function DeletePagesPage() {
             <p className="text-center text-green-600 font-semibold">
               Done! {parsedPages.length} page{parsedPages.length !== 1 ? "s" : ""} deleted and downloaded.
             </p>
-            <button onClick={reset} className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 transition-colors">
+            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 transition-colors">
               Edit another PDF
             </button>
           </div>
@@ -121,7 +121,7 @@ export default function DeletePagesPage() {
             <button
               onClick={handleDelete}
               disabled={!file || parsedPages.length === 0 || status === "processing"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "processing" ? "Deleting pages..." : `Delete ${parsedPages.length > 0 ? parsedPages.length + " page" + (parsedPages.length !== 1 ? "s" : "") : "pages"}`}
             </button>

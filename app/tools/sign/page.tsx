@@ -344,7 +344,7 @@ export default function SignPage() {
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 text-sm">
                   {(["draw", "upload"] as const).map(t => (
                     <button key={t} onClick={() => setSigTab(t)}
-                      className={`flex-1 py-2 font-medium transition-colors capitalize ${sigTab === t ? "bg-purple-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
+                      className={`flex-1 py-2 font-medium transition-colors capitalize ${sigTab === t ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
                       {t}
                     </button>
                   ))}
@@ -361,7 +361,7 @@ export default function SignPage() {
                     <div className="flex gap-2">
                       <button onClick={clearDraw} className="flex-1 py-2 text-xs text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Clear</button>
                       <button onClick={useSig} disabled={!hasDrawn || !pageUrls.length}
-                        className="flex-1 py-2 text-xs font-bold bg-purple-600 text-white rounded-xl disabled:opacity-40 hover:bg-purple-700">
+                        className="flex-1 py-2 text-xs font-bold bg-red-600 text-white rounded-xl disabled:opacity-40 hover:bg-red-700">
                         Use Signature
                       </button>
                     </div>
@@ -371,7 +371,7 @@ export default function SignPage() {
                 {/* Upload */}
                 {sigTab === "upload" && (
                   <div className="space-y-2">
-                    <label className="flex flex-col items-center gap-2 py-6 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-purple-300 transition-colors">
+                    <label className="flex flex-col items-center gap-2 py-6 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-red-300 transition-colors">
                       <span className="text-3xl">🖼️</span>
                       <span className="text-sm text-gray-500 font-medium">Upload signature image</span>
                       <span className="text-xs text-gray-400">PNG, JPG, WEBP</span>
@@ -379,7 +379,7 @@ export default function SignPage() {
                     </label>
                     {origUpload && (
                       <button onClick={toggleBgRemoval}
-                        className={`w-full py-2 text-xs font-semibold rounded-xl border transition-colors ${bgRemoved ? "bg-green-50 border-green-300 text-green-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:border-purple-300"}`}>
+                        className={`w-full py-2 text-xs font-semibold rounded-xl border transition-colors ${bgRemoved ? "bg-green-50 border-green-300 text-green-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:border-red-300"}`}>
                         {bgRemoved ? "✓ Background removed" : "Remove white background"}
                       </button>
                     )}
@@ -388,9 +388,9 @@ export default function SignPage() {
 
                 {/* Sig preview */}
                 {sigDataUrl && (
-                  <div className="border border-purple-200 rounded-xl p-3 bg-purple-50 space-y-1" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
+                  <div className="border border-red-200 rounded-xl p-3 bg-red-50 space-y-1" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
                     <img src={sigDataUrl} alt="Signature" className="max-h-14 object-contain mx-auto" draggable={false} />
-                    <p className="text-xs text-center text-purple-600 font-medium mt-1">
+                    <p className="text-xs text-center text-red-600 font-medium mt-1">
                       {placement ? "Drag to reposition · corner to resize" : "Click on the PDF to place"}
                     </p>
                   </div>
@@ -407,13 +407,13 @@ export default function SignPage() {
               {status === "done" ? (
                 <div className="space-y-2 text-center">
                   <p className="text-green-600 font-semibold text-sm">✓ Signed PDF downloaded!</p>
-                  <button onClick={reset} className="w-full bg-purple-600 text-white py-3 rounded-2xl font-bold text-sm hover:bg-purple-700">Sign another PDF</button>
+                  <button onClick={reset} className="w-full bg-red-600 text-white py-3 rounded-2xl font-bold text-sm hover:bg-red-700">Sign another PDF</button>
                 </div>
               ) : (
                 <>
                   {err && <p className="text-red-500 text-xs text-center">{err}</p>}
                   <button onClick={handleSign} disabled={!canSign}
-                    className="w-full bg-purple-600 text-white py-3 rounded-2xl font-bold text-sm disabled:opacity-40 hover:bg-purple-700 transition-colors">
+                    className="w-full bg-red-600 text-white py-3 rounded-2xl font-bold text-sm disabled:opacity-40 hover:bg-red-700 transition-colors">
                     {status === "processing" ? "Signing…" : !sigDataUrl ? "Create a signature first" : !placement ? "Place signature on the PDF" : "Sign & Download PDF"}
                   </button>
                 </>
@@ -438,7 +438,7 @@ export default function SignPage() {
               <div ref={scrollRef} className="relative overflow-auto bg-gray-300 rounded-2xl border border-gray-200" style={{ height: "70vh" }}>
                 {loading && (
                   <div className="flex items-center justify-center h-full gap-2">
-                    <svg className="animate-spin h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                     </svg>
@@ -475,12 +475,12 @@ export default function SignPage() {
                     onPointerUp={onSigPtrUp}
                     onPointerCancel={onSigPtrUp}>
 
-                    <div className="absolute -top-6 left-0 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md whitespace-nowrap shadow pointer-events-none">
+                    <div className="absolute -top-6 left-0 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md whitespace-nowrap shadow pointer-events-none">
                       ↕ Drag to move
                     </div>
 
                     <img src={sigDataUrl} alt="Signature" draggable={false}
-                      className="w-full select-none border-2 border-purple-400 border-dashed rounded"
+                      className="w-full select-none border-2 border-red-400 border-dashed rounded"
                       style={{ userSelect: "none", display: "block" }} />
 
                     {/* Resize handle */}
@@ -503,7 +503,7 @@ export default function SignPage() {
                 {/* Placement hint */}
                 {!loading && pageUrls.length > 0 && sigDataUrl && !placement && (
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="bg-purple-600/90 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-lg">
+                    <div className="bg-red-600/90 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-lg">
                       Click anywhere on the PDF to place your signature
                     </div>
                   </div>

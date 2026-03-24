@@ -87,7 +87,7 @@ export default function WatermarkPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="CONFIDENTIAL"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-purple-400"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-red-400"
               />
             </div>
 
@@ -101,8 +101,8 @@ export default function WatermarkPage() {
                     onClick={() => setColor(opt.value)}
                     className={
                       color === opt.value
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {opt.label}
@@ -121,8 +121,8 @@ export default function WatermarkPage() {
                     onClick={() => setPosition(opt.value)}
                     className={
                       position === opt.value
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {opt.label}
@@ -134,7 +134,7 @@ export default function WatermarkPage() {
             {/* Opacity slider */}
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">
-                Opacity — <span className="text-purple-600">{opacity}%</span>
+                Opacity — <span className="text-red-600">{opacity}%</span>
               </p>
               <input
                 type="range"
@@ -143,7 +143,7 @@ export default function WatermarkPage() {
                 step={5}
                 value={opacity}
                 onChange={(e) => setOpacity(Number(e.target.value))}
-                className="w-full accent-purple-600"
+                className="w-full accent-red-600"
               />
               <div className="flex justify-between text-xs text-gray-400 mt-1">
                 <span>10%</span>
@@ -154,7 +154,7 @@ export default function WatermarkPage() {
             <button
               onClick={handleWatermark}
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {loading ? "Adding watermark…" : "Add Watermark"}
             </button>

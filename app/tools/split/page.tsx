@@ -91,10 +91,10 @@ export default function SplitPage() {
                     value="every-page"
                     checked={mode === "every-page"}
                     onChange={() => setMode("every-page")}
-                    className="accent-purple-600 w-4 h-4"
+                    className="accent-red-600 w-4 h-4"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
+                    <p className="text-sm font-medium text-gray-800 group-hover:text-red-700 transition-colors">
                       Split every page
                     </p>
                     <p className="text-xs text-gray-400">Creates one file per page</p>
@@ -108,10 +108,10 @@ export default function SplitPage() {
                     value="range"
                     checked={mode === "range"}
                     onChange={() => setMode("range")}
-                    className="accent-purple-600 w-4 h-4"
+                    className="accent-red-600 w-4 h-4"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-800 group-hover:text-purple-700 transition-colors">
+                    <p className="text-sm font-medium text-gray-800 group-hover:text-red-700 transition-colors">
                       Custom ranges
                     </p>
                     <p className="text-xs text-gray-400">Specify page groups to extract</p>
@@ -131,7 +131,7 @@ export default function SplitPage() {
                   value={rangeStr}
                   onChange={(e) => setRangeStr(e.target.value)}
                   placeholder="e.g. 1-3, 5, 7-9"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-400 mt-1.5">
                   Each group becomes a separate file. Example: <span className="font-mono">1-3, 5, 7-9</span>
@@ -147,7 +147,7 @@ export default function SplitPage() {
             <p className="text-center text-green-600 font-semibold">
               Split into {splitCount} {splitCount === 1 ? "file" : "files"} — downloads started automatically.
             </p>
-            <button onClick={reset} className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors">
+            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors">
               Split another PDF
             </button>
           </div>
@@ -159,7 +159,7 @@ export default function SplitPage() {
             <button
               onClick={handleSplit}
               disabled={!canSplit || status === "processing"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "processing" ? "Splitting..." : "Split PDF"}
             </button>

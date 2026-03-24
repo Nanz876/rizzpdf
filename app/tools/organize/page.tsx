@@ -101,7 +101,7 @@ export default function OrganizePage() {
 
         {status === "loading-thumbs" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-red-200 border-t-red-600 rounded-full animate-spin" />
             <p className="text-gray-500 font-medium">Loading thumbnails…</p>
           </div>
         )}
@@ -135,8 +135,8 @@ export default function OrganizePage() {
                   className={`
                     relative rounded-xl border-2 overflow-hidden cursor-grab active:cursor-grabbing transition-all select-none
                     ${dragOver === displayIndex
-                      ? "border-purple-500 scale-105 shadow-lg"
-                      : "border-gray-200 hover:border-purple-300 hover:shadow-sm"
+                      ? "border-red-500 scale-105 shadow-lg"
+                      : "border-gray-200 hover:border-red-300 hover:shadow-sm"
                     }
                   `}
                 >
@@ -170,7 +170,7 @@ export default function OrganizePage() {
             <button
               onClick={handleSave}
               disabled={status === "saving"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "saving" ? "Saving…" : "Save New Order"}
             </button>
@@ -184,7 +184,7 @@ export default function OrganizePage() {
             </p>
             <button
               onClick={handleReset}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 transition-colors"
             >
               Organize another
             </button>

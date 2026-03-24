@@ -79,8 +79,8 @@ export default function PageNumbersPage() {
                     onClick={() => setPosition(opt.value)}
                     className={
                       position === opt.value
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {opt.label}
@@ -99,8 +99,8 @@ export default function PageNumbersPage() {
                     onClick={() => setFormat(f)}
                     className={
                       format === f
-                        ? "px-4 py-2 rounded-xl bg-purple-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-purple-400 transition-colors"
+                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
+                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
                     }
                   >
                     {f}
@@ -119,14 +119,14 @@ export default function PageNumbersPage() {
                 min={1}
                 value={startFrom}
                 onChange={(e) => setStartFrom(Number(e.target.value))}
-                className="w-28 border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-purple-400"
+                className="w-28 border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:border-red-400"
               />
             </div>
 
             <button
               onClick={handleAddNumbers}
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {loading ? "Adding page numbers…" : "Add Page Numbers"}
             </button>

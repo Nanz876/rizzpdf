@@ -100,12 +100,12 @@ export default function CompressPage() {
                     onClick={() => setQuality(opt.value)}
                     className={`flex-1 py-3 px-3 rounded-xl border text-sm font-semibold transition-all duration-150 ${
                       quality === opt.value
-                        ? "bg-purple-600 border-purple-600 text-white shadow-sm"
-                        : "bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-700"
+                        ? "bg-red-600 border-red-600 text-white shadow-sm"
+                        : "bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-700"
                     }`}
                   >
                     <span className="block">{opt.label}</span>
-                    <span className={`block text-xs font-normal mt-0.5 ${quality === opt.value ? "text-purple-100" : "text-gray-400"}`}>
+                    <span className={`block text-xs font-normal mt-0.5 ${quality === opt.value ? "text-red-100" : "text-gray-400"}`}>
                       {opt.note}
                     </span>
                   </button>
@@ -124,7 +124,7 @@ export default function CompressPage() {
               Compressed successfully! Download started automatically.
             </p>
             <p className="text-center text-xs text-gray-400">{QUALITY_NOTES[quality]}</p>
-            <button onClick={reset} className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors">
+            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors">
               Compress another PDF
             </button>
           </div>
@@ -136,7 +136,7 @@ export default function CompressPage() {
             <button
               onClick={handleCompress}
               disabled={!file || status === "processing"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "processing" ? "Compressing..." : "Compress PDF"}
             </button>

@@ -77,7 +77,7 @@ export default function RepairPage() {
         {status === "done" ? (
           <div className="space-y-3">
             <p className="text-center text-green-600 font-semibold">Repaired PDF downloaded!</p>
-            <button onClick={reset} className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 transition-colors">
+            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 transition-colors">
               Repair another PDF
             </button>
           </div>
@@ -87,7 +87,7 @@ export default function RepairPage() {
             <button
               onClick={handleRepair}
               disabled={!file || status === "processing"}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               {status === "processing" ? "Repairing..." : "Repair PDF"}
             </button>
