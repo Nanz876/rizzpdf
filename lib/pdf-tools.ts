@@ -568,8 +568,7 @@ export async function pdfToWord(
     const pdfjsLib = await getPdfjsLib();
     const {
       Document, Packer, Paragraph, TextRun,
-      Table, TableRow, TableCell, WidthType,
-      HeadingLevel, BorderStyle,
+      TabStopType, HeadingLevel,
     } = await import("docx");
 
     type PdfItem = { str: string; x: number; y: number; fontSize: number };
@@ -663,73 +662,54 @@ export async function pdfToWord(
       }
 
       // ── 5. Build docx children ────────────────────────────────────────────
-      const noBorder = {
-        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-        bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      };
+      // iLovePDF approach: tab-stop paragraphs (not tables).
+      // Tab stop position = col2X_pdf_points × 20 (points → twips).
+      // Labels are bold dark-gray; values are regular weight.
+      const LABEL_COLOR = "383A3E";
+      const FONT_SIZE = 20; // half-points = 10pt
 
       for (const line of lines) {
         const fullText = line.map((i) => i.str).join(" ");
         const maxFs = Math.max(...line.map((i) => i.fontSize));
-        const isBold = maxFs > bodyFontSize * 1.15;
 
-        // Heading detection: significantly larger than body
-        if (maxFs >= bodyFontSize * 1.5 && line.length <= 4) {
+        // Heading detection
+        if (maxFs >= bodyFontSize * 1.5) {
           allChildren.push(
             new Paragraph({
               heading: HeadingLevel.HEADING_1,
-              children: [new TextRun({ text: fullText, bold: true })],
+              children: [new TextRun({ text: fullText, bold: true, color: LABEL_COLOR })],
             })
           );
           continue;
         }
-
-        if (maxFs >= bodyFontSize * 1.2 && line.length <= 6) {
+        if (maxFs >= bodyFontSize * 1.2) {
           allChildren.push(
             new Paragraph({
               heading: HeadingLevel.HEADING_2,
-              children: [new TextRun({ text: fullText, bold: true })],
+              children: [new TextRun({ text: fullText, bold: true, color: LABEL_COLOR })],
             })
           );
           continue;
         }
 
-        // Two-column table row: split at col2X boundary
-        if (col2X > 0 && line.length >= 2) {
+        // Two-column line: split at the detected column boundary, use tab stop
+        if (col2X > 0) {
           const leftItems = line.filter((i) => i.x < col2X - 10);
           const rightItems = line.filter((i) => i.x >= col2X - 10);
           const leftText = leftItems.map((i) => i.str).join(" ").trim();
           const rightText = rightItems.map((i) => i.str).join(" ").trim();
 
-          if (leftText || rightText) {
+          if (leftText && rightText) {
+            // Tab stop at the actual PDF x-position of col2, converted to twips
+            const tabPos = Math.round(col2X * 20);
             allChildren.push(
-              new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                  new TableRow({
-                    children: [
-                      new TableCell({
-                        borders: noBorder,
-                        width: { size: 45, type: WidthType.PERCENTAGE },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun({ text: leftText, bold: isBold })],
-                          }),
-                        ],
-                      }),
-                      new TableCell({
-                        borders: noBorder,
-                        width: { size: 55, type: WidthType.PERCENTAGE },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun({ text: rightText })],
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
+              new Paragraph({
+                tabStops: [{ type: TabStopType.LEFT, position: tabPos }],
+                indent: { left: Math.round(line[0].x * 20) },
+                children: [
+                  new TextRun({ text: leftText, bold: true, color: LABEL_COLOR, size: FONT_SIZE }),
+                  new TextRun({ text: "\t", bold: true, color: LABEL_COLOR, size: FONT_SIZE }),
+                  new TextRun({ text: rightText, color: LABEL_COLOR, size: FONT_SIZE }),
                 ],
               })
             );
@@ -737,10 +717,13 @@ export async function pdfToWord(
           }
         }
 
-        // Default: plain paragraph
+        // Default: plain paragraph preserving x indent
+        const indent = line[0]?.x ? Math.round(line[0].x * 20) : 0;
+        const isBold = maxFs > bodyFontSize * 1.1;
         allChildren.push(
           new Paragraph({
-            children: [new TextRun({ text: fullText, bold: isBold })],
+            indent: indent > 0 ? { left: indent } : undefined,
+            children: [new TextRun({ text: fullText, bold: isBold, color: LABEL_COLOR, size: FONT_SIZE })],
           })
         );
       }
@@ -751,7 +734,18 @@ export async function pdfToWord(
       }
     }
 
-    const doc = new Document({ sections: [{ properties: {}, children: allChildren }] });
+    // Match iLovePDF: A4 with minimal margins so tab positions align with PDF coords
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 11900, height: 16840 },
+            margin: { top: 400, right: 566, bottom: 280, left: 566 },
+          },
+        },
+        children: allChildren,
+      }],
+    });
     const blob = await Packer.toBlob(doc);
     return {
       success: true,
