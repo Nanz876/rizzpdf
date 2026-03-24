@@ -116,7 +116,7 @@ export default function BestPdfPasswordRemover() {
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">Limited (with ads)</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Sign-up required</span><span className="text-yellow-400">For full access</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Files uploaded to server</span><span className="text-yellow-400">Yes</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Paid option</span><span className="text-white">From $7/month</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Paid option</span><span className="text-white">From $5/month</span></div>
             </div>
             <p className="mt-4 text-gray-400 text-sm">
               <strong className="text-gray-300">Best for:</strong> Users who need multiple PDF tools and are comfortable with server-side processing.

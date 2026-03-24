@@ -23,7 +23,7 @@ export default function SubscribeButton() {
       disabled={loading}
       className="bg-gradient-to-r from-purple-600 to-pink-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
     >
-      {loading ? "Redirecting…" : "Upgrade to Pro — $7/mo"}
+      {loading ? "Redirecting…" : "Upgrade to Pro — $5/mo"}
     </button>
   );
 }

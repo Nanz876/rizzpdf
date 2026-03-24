@@ -82,11 +82,11 @@ export default async function DashboardPage({
             </div>
             {tier === "pro" ? (
               <p className="text-sm text-gray-500">
-                Unlimited unlocks · 100MB files · CSV bulk unlock · Full history
+                Unlimited files · 200MB per file · All tools · Full history
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                3 unlocks · 10MB files · No history
+                3 files per tool · No history
               </p>
             )}
           </div>
@@ -134,7 +134,7 @@ export default async function DashboardPage({
               <div className="text-2xl mb-2">📋</div>
               <h3 className="font-semibold text-gray-500">CSV Bulk Unlock</h3>
               <p className="text-sm text-gray-400 mt-1">
-                Pro plan only · $7/month
+                Pro plan only · $5/month
               </p>
             </div>
           )}

@@ -121,7 +121,7 @@ export default function PdfToWordWithoutLosingFormatting() {
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                 <h3 className="font-semibold text-white mb-2">Smallpdf / ILovePDF</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  Mid-range quality. Better than basic browser tools but not as good as Adobe. Files are uploaded to their servers. Free tiers are limited; paid plans run $7–9/month.
+                  Mid-range quality. Better than basic browser tools but not as good as Adobe. Files are uploaded to their servers. Free tiers are limited; paid plans run $5/month.
                 </p>
               </div>
             </div>

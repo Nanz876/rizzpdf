@@ -185,7 +185,7 @@ export default function RemovePdfRestrictionsOnline() {
                     ["Sign-up required", "No", "Often"],
                     ["Free tier", "3 files", "1–2 tasks/day"],
                     ["Works on mobile", "✅ Yes", "Varies"],
-                    ["Paid option", "$1 one-time", "$7–12/month"],
+                    ["Paid option", "$1 one-time", "$5/month"],
                   ].map(([feature, rizzpdf, others]) => (
                     <tr key={feature}>
                       <td className="py-3 pr-4 text-gray-300">{feature}</td>
