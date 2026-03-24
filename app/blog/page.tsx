@@ -4,11 +4,32 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "PDF Tips & Guides | RizzPDF",
   description:
-    "Free guides on how to unlock, edit and manage PDFs. No fluff, just actionable tips.",
+    "Free guides on how to unlock PDFs, convert PDF to Word, and work smarter with PDF files.",
   alternates: { canonical: "https://www.rizzpdf.com/blog" },
 };
 
 const posts = [
+  {
+    slug: "convert-pdf-to-word-online-free",
+    title: "Convert PDF to Word Online Free — No Email, No Sign Up",
+    description: "Convert any PDF to an editable Word document online for free. No sign-up, no email required — runs entirely in your browser.",
+    date: "March 23, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "pdf-to-word-without-losing-formatting",
+    title: "How to Convert PDF to Word Without Losing Formatting",
+    description: "Why PDF formatting gets lost during conversion, which tools preserve it best, and tips to get clean output every time.",
+    date: "March 23, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "how-to-edit-pdf-in-word",
+    title: "How to Edit a PDF in Word — Free, Without Adobe Acrobat",
+    description: "Two methods to edit a PDF in Word: convert it first, or edit directly in your browser. Step-by-step guide.",
+    date: "March 23, 2026",
+    readTime: "4 min read",
+  },
   {
     slug: "how-to-unlock-pdf-without-password",
     title: "How to Unlock a PDF Without the Password (3 Methods)",

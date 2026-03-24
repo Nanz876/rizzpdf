@@ -1,0 +1,276 @@
+<h2>New homepage layout — which feels right?</h2>
+<p class="subtitle">Unlock PDF moves to the tool grid. These are three options for the new landing page.</p>
+
+<style>
+  .cards { display: flex; flex-direction: column; gap: 24px; }
+  .card { border: 2px solid #e5e7eb; border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.15s; }
+  .card:hover { border-color: #ef4444; box-shadow: 0 4px 16px rgba(239,68,68,0.1); }
+  .card.selected { border-color: #ef4444; background: #fff5f5; }
+  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .card-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .card-name { font-size: 17px; font-weight: 800; color: #111; }
+  .card-desc { font-size: 13px; color: #666; margin-bottom: 14px; line-height: 1.6; }
+
+  /* Mockup styles */
+  .mockup-wrap {
+    background: #f8f8f8;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+  }
+  .mock-navbar {
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+  .mock-logo { font-weight: 900; font-size: 13px; }
+  .mock-logo span { color: #ef4444; }
+  .mock-nav-links { display: flex; gap: 10px; color: #666; }
+  .mock-body { padding: 14px; }
+
+  /* Option A - Minimal search hero */
+  .hero-search {
+    text-align: center;
+    padding: 18px 10px 14px;
+  }
+  .hero-search h1 { font-size: 17px; font-weight: 900; color: #111; margin-bottom: 4px; }
+  .hero-search p { font-size: 10px; color: #888; margin-bottom: 10px; }
+  .search-bar {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 30px;
+    padding: 7px 14px;
+    font-size: 11px;
+    color: #bbb;
+    max-width: 260px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  /* Tool grid */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .tool-tile {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 9px;
+    color: #333;
+    font-weight: 600;
+  }
+  .tool-tile-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    margin: 0 auto 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  /* Option B - Category sections */
+  .cat-section { margin-bottom: 12px; }
+  .cat-title { font-size: 9px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; padding-left: 2px; }
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+  .cat-tile {
+    background: white;
+    border-radius: 7px;
+    border: 1px solid #f0f0f0;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 8px;
+    color: #444;
+    font-weight: 600;
+  }
+  .cat-icon { width: 22px; height: 22px; border-radius: 5px; margin: 0 auto 3px; }
+
+  /* Option C - iLovePDF split hero */
+  .split-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 0;
+  }
+  .featured-tool {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-radius: 10px;
+    padding: 12px;
+    color: white;
+    text-align: center;
+  }
+  .featured-title { font-size: 12px; font-weight: 800; margin-bottom: 2px; }
+  .featured-sub { font-size: 9px; opacity: 0.8; margin-bottom: 8px; }
+  .featured-btn { background: white; color: #ef4444; font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+
+  .popular-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .pop-tile {
+    background: white;
+    border-radius: 7px;
+    border: 1px solid #f0f0f0;
+    padding: 6px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+  }
+  .pop-icon { width: 20px; height: 20px; border-radius: 5px; margin: 0 auto 3px; }
+
+  .badge-new { background: #ef4444; color: white; font-size: 7px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  .badge-hot { background: #f97316; color: white; font-size: 7px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Minimal search + full grid -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">A</div>
+      <div>
+        <div class="card-label">Clean & Simple</div>
+        <div class="card-name">Search bar + full tool grid</div>
+      </div>
+    </div>
+    <div class="card-desc">Minimal hero with a search bar. All tools below in a clean grid. No noise — just find your tool and go.</div>
+    <div class="mockup-wrap">
+      <div class="mock-navbar">
+        <div class="mock-logo">Rizz<span>PDF</span></div>
+        <div class="mock-nav-links"><span>All Tools</span><span>Pricing</span><span>Sign In</span></div>
+      </div>
+      <div class="mock-body">
+        <div class="hero-search">
+          <h1>PDF tools that respect your privacy</h1>
+          <p>All tools run in your browser. No uploads, no accounts.</p>
+          <div class="search-bar">🔍 Search tools…</div>
+        </div>
+        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">All Tools</div>
+        <div class="tool-grid">
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#fff3f3;">📄</div>Merge PDF</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#fff7ed;">✂️</div>Split PDF</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#f0fdf4;">⚡</div>Compress</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#eff6ff;">🔒</div>Protect</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#fdf4ff;">🔑</div>Unlock</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#fff7ed;">🔄</div>Rotate</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#f0f9ff;">🖼</div>PDF→JPG</div>
+          <div class="tool-tile"><div class="tool-tile-icon" style="background:#eff6ff;">📝</div>PDF→Word<span class="badge-new">NEW</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Category sections like iLovePDF -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">B</div>
+      <div>
+        <div class="card-label">iLovePDF Style</div>
+        <div class="card-name">Category sections</div>
+      </div>
+    </div>
+    <div class="card-desc">Tools grouped by category: Organize, Convert, Edit, Security. Familiar layout anyone coming from iLovePDF will recognize.</div>
+    <div class="mockup-wrap">
+      <div class="mock-navbar">
+        <div class="mock-logo">Rizz<span>PDF</span></div>
+        <div class="mock-nav-links"><span>All Tools</span><span>Pricing</span><span>Sign In</span></div>
+      </div>
+      <div class="mock-body">
+        <div style="text-align:center;padding:12px 0 10px;">
+          <div style="font-size:16px;font-weight:900;color:#111;">All PDF Tools</div>
+          <div style="font-size:10px;color:#888;margin-top:2px;">Free, private, browser-only</div>
+        </div>
+        <div class="cat-section">
+          <div class="cat-title">Organize PDF</div>
+          <div class="cat-grid">
+            <div class="cat-tile"><div class="cat-icon" style="background:#fff3f3;"></div>Merge</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#fff7ed;"></div>Split</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#fefce8;"></div>Organize</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#fff7ed;"></div>Delete Pages</div>
+          </div>
+        </div>
+        <div class="cat-section">
+          <div class="cat-title">Convert PDF</div>
+          <div class="cat-grid">
+            <div class="cat-tile"><div class="cat-icon" style="background:#f0f9ff;"></div>PDF→JPG</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#eff6ff;"></div>JPG→PDF</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#eff6ff;"></div>PDF→Word <span class="badge-new">NEW</span></div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#f0fdf4;"></div>Compress</div>
+          </div>
+        </div>
+        <div class="cat-section">
+          <div class="cat-title">Security</div>
+          <div class="cat-grid">
+            <div class="cat-tile"><div class="cat-icon" style="background:#fdf4ff;"></div>Protect</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#fef2f2;"></div>Unlock</div>
+            <div class="cat-tile"><div class="cat-icon" style="background:#fff0f9;"></div>Watermark</div>
+            <div class="cat-tile" style="opacity:0.4;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Featured + quick grid (closest to current but cleaner) -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">C</div>
+      <div>
+        <div class="card-label">Featured + Grid</div>
+        <div class="card-name">Hero tool spotlight + grid</div>
+      </div>
+    </div>
+    <div class="card-desc">Spotlight 1-2 most popular tools prominently (Merge, Unlock), then full grid below. Best for highlighting new features.</div>
+    <div class="mockup-wrap">
+      <div class="mock-navbar">
+        <div class="mock-logo">Rizz<span>PDF</span></div>
+        <div class="mock-nav-links"><span>All Tools</span><span>Pricing</span><span>Sign In</span></div>
+      </div>
+      <div class="mock-body">
+        <div style="padding:8px 0 10px;">
+          <div class="split-hero">
+            <div class="featured-tool">
+              <div style="font-size:22px;margin-bottom:4px;">📄</div>
+              <div class="featured-title">Merge PDF</div>
+              <div class="featured-sub">Combine files in seconds</div>
+              <div class="featured-btn">Open tool →</div>
+            </div>
+            <div class="popular-grid">
+              <div class="pop-tile"><div class="pop-icon" style="background:#fff3f3;"></div>Unlock</div>
+              <div class="pop-tile"><div class="pop-icon" style="background:#eff6ff;"></div>PDF→Word <span class="badge-new" style="font-size:6px;">NEW</span></div>
+              <div class="pop-tile"><div class="pop-icon" style="background:#fdf4ff;"></div>Protect</div>
+              <div class="pop-tile"><div class="pop-icon" style="background:#f0fdf4;"></div>Compress</div>
+            </div>
+          </div>
+          <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin:8px 0 5px;">All Tools</div>
+          <div class="tool-grid">
+            <div class="tool-tile"><div class="tool-tile-icon" style="background:#fff7ed;">✂️</div>Split</div>
+            <div class="tool-tile"><div class="tool-tile-icon" style="background:#fff7ed;">🔄</div>Rotate</div>
+            <div class="tool-tile"><div class="tool-tile-icon" style="background:#fefce8;">🗂️</div>Organize</div>
+            <div class="tool-tile"><div class="tool-tile-icon" style="background:#f0f9ff;">🖼</div>PDF→JPG</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

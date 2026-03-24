@@ -170,7 +170,7 @@ export default function HowToRemovePdfPassword() {
             <h2 className="text-2xl font-bold mb-3">Ready to unlock your PDF?</h2>
             <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. Files stay in your browser.</p>
             <Link
-              href="/"
+              href="/tools/unlock"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
             >
               Unlock PDF Free →
@@ -184,7 +184,7 @@ export default function HowToRemovePdfPassword() {
           <p>© {new Date().getFullYear()} RizzPDF ·{" "}
             <Link href="/blog" className="hover:text-gray-300 transition-colors">All guides</Link>
             {" · "}
-            <Link href="/" className="hover:text-gray-300 transition-colors">Unlock a PDF</Link>
+            <Link href="/tools/unlock" className="hover:text-gray-300 transition-colors">Unlock a PDF</Link>
           </p>
         </div>
       </footer>

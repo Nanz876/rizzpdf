@@ -1,0 +1,237 @@
+<h2>Tile layout — matching iLovePDF proportions</h2>
+<p class="subtitle">Large icon top-left, bold name, description below. Does this match what you're after?</p>
+
+<style>
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .tool-card {
+    background: white;
+    border-radius: 16px;
+    border: 1.5px solid #e5e7eb;
+    padding: 20px 18px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    min-height: 160px;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .tool-card:hover {
+    border-color: #ef4444;
+    box-shadow: 0 4px 16px rgba(239,68,68,0.10);
+    transform: translateY(-1px);
+  }
+
+  /* Big icon — top left */
+  .tool-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  /* doc+badge icon */
+  .doc-wrap {
+    position: relative;
+    width: 36px;
+    height: 44px;
+  }
+  .doc {
+    width: 34px;
+    height: 42px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.20);
+    position: relative;
+  }
+  .doc::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 9px; height: 9px;
+    background: #e0e0e0;
+    border-radius: 0 0 0 4px;
+  }
+  .doc-inner { padding: 12px 5px 5px; display: flex; flex-direction: column; gap: 3px; }
+  .dl { height: 2.5px; border-radius: 2px; background: #ddd; }
+  .dl.s { width: 60%; }
+  .badge {
+    position: absolute;
+    bottom: -6px; right: -7px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.5;
+    letter-spacing: 0.2px;
+  }
+
+  /* two-doc conversion icon */
+  .two-docs {
+    position: relative;
+    width: 44px;
+    height: 42px;
+  }
+  .doc-back {
+    position: absolute;
+    right: 0; top: 0;
+    width: 30px; height: 38px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.13);
+  }
+  .doc-front {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 30px; height: 38px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.20);
+  }
+  .doc-front::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 8px; height: 8px;
+    background: #e0e0e0;
+    border-radius: 0 0 0 4px;
+  }
+  .doc-front-inner { padding: 10px 5px 5px; display: flex; flex-direction: column; gap: 3px; }
+
+  .tool-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .tool-desc {
+    font-size: 12px;
+    color: #777;
+    line-height: 1.5;
+  }
+
+  .badge-new {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: #ef4444;
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+</style>
+
+<div class="tool-grid">
+
+  <!-- Merge -->
+  <div class="tool-card">
+    <div class="tool-icon" style="background:#fff3f3;">
+      <div class="two-docs">
+        <div class="doc-back"></div>
+        <div class="doc-front">
+          <div class="doc-front-inner"><div class="dl"></div><div class="dl s"></div></div>
+          <div class="badge" style="background:#ef4444;">PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">Merge PDF</div>
+    <div class="tool-desc">Combine PDFs in the order you want.</div>
+  </div>
+
+  <!-- Split -->
+  <div class="tool-card">
+    <div class="tool-icon" style="background:#fff7ed;">
+      <div class="doc-wrap">
+        <div class="doc">
+          <div class="doc-inner"><div class="dl"></div><div class="dl s"></div><div class="dl"></div></div>
+          <div class="badge" style="background:#f97316;">PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">Split PDF</div>
+    <div class="tool-desc">Separate pages or extract ranges.</div>
+  </div>
+
+  <!-- PDF to JPG -->
+  <div class="tool-card">
+    <div class="tool-icon" style="background:#f0f9ff;">
+      <div class="two-docs">
+        <div class="doc-back">
+          <div class="badge" style="background:#3b82f6;bottom:-6px;right:-7px;position:absolute;">JPG</div>
+        </div>
+        <div class="doc-front">
+          <div class="doc-front-inner"><div class="dl"></div><div class="dl s"></div></div>
+          <div class="badge" style="background:#ef4444;">PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">PDF to JPG</div>
+    <div class="tool-desc">Export every page as an image.</div>
+  </div>
+
+  <!-- PDF to Word -->
+  <div class="tool-card">
+    <span class="badge-new">NEW</span>
+    <div class="tool-icon" style="background:#eff6ff;">
+      <div class="two-docs">
+        <div class="doc-back">
+          <div class="badge" style="background:#2563eb;bottom:-6px;right:-7px;position:absolute;">DOC</div>
+        </div>
+        <div class="doc-front">
+          <div class="doc-front-inner"><div class="dl"></div><div class="dl s"></div></div>
+          <div class="badge" style="background:#ef4444;">PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">PDF to Word</div>
+    <div class="tool-desc">Export as an editable .docx file.</div>
+  </div>
+
+  <!-- Protect -->
+  <div class="tool-card">
+    <div class="tool-icon" style="background:#fdf4ff;">
+      <div class="doc-wrap">
+        <div class="doc">
+          <div style="display:flex;align-items:center;justify-content:center;height:100%;padding-top:4px;">
+            <svg width="16" height="18" viewBox="0 0 16 18" fill="none"><rect x="1.5" y="8" width="13" height="9.5" rx="2.5" fill="#e9d5ff" stroke="#a855f7" strokeWidth="1.3"/><path d="M4 8V5.5a4 4 0 018 0V8" stroke="#a855f7" strokeWidth="1.3"/><circle cx="8" cy="12.5" r="1.5" fill="#a855f7"/></svg>
+          </div>
+          <div class="badge" style="background:#a855f7;">PDF</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">Protect PDF</div>
+    <div class="tool-desc">Add password protection to any PDF.</div>
+  </div>
+
+  <!-- Compress -->
+  <div class="tool-card">
+    <div class="tool-icon" style="background:#f0fdf4;">
+      <div class="doc-wrap">
+        <div class="doc">
+          <div class="doc-inner"><div class="dl"></div><div class="dl s"></div></div>
+          <div class="badge" style="background:#22c55e;">ZIP</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-name">Compress PDF</div>
+    <div class="tool-desc">Reduce file size without quality loss.</div>
+  </div>
+
+</div>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RizzPDF – Brand Color</title>
+<script>
+  function toggleSelect(el) {
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    fetch('/__select', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice:el.dataset.choice,text:el.dataset.label})}).catch(()=>{});
+    document.getElementById('si').textContent = '✓ ' + el.dataset.label;
+    document.getElementById('si').style.opacity = '1';
+  }
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Inter', sans-serif; background: #0f0f13; color: #e2e8f0; padding: 32px 24px 80px; }
+  h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
+  .sub { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+  .designs { display: flex; flex-direction: column; gap: 32px; }
+  .option-card { border: 2px solid #1e293b; border-radius: 16px; overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .option-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+  .option-card.selected { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); }
+  .option-label { display: flex; align-items: center; gap: 10px; padding: 14px 20px 12px; background: #1e293b; }
+  .letter-badge { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; flex-shrink: 0; }
+  .option-title { font-weight: 700; font-size: 15px; color: #f1f5f9; }
+  .option-tag { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; margin-left: auto; }
+  #si { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; padding: 10px 18px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+
+  /* shared nav chrome */
+  .nav { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+  .nav-links { display: flex; gap: 18px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .nav-right { display: flex; gap: 8px; }
+  .nbtn { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+
+  /* shared tool grid preview */
+  .grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; padding: 20px 24px 24px; max-width: 680px; margin: 0 auto; }
+  .tool { border-radius: 12px; padding: 16px 10px 12px; text-align: center; }
+  .icon-wrap { width: 42px; height: 42px; border-radius: 10px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+  .tool-name { font-size: 11px; font-weight: 700; line-height: 1.3; }
+
+  /* A: Keep purple */
+  .prev-a { background: #F9F7FF; }
+  .prev-a .nav { background: white; border-bottom: 1px solid #e5e7eb; }
+  .prev-a .logo { font-weight: 900; font-size: 18px; background: linear-gradient(135deg,#9333ea,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .prev-a .nav-links { color: #6b7280; }
+  .prev-a .nbtn.o { border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-a .nbtn.f { background: #9333ea; color: white; }
+  .prev-a .hero { text-align: center; padding: 28px 24px 16px; }
+  .prev-a .hero h2 { font-size: 24px; font-weight: 900; color: #111; margin-bottom: 4px; }
+  .prev-a .hero p { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .prev-a .pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .prev-a .pill { padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-a .pill.active { background: #9333ea; border-color: #9333ea; color: white; }
+  .prev-a .tool { background: white; border: 1.5px solid #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .prev-a .tool:hover { border-color: #9333ea; }
+  .prev-a .tool-name { color: #111827; }
+
+  /* B: Go red (iLovePDF-style) */
+  .prev-b { background: #f5f5f5; }
+  .prev-b .nav { background: white; border-bottom: 1px solid #e5e7eb; }
+  .prev-b .logo { font-weight: 900; font-size: 18px; color: #111; }
+  .prev-b .logo span { color: #dc2626; }
+  .prev-b .nav-links { color: #6b7280; }
+  .prev-b .nbtn.o { border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-b .nbtn.f { background: #dc2626; color: white; }
+  .prev-b .hero { text-align: center; padding: 28px 24px 16px; }
+  .prev-b .hero h2 { font-size: 24px; font-weight: 900; color: #111; margin-bottom: 4px; }
+  .prev-b .hero p { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .prev-b .pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .prev-b .pill { padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-b .pill.active { background: #dc2626; border-color: #dc2626; color: white; }
+  .prev-b .tool { background: white; border: 1.5px solid #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .prev-b .tool:hover { border-color: #dc2626; }
+  .prev-b .tool-name { color: #111827; }
+
+  /* C: Purple stays, red as secondary accent */
+  .prev-c { background: #F9F7FF; }
+  .prev-c .nav { background: white; border-bottom: 1px solid #e5e7eb; }
+  .prev-c .logo { font-weight: 900; font-size: 18px; background: linear-gradient(135deg,#9333ea,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .prev-c .nav-links { color: #6b7280; }
+  .prev-c .nbtn.o { border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-c .nbtn.f { background: linear-gradient(135deg,#9333ea,#ec4899); color: white; }
+  .prev-c .hero { text-align: center; padding: 28px 24px 16px; }
+  .prev-c .hero h2 { font-size: 24px; font-weight: 900; color: #111; margin-bottom: 4px; }
+  .prev-c .hero p { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .prev-c .pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .prev-c .pill { padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1.5px solid #e5e7eb; color: #374151; }
+  .prev-c .pill.active { background: linear-gradient(135deg,#9333ea,#ec4899); border-color: #9333ea; color: white; }
+  .prev-c .tool { background: white; border: 1.5px solid #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .prev-c .tool:hover { border-color: #9333ea; }
+  .prev-c .tool-name { color: #111827; }
+
+  /* Shared icon fills */
+  .ic-red { background: #fef2f2; }
+  .ic-orange { background: #fff7ed; }
+  .ic-green { background: #f0fdf4; }
+  .ic-blue { background: #eff6ff; }
+  .ic-purple { background: #fdf4ff; }
+  .ic-pink { background: #fdf2f8; }
+  .ic-yellow { background: #fefce8; }
+  .ic-teal { background: #f0fdfa; }
+  .ic-indigo { background: #eef2ff; }
+  .ic-violet { background: #f5f3ff; }
+</style>
+</head>
+<body>
+<h1>One last question — Brand Color</h1>
+<p class="sub">The tool cards and page layouts are locked in. Now pick the primary accent color for RizzPDF.</p>
+
+<div class="designs">
+
+  <!-- A: Keep purple -->
+  <div class="option-card" data-choice="a" data-label="Keep purple — RizzPDF's current brand" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge" style="background:#9333ea">A</div>
+      <div class="option-title">Keep purple — RizzPDF's current identity</div>
+      <div class="option-tag" style="background:#f3e8ff;color:#7e22ce">Brand continuity</div>
+    </div>
+    <div class="prev-a">
+      <div class="nav">
+        <div class="logo">RizzPDF</div>
+        <div class="nav-links"><span>MERGE</span><span>SPLIT</span><span>ALL TOOLS</span></div>
+        <div class="nav-right"><div class="nbtn o">Sign in</div><div class="nbtn f">Sign up</div></div>
+      </div>
+      <div class="hero">
+        <h2>Every PDF tool you need</h2>
+        <p>Free, fast, and private — files never leave your browser.</p>
+        <div class="pills"><div class="pill active">All</div><div class="pill">Organize</div><div class="pill">Convert</div><div class="pill">Edit</div><div class="pill">Security</div></div>
+      </div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap ic-red"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="#fca5a5"/><path d="M13 6h7v12h-7V6z" fill="#ef4444"/></svg></div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-orange"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/><path d="M12 4v16" stroke="#f97316" stroke-width="1.5" stroke-dasharray="2 2"/></svg></div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-green"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="#bbf7d0" stroke="#22c55e" stroke-width="1.5"/></svg></div><div class="tool-name">Compress</div></div>
+        <div class="tool"><div class="icon-wrap ic-blue"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/></svg></div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap ic-purple"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" fill="#e9d5ff" stroke="#a855f7" stroke-width="1.5"/></svg></div><div class="tool-name">Sign PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Go red -->
+  <div class="option-card" data-choice="b" data-label="Switch to red — iLovePDF-style brand" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge" style="background:#dc2626">B</div>
+      <div class="option-title">Switch to red — cleaner, matches iLovePDF energy</div>
+      <div class="option-tag" style="background:#fef2f2;color:#991b1b">✦ Recommended</div>
+    </div>
+    <div class="prev-b">
+      <div class="nav">
+        <div class="logo">Rizz<span>PDF</span></div>
+        <div class="nav-links"><span>MERGE</span><span>SPLIT</span><span>ALL TOOLS</span></div>
+        <div class="nav-right"><div class="nbtn o">Sign in</div><div class="nbtn f">Sign up</div></div>
+      </div>
+      <div class="hero">
+        <h2>Every PDF tool you need</h2>
+        <p>Free, fast, and private — files never leave your browser.</p>
+        <div class="pills"><div class="pill active">All</div><div class="pill">Organize</div><div class="pill">Convert</div><div class="pill">Edit</div><div class="pill">Security</div></div>
+      </div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap ic-red"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="#fca5a5"/><path d="M13 6h7v12h-7V6z" fill="#ef4444"/></svg></div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-orange"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/><path d="M12 4v16" stroke="#f97316" stroke-width="1.5" stroke-dasharray="2 2"/></svg></div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-green"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="#bbf7d0" stroke="#22c55e" stroke-width="1.5"/></svg></div><div class="tool-name">Compress</div></div>
+        <div class="tool"><div class="icon-wrap ic-blue"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/></svg></div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap ic-purple"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" fill="#e9d5ff" stroke="#a855f7" stroke-width="1.5"/></svg></div><div class="tool-name">Sign PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Purple brand, red secondary -->
+  <div class="option-card" data-choice="c" data-label="Purple brand + red tool accents — best of both" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge" style="background:linear-gradient(135deg,#9333ea,#ec4899)">C</div>
+      <div class="option-title">Purple brand + red tool accents — RizzPDF stays distinct</div>
+      <div class="option-tag" style="background:#f3e8ff;color:#7e22ce">Most distinctive</div>
+    </div>
+    <div class="prev-c">
+      <div class="nav">
+        <div class="logo">RizzPDF</div>
+        <div class="nav-links"><span>MERGE</span><span>SPLIT</span><span>ALL TOOLS</span></div>
+        <div class="nav-right"><div class="nbtn o">Sign in</div><div class="nbtn f">Sign up</div></div>
+      </div>
+      <div class="hero">
+        <h2>Every PDF tool you need</h2>
+        <p>Free, fast, and private — files never leave your browser.</p>
+        <div class="pills"><div class="pill active">All</div><div class="pill">Organize</div><div class="pill">Convert</div><div class="pill">Edit</div><div class="pill">Security</div></div>
+      </div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap ic-red"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="#fca5a5"/><path d="M13 6h7v12h-7V6z" fill="#ef4444"/></svg></div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-orange"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/><path d="M12 4v16" stroke="#f97316" stroke-width="1.5" stroke-dasharray="2 2"/></svg></div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap ic-green"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="#bbf7d0" stroke="#22c55e" stroke-width="1.5"/></svg></div><div class="tool-name">Compress</div></div>
+        <div class="tool"><div class="icon-wrap ic-blue"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/></svg></div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap ic-purple"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" fill="#e9d5ff" stroke="#a855f7" stroke-width="1.5"/></svg></div><div class="tool-name">Sign PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="si">✓ Selected</div>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RizzPDF – Tool Workspace Patterns</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Inter', sans-serif; background: #0f0f13; color: #e2e8f0; padding: 28px 20px 80px; }
+h1 { font-size: 20px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+.sub { color: #94a3b8; font-size: 13px; margin-bottom: 28px; }
+
+.pattern { margin-bottom: 48px; border: 1.5px solid #1e293b; border-radius: 14px; overflow: hidden; }
+.pattern-label { background: #1e293b; padding: 12px 18px; display: flex; align-items: center; gap-10px; justify-content: space-between; }
+.pattern-name { font-weight: 700; font-size: 14px; color: #f1f5f9; }
+.pattern-tools { font-size: 12px; color: #64748b; background: #0f172a; padding: 4px 10px; border-radius: 20px; }
+
+/* Shared chrome */
+.tool-bar { background: white; border-bottom: 1px solid #e5e7eb; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bar-left { display: flex; align-items: center; gap: 10px; }
+.bar-icon { width: 32px; height: 32px; border-radius: 8px; background: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.bar-title { font-weight: 700; font-size: 14px; color: #111; }
+.bar-subtitle { font-size: 11px; color: #9ca3af; }
+.bar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.btn-outline { padding: 7px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 12px; font-weight: 600; color: #374151; white-space: nowrap; cursor: pointer; }
+.btn-red { padding: 7px 18px; background: #dc2626; color: white; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.btn-add { padding: 7px 14px; border: 1.5px dashed #d1d5db; border-radius: 8px; font-size: 12px; font-weight: 600; color: #6b7280; cursor: pointer; }
+
+/* ── PATTERN 1: Thumbnail Grid ── */
+.thumb-workspace { background: #f3f4f6; padding: 20px; }
+.thumb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 720px; }
+.thumb-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.1); position: relative; }
+.thumb-card.selected { outline: 2.5px solid #dc2626; }
+.thumb-page { aspect-ratio: 3/4; background: #f9fafb; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.thumb-page svg { opacity: .12; }
+.thumb-page .lines { position: absolute; inset: 12px; display: flex; flex-direction: column; gap: 5px; }
+.thumb-page .line { height: 6px; background: #d1d5db; border-radius: 2px; }
+.thumb-page .line.short { width: 60%; }
+.thumb-page .line.med { width: 80%; }
+.thumb-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; }
+.thumb-card:hover .thumb-actions { opacity: 1; }
+.thumb-act-btn { width: 26px; height: 26px; background: rgba(0,0,0,.5); border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.thumb-footer { padding: 6px 8px; display: flex; align-items: center; justify-content: space-between; }
+.thumb-num { font-size: 11px; font-weight: 600; color: #6b7280; }
+.thumb-del { font-size: 11px; color: #ef4444; cursor: pointer; opacity: 0; }
+.thumb-card:hover .thumb-del { opacity: 1; }
+
+/* rotate badge */
+.rotate-badge { position: absolute; top: 6px; left: 6px; background: #dc2626; color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+
+/* delete checkbox */
+.del-check { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.del-check.checked { background: #dc2626; border-color: #dc2626; }
+
+/* ── PATTERN 2: Sidebar + Thumbnails ── */
+.sidebar-workspace { background: #f3f4f6; display: flex; min-height: 280px; }
+.sidebar-panel { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 16px; flex-shrink: 0; }
+.sidebar-panel h3 { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+.radio-opt { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; margin-bottom: 4px; cursor: pointer; border: 1.5px solid transparent; }
+.radio-opt.active { border-color: #fca5a5; background: #fef2f2; }
+.radio-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #d1d5db; flex-shrink: 0; margin-top: 1px; }
+.radio-opt.active .radio-dot { border-color: #dc2626; background: #dc2626; }
+.radio-label { font-size: 12px; font-weight: 600; color: #374151; }
+.radio-desc { font-size: 11px; color: #9ca3af; }
+.sidebar-divider { border-top: 1px solid #f3f4f6; margin: 12px 0; }
+.input-row { margin-bottom: 8px; }
+.input-label { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.mock-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #374151; background: white; }
+.thumb-main { flex: 1; padding: 20px; }
+.thumb-strip { display: flex; gap: 10px; overflow-x: auto; }
+.thumb-strip-card { flex-shrink: 0; width: 110px; }
+.strip-page { aspect-ratio: 3/4; background: white; border-radius: 8px; border: 1.5px solid #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px; }
+.strip-line { height: 5px; background: #e5e7eb; border-radius: 2px; width: 80%; }
+.strip-line.s { width: 50%; }
+.strip-num { font-size: 11px; color: #9ca3af; font-weight: 600; margin-top: 4px; }
+/* split divider */
+.split-divider { width: 3px; background: #dc2626; border-radius: 2px; margin: 0 2px; align-self: stretch; position: relative; flex-shrink: 0; cursor: pointer; }
+.split-divider::before { content: '✂'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 14px; background: #dc2626; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* ── PATTERN 3: Simple options (Compress) ── */
+.compress-workspace { background: white; padding: 24px 32px; }
+.file-info-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; margin-bottom: 20px; max-width: 480px; }
+.file-icon { width: 40px; height: 48px; background: #fef2f2; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #fca5a5; flex-shrink: 0; }
+.file-name { font-size: 13px; font-weight: 700; color: #111; }
+.file-size { font-size: 11px; color: #9ca3af; }
+.compress-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 480px; }
+.compress-opt { border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 14px; cursor: pointer; transition: all .2s; }
+.compress-opt.active { border-color: #dc2626; background: #fef2f2; }
+.opt-title { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 4px; }
+.opt-desc { font-size: 11px; color: #9ca3af; line-height: 1.4; }
+.opt-icon { font-size: 20px; margin-bottom: 8px; }
+
+/* ── PATTERN 4: Watermark/Page Numbers (sidebar + preview) ── */
+.preview-workspace { background: #f3f4f6; display: flex; min-height: 320px; }
+.preview-panel { width: 220px; background: white; border-right: 1px solid #e5e7eb; padding: 16px; flex-shrink: 0; overflow-y: auto; }
+.preview-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+.pdf-preview { background: white; box-shadow: 0 2px 12px rgba(0,0,0,.12); border-radius: 4px; width: 160px; aspect-ratio: 3/4; padding: 14px 12px; position: relative; flex-shrink: 0; }
+.preview-line { height: 6px; background: #e5e7eb; border-radius: 2px; margin-bottom: 5px; }
+.preview-line.s { width: 60%; }
+.preview-line.m { width: 80%; }
+.watermark-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.watermark-text { font-size: 22px; font-weight: 900; color: rgba(220,38,38,.25); transform: rotate(-30deg); letter-spacing: 2px; white-space: nowrap; }
+.pagenum-badge { position: absolute; bottom: 8px; right: 10px; font-size: 10px; font-weight: 700; color: #374151; }
+.pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; margin-bottom: 10px; }
+.pos-cell { aspect-ratio: 1; border: 1.5px solid #e5e7eb; border-radius: 5px; cursor: pointer; }
+.pos-cell.active { background: #dc2626; border-color: #dc2626; }
+.slider-row { margin-bottom: 10px; }
+.slider-label { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.mock-range { width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; position: relative; }
+.mock-range-fill { height: 4px; background: #dc2626; border-radius: 2px; width: 60%; }
+.mock-range-thumb { width: 14px; height: 14px; background: #dc2626; border-radius: 50%; position: absolute; top: -5px; left: 58%; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+</style>
+</head>
+<body>
+<h1>RizzPDF Tool Workspace — 4 UI Patterns</h1>
+<p class="sub">These are the post-upload layouts we're building for each tool. No interaction needed — just reviewing.</p>
+
+<!-- PATTERN 1A: THUMBNAIL GRID (Rotate) -->
+<div class="pattern">
+  <div class="pattern-label">
+    <div class="pattern-name">Pattern 1A — Thumbnail Grid with Hover Actions</div>
+    <div class="pattern-tools">Rotate PDF · PDF→JPG · PDF→PNG · Merge PDF</div>
+  </div>
+  <div class="tool-bar">
+    <div class="bar-left">
+      <div class="bar-icon">↻</div>
+      <div><div class="bar-title">Rotate PDF</div><div class="bar-subtitle">contract.pdf · 4 pages</div></div>
+    </div>
+    <div class="bar-right">
+      <div class="btn-outline">↻ Rotate all left</div>
+      <div class="btn-outline">↺ Rotate all right</div>
+      <div class="btn-red">Rotate PDF →</div>
+    </div>
+  </div>
+  <div class="thumb-workspace">
+    <div class="thumb-grid">
+      <!-- Page 1 -->
+      <div class="thumb-card">
+        <div class="thumb-page">
+          <div class="lines"><div class="line med"></div><div class="line short"></div><div class="line med"></div><div class="line"></div><div class="line short"></div><div class="line med"></div><div class="line"></div></div>
+          <div class="thumb-actions">
+            <div class="thumb-act-btn"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M12 4V8M12 8l-3-3m3 3l3-3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <div class="thumb-act-btn"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-8-8" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M12 4V8M12 8l3-3m-3 3l-3-3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+          </div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 1</span><span class="thumb-del">✕</span></div>
+      </div>
+      <!-- Page 2 - rotated -->
+      <div class="thumb-card">
+        <div class="thumb-page" style="background:#fff9f9">
+          <div class="rotate-badge">90°</div>
+          <div class="lines" style="transform:rotate(90deg);width:60%"><div class="line med"></div><div class="line short"></div><div class="line med"></div><div class="line"></div></div>
+          <div class="thumb-actions">
+            <div class="thumb-act-btn"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M12 4V8M12 8l-3-3m3 3l3-3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <div class="thumb-act-btn"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-8-8" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M12 4V8M12 8l3-3m-3 3l-3-3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+          </div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 2</span><span class="thumb-del">✕</span></div>
+      </div>
+      <!-- Page 3 -->
+      <div class="thumb-card">
+        <div class="thumb-page">
+          <div class="lines"><div class="line"></div><div class="line short"></div><div class="line med"></div><div class="line"></div><div class="line short"></div><div class="line"></div><div class="line med"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 3</span></div>
+      </div>
+      <!-- Page 4 -->
+      <div class="thumb-card">
+        <div class="thumb-page">
+          <div class="lines"><div class="line med"></div><div class="line"></div><div class="line short"></div><div class="line med"></div><div class="line"></div><div class="line short"></div><div class="line"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 4</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERN 1B: THUMBNAIL GRID with checkboxes (Delete Pages) -->
+<div class="pattern">
+  <div class="pattern-label">
+    <div class="pattern-name">Pattern 1B — Thumbnail Grid with Checkboxes</div>
+    <div class="pattern-tools">Delete Pages · Organize PDF (+ drag to reorder)</div>
+  </div>
+  <div class="tool-bar">
+    <div class="bar-left">
+      <div class="bar-icon" style="background:#f97316">🗑</div>
+      <div><div class="bar-title">Delete Pages</div><div class="bar-subtitle">contract.pdf · 4 pages · 2 selected</div></div>
+    </div>
+    <div class="bar-right">
+      <div class="btn-outline" style="color:#ef4444;border-color:#fca5a5">Delete 2 pages</div>
+      <div class="btn-red">Apply & Download →</div>
+    </div>
+  </div>
+  <div class="thumb-workspace">
+    <div class="thumb-grid">
+      <div class="thumb-card selected">
+        <div class="thumb-page" style="background:#fff5f5">
+          <div class="del-check checked"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div class="lines"><div class="line med"></div><div class="line short"></div><div class="line med"></div><div class="line"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num" style="color:#dc2626">Page 1 ✓</span></div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-page">
+          <div class="del-check"></div>
+          <div class="lines"><div class="line"></div><div class="line short"></div><div class="line med"></div><div class="line"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 2</span></div>
+      </div>
+      <div class="thumb-card selected">
+        <div class="thumb-page" style="background:#fff5f5">
+          <div class="del-check checked"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div class="lines"><div class="line short"></div><div class="line med"></div><div class="line"></div><div class="line short"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num" style="color:#dc2626">Page 3 ✓</span></div>
+      </div>
+      <div class="thumb-card">
+        <div class="thumb-page">
+          <div class="del-check"></div>
+          <div class="lines"><div class="line med"></div><div class="line"></div><div class="line short"></div><div class="line med"></div></div>
+        </div>
+        <div class="thumb-footer"><span class="thumb-num">Page 4</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERN 2: SIDEBAR + STRIP (Split) -->
+<div class="pattern">
+  <div class="pattern-label">
+    <div class="pattern-name">Pattern 2 — Sidebar Options + Page Strip</div>
+    <div class="pattern-tools">Split PDF</div>
+  </div>
+  <div class="tool-bar">
+    <div class="bar-left">
+      <div class="bar-icon" style="background:#f97316">✂</div>
+      <div><div class="bar-title">Split PDF</div><div class="bar-subtitle">contract.pdf · 6 pages</div></div>
+    </div>
+    <div class="bar-right">
+      <div class="btn-red">Split PDF →</div>
+    </div>
+  </div>
+  <div class="sidebar-workspace">
+    <div class="sidebar-panel">
+      <h3>Split Mode</h3>
+      <div class="radio-opt active">
+        <div class="radio-dot"></div>
+        <div><div class="radio-label">Custom ranges</div><div class="radio-desc">e.g. 1-3, 5, 7-end</div></div>
+      </div>
+      <div class="radio-opt">
+        <div class="radio-dot"></div>
+        <div><div class="radio-label">Split by pages</div><div class="radio-desc">Every N pages</div></div>
+      </div>
+      <div class="radio-opt">
+        <div class="radio-dot"></div>
+        <div><div class="radio-label">Extract pages</div><div class="radio-desc">Each page as a file</div></div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="input-row">
+        <div class="input-label">Page ranges</div>
+        <input class="mock-input" value="1-3, 4-6" readonly>
+      </div>
+    </div>
+    <div class="thumb-main">
+      <div class="thumb-strip">
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line"></div><div class="strip-line s"></div><div class="strip-line"></div><div class="strip-line s"></div></div>
+          <div class="strip-num">1</div>
+        </div>
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line"></div><div class="strip-line s"></div><div class="strip-line"></div></div>
+          <div class="strip-num">2</div>
+        </div>
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line s"></div><div class="strip-line"></div><div class="strip-line s"></div></div>
+          <div class="strip-num">3</div>
+        </div>
+        <!-- Split marker -->
+        <div class="split-divider"></div>
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line"></div><div class="strip-line s"></div><div class="strip-line"></div></div>
+          <div class="strip-num">4</div>
+        </div>
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line s"></div><div class="strip-line"></div><div class="strip-line s"></div></div>
+          <div class="strip-num">5</div>
+        </div>
+        <div class="thumb-strip-card">
+          <div class="strip-page"><div class="strip-line"></div><div class="strip-line"></div><div class="strip-line s"></div></div>
+          <div class="strip-num">6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERN 3: SIMPLE OPTIONS (Compress) -->
+<div class="pattern">
+  <div class="pattern-label">
+    <div class="pattern-name">Pattern 3 — File Info + Option Cards</div>
+    <div class="pattern-tools">Compress PDF · JPG→PDF · Repair PDF</div>
+  </div>
+  <div class="tool-bar">
+    <div class="bar-left">
+      <div class="bar-icon" style="background:#22c55e">⬇</div>
+      <div><div class="bar-title">Compress PDF</div><div class="bar-subtitle">contract.pdf</div></div>
+    </div>
+    <div class="bar-right">
+      <div class="btn-outline">✕ Remove</div>
+      <div class="btn-red">Compress PDF →</div>
+    </div>
+  </div>
+  <div class="compress-workspace">
+    <div class="file-info-card">
+      <div class="file-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="12" height="18" rx="2" fill="#fca5a5" stroke="#ef4444" stroke-width="1.5"/><path d="M14 3v5h5" stroke="#ef4444" stroke-width="1.5"/></svg></div>
+      <div><div class="file-name">contract.pdf</div><div class="file-size">4.2 MB → estimated ~1.1 MB</div></div>
+    </div>
+    <div class="compress-opts">
+      <div class="compress-opt">
+        <div class="opt-icon">🔥</div>
+        <div class="opt-title">Extreme</div>
+        <div class="opt-desc">Maximum compression. Lower quality.</div>
+      </div>
+      <div class="compress-opt active">
+        <div class="opt-icon">✅</div>
+        <div class="opt-title">Recommended</div>
+        <div class="opt-desc">Good balance of size and quality.</div>
+      </div>
+      <div class="compress-opt">
+        <div class="opt-icon">🎯</div>
+        <div class="opt-title">Less</div>
+        <div class="opt-desc">Slight compression. Best quality.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERN 4: SIDEBAR + PDF PREVIEW (Watermark / Page Numbers) -->
+<div class="pattern">
+  <div class="pattern-label">
+    <div class="pattern-name">Pattern 4 — Live PDF Preview + Options Sidebar</div>
+    <div class="pattern-tools">Watermark PDF · Page Numbers · Sign PDF (already built)</div>
+  </div>
+  <div class="tool-bar">
+    <div class="bar-left">
+      <div class="bar-icon" style="background:#ec4899">💧</div>
+      <div><div class="bar-title">Watermark PDF</div><div class="bar-subtitle">contract.pdf · 4 pages</div></div>
+    </div>
+    <div class="bar-right">
+      <div class="btn-red">Add Watermark →</div>
+    </div>
+  </div>
+  <div class="preview-workspace">
+    <div class="preview-panel">
+      <h3>Watermark Text</h3>
+      <input class="mock-input" value="CONFIDENTIAL" style="margin-bottom:10px" readonly>
+      <h3 style="margin-top:8px">Position</h3>
+      <div class="pos-grid">
+        <div class="pos-cell"></div><div class="pos-cell"></div><div class="pos-cell"></div>
+        <div class="pos-cell"></div><div class="pos-cell active"></div><div class="pos-cell"></div>
+        <div class="pos-cell"></div><div class="pos-cell"></div><div class="pos-cell"></div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Opacity</span><span style="color:#dc2626">25%</span></div>
+        <div class="mock-range"><div class="mock-range-fill" style="width:25%"></div><div class="mock-range-thumb" style="left:23%"></div></div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Font size</span><span style="color:#dc2626">48px</span></div>
+        <div class="mock-range"><div class="mock-range-fill" style="width:55%"></div><div class="mock-range-thumb" style="left:53%"></div></div>
+      </div>
+      <div class="input-row" style="margin-top:8px">
+        <div class="input-label">Rotation</div>
+        <input class="mock-input" value="-30°" readonly>
+      </div>
+    </div>
+    <div class="preview-main">
+      <div>
+        <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:8px;">Live Preview</div>
+        <div class="pdf-preview">
+          <div class="preview-line m"></div><div class="preview-line s"></div><div class="preview-line m"></div>
+          <div class="preview-line"></div><div class="preview-line s"></div><div class="preview-line m"></div>
+          <div class="preview-line s"></div><div class="preview-line"></div>
+          <div class="watermark-overlay"><div class="watermark-text">CONFIDENTIAL</div></div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:12px">
+          <div style="font-size:11px;color:#9ca3af;cursor:pointer">◀ prev</div>
+          <div style="font-size:11px;color:#374151;font-weight:600">1 / 4</div>
+          <div style="font-size:11px;color:#9ca3af;cursor:pointer">next ▶</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

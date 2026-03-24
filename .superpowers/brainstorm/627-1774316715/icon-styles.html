@@ -1,0 +1,347 @@
+<h2>Which icon style for RizzPDF tools?</h2>
+<p class="subtitle">Pick the visual direction for all tool icons across the site</p>
+
+<style>
+  .icon-showcase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .icon-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #888;
+  }
+  .icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Style A - current geometric */
+  .style-a { background: #fef2f2; }
+  .style-a-2 { background: #fff7ed; }
+  .style-a-3 { background: #f0fdf4; }
+  .style-a-4 { background: #eff6ff; }
+  .style-a-5 { background: #fdf4ff; }
+  .style-a-6 { background: #fefce8; }
+
+  /* Style B - iLovePDF document badge */
+  .doc-icon {
+    position: relative;
+    width: 36px;
+    height: 44px;
+  }
+  .doc-body {
+    width: 36px;
+    height: 44px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: visible;
+  }
+  .doc-fold {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 0 0 0 4px;
+  }
+  .doc-lines {
+    padding: 14px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .doc-line {
+    height: 3px;
+    border-radius: 2px;
+    background: #e0e0e0;
+  }
+  .doc-line.short { width: 60%; }
+  .doc-badge {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+  }
+
+  /* Style C - flat colored circles */
+  .circle-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Style D - gradient card */
+  .grad-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .cards { display: flex; flex-direction: column; gap: 20px; }
+  .card { border: 2px solid #e5e7eb; border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.15s; }
+  .card:hover { border-color: #ef4444; box-shadow: 0 4px 16px rgba(239,68,68,0.1); }
+  .card.selected { border-color: #ef4444; background: #fff5f5; }
+
+  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .card-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .card-name { font-size: 18px; font-weight: 800; color: #111; }
+  .card-desc { font-size: 13px; color: #666; margin-bottom: 14px; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Current style -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">A</div>
+      <div>
+        <div class="card-label">Current</div>
+        <div class="card-name">Geometric Symbols</div>
+      </div>
+    </div>
+    <div class="card-desc">Abstract SVG shapes — different color per tool, minimal and modern</div>
+    <div class="icon-showcase">
+      <!-- Merge -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="#fca5a5"/><path d="M13 6h7v12h-7V6z" fill="#ef4444"/><path d="M10 12h4" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/></svg>
+        </div>
+        <span>Merge</span>
+      </div>
+      <!-- Split -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a-2">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="#fed7aa" stroke="#f97316" strokeWidth="1.5"/><path d="M12 4v16M4 12h16" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/></svg>
+        </div>
+        <span>Split</span>
+      </div>
+      <!-- Compress -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a-3">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="#bbf7d0" stroke="#22c55e" strokeWidth="1.5"/></svg>
+        </div>
+        <span>Compress</span>
+      </div>
+      <!-- PDF to JPG -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a-4">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.5"/><circle cx="9" cy="9" r="2" fill="#3b82f6" opacity=".4"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+        <span>PDF→JPG</span>
+      </div>
+      <!-- Sign -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a-5">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3" fill="#e9d5ff" stroke="#a855f7" strokeWidth="1.5"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </div>
+        <span>Sign</span>
+      </div>
+      <!-- Organize -->
+      <div class="icon-wrap">
+        <div class="icon-box style-a-6">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" strokeWidth="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" strokeWidth="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" strokeWidth="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" strokeWidth="1.5"/></svg>
+        </div>
+        <span>Organize</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: iLovePDF document+badge style -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">B</div>
+      <div>
+        <div class="card-label">iLovePDF Style</div>
+        <div class="card-name">Document + Format Badge</div>
+      </div>
+    </div>
+    <div class="card-desc">White document with folded corner, colored format badge in corner — instantly recognizable at a glance</div>
+    <div class="icon-showcase">
+      <!-- Merge: PDF + PDF -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#fff3f3;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:32px;height:38px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:0;top:2px;z-index:1;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="padding:11px 4px 4px;display:flex;flex-direction:column;gap:2px;">
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;width:70%;"></div>
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+              </div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#ef4444;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">PDF</div>
+            </div>
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.12);position:absolute;left:4px;top:0;z-index:0;opacity:0.7;">
+            </div>
+          </div>
+        </div>
+        <span>Merge</span>
+      </div>
+      <!-- PDF to JPG -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#f0f9ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:38px;height:40px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:0;top:2px;z-index:1;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="padding:8px 4px 4px;display:flex;flex-direction:column;gap:2px;">
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+                <div style="width:18px;height:14px;background:#dbeafe;border-radius:2px;display:flex;align-items:center;justify-content:center;margin-top:2px;">
+                  <svg width="10" height="8" viewBox="0 0 12 10" fill="none"><circle cx="4" cy="3" r="1.5" fill="#3b82f6" opacity=".5"/><path d="M1 8l3-3 2 2 1.5-2 3 3" stroke="#3b82f6" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+              </div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#ef4444;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">PDF</div>
+            </div>
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.12);position:absolute;left:10px;top:0;z-index:0;">
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#3b82f6;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">JPG</div>
+            </div>
+          </div>
+        </div>
+        <span>PDF→JPG</span>
+      </div>
+      <!-- Compress -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#f0fdf4;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:32px;height:38px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:2px;top:1px;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="padding:11px 4px 4px;display:flex;flex-direction:column;gap:2px;">
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;width:70%;"></div>
+              </div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-30%);color:#22c55e;font-size:14px;font-weight:900;line-height:1;">↕</div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#22c55e;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">ZIP</div>
+            </div>
+          </div>
+        </div>
+        <span>Compress</span>
+      </div>
+      <!-- Word -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#eff6ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:38px;height:40px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:0;top:2px;z-index:1;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="padding:11px 4px 4px;display:flex;flex-direction:column;gap:2px;">
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;width:70%;"></div>
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;"></div>
+              </div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#ef4444;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">PDF</div>
+            </div>
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.12);position:absolute;left:10px;top:0;z-index:0;">
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#2563eb;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">DOC</div>
+            </div>
+          </div>
+        </div>
+        <span>PDF→Word</span>
+      </div>
+      <!-- Protect -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#fdf4ff;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:32px;height:38px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:2px;top:1px;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding-top:4px;">
+                <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><rect x="2" y="7" width="10" height="8" rx="2" fill="#e9d5ff" stroke="#a855f7" strokeWidth="1.2"/><path d="M4 7V5a3 3 0 016 0v2" stroke="#a855f7" strokeWidth="1.2"/><circle cx="7" cy="11" r="1" fill="#a855f7"/></svg>
+              </div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#a855f7;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">PDF</div>
+            </div>
+          </div>
+        </div>
+        <span>Protect</span>
+      </div>
+      <!-- Sign -->
+      <div class="icon-wrap">
+        <div style="position:relative;width:52px;height:52px;background:#fff7ed;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:relative;width:32px;height:38px;">
+            <div style="width:28px;height:36px;background:white;border-radius:3px;box-shadow:0 1px 5px rgba(0,0,0,0.18);position:absolute;left:2px;top:1px;">
+              <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:#f0f0f0;border-radius:0 0 0 3px;"></div>
+              <div style="padding:6px 4px 4px;">
+                <div style="height:2px;background:#e8e8e8;border-radius:1px;margin-bottom:4px;"></div>
+                <svg width="20" height="10" viewBox="0 0 20 10" fill="none"><path d="M2 7c2-4 4 4 6 0s4-4 6-2" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </div>
+              <div style="position:absolute;bottom:-5px;right:-5px;background:#f97316;padding:1px 4px;border-radius:3px;font-size:8px;font-weight:800;color:white;line-height:1.5;">PDF</div>
+            </div>
+          </div>
+        </div>
+        <span>Sign</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Rounded colored tiles with white icon -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="letter">C</div>
+      <div>
+        <div class="card-label">Bold & Modern</div>
+        <div class="card-name">Colored Tiles + White Icon</div>
+      </div>
+    </div>
+    <div class="card-desc">Solid color rounded square background with crisp white SVG — bold, app-icon feel like Notion/Linear</div>
+    <div class="icon-showcase">
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#ef4444;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="rgba(255,255,255,0.4)"/><path d="M13 6h7v12h-7V6z" fill="white"/><path d="M10 12h4" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/></svg>
+        </div>
+        <span>Merge</span>
+      </div>
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#f97316;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5"/><path d="M12 4v16M4 12h16" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/></svg>
+        </div>
+        <span>Split</span>
+      </div>
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#22c55e;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5"/><path d="M12 12l8-4M12 12v8M12 12L4 8" stroke="white" strokeWidth="1.5"/></svg>
+        </div>
+        <span>Compress</span>
+      </div>
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#3b82f6;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5"/><circle cx="9" cy="9" r="2" fill="white" opacity=".5"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+        <span>PDF→JPG</span>
+      </div>
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#a855f7;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><rect x="5" y="7" width="10" height="9" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.4"/><path d="M7 7V5a3 3 0 016 0v2" stroke="white" strokeWidth="1.4"/><circle cx="10" cy="11.5" r="1" fill="white"/></svg>
+        </div>
+        <span>Protect</span>
+      </div>
+      <div class="icon-wrap">
+        <div style="width:52px;height:52px;background:#ec4899;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+          <svg width="26" height="26" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.5"/><path d="M8 14c2-4 4 4 6 0s3-3 4-1" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </div>
+        <span>Sign</span>
+      </div>
+    </div>
+  </div>
+
+</div>

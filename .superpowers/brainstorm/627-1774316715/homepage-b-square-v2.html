@@ -1,0 +1,359 @@
+<h2>Icons top-left — does this look right?</h2>
+<p class="subtitle">Tool name and description anchor to bottom, icon sits top-left like iLovePDF cards.</p>
+
+<style>
+  .mockup-wrap {
+    background: #f5f5f5;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .mock-navbar {
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mock-logo { font-weight: 900; font-size: 16px; }
+  .mock-logo span { color: #ef4444; }
+  .mock-nav { display: flex; gap: 16px; font-size: 12px; color: #555; }
+  .mock-btn { background: #ef4444; color: white; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px; }
+
+  .mock-hero {
+    background: white;
+    text-align: center;
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .hero-title { font-size: 22px; font-weight: 900; color: #111; margin-bottom: 5px; }
+  .hero-sub { font-size: 12px; color: #888; }
+
+  .mock-body { padding: 20px; }
+
+  .cat-section { margin-bottom: 22px; }
+  .cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cat-label { font-size: 12px; font-weight: 800; color: #111; text-transform: uppercase; letter-spacing: 0.6px; }
+  .cat-line { flex: 1; height: 1px; background: #e5e7eb; }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .tool-card {
+    background: white;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    overflow: visible;
+  }
+  .tool-card:hover { border-color: #ef4444; box-shadow: 0 3px 12px rgba(239,68,68,0.12); }
+
+  .tool-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .tool-text { width: 100%; }
+  .tool-name { font-size: 11px; font-weight: 800; color: #111; line-height: 1.2; }
+  .tool-desc { font-size: 9px; color: #888; margin-top: 2px; line-height: 1.3; }
+
+  /* doc icon */
+  .doc-base {
+    width: 24px;
+    height: 30px;
+    background: white;
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .doc-base::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 7px; height: 7px;
+    background: #e5e5e5;
+    border-radius: 0 0 0 3px;
+  }
+  .doc-lines { padding: 9px 4px 4px; display: flex; flex-direction: column; gap: 2px; }
+  .dl { height: 2px; border-radius: 1px; background: #ddd; }
+  .dl.s { width: 60%; }
+  .doc-badge {
+    position: absolute;
+    bottom: -5px; right: -6px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 7px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.6;
+  }
+
+  .badge-new {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: #ef4444;
+    color: white;
+    font-size: 7px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.4;
+  }
+</style>
+
+<div class="mockup-wrap">
+  <div class="mock-navbar">
+    <div class="mock-logo">Rizz<span>PDF</span></div>
+    <div class="mock-nav"><span>All Tools</span><span>Pricing</span><span>API</span></div>
+    <div class="mock-btn">Sign in</div>
+  </div>
+
+  <div class="mock-hero">
+    <div class="hero-title">Every PDF tool you need</div>
+    <div class="hero-sub">100% private · runs in your browser · free for 3 files</div>
+  </div>
+
+  <div class="mock-body">
+
+    <!-- Organize -->
+    <div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-label">Organize PDF</span>
+        <div class="cat-line"></div>
+      </div>
+      <div class="tool-grid">
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fff3f3;">
+            <div style="position:relative;display:flex;align-items:flex-end;gap:2px;">
+              <div style="position:absolute;left:-4px;top:-2px;width:22px;height:27px;background:white;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.1);z-index:0;"></div>
+              <div class="doc-base" style="z-index:1;position:relative;">
+                <div class="doc-lines"><div class="dl"></div><div class="dl s"></div></div>
+                <div class="doc-badge" style="background:#ef4444;">PDF</div>
+              </div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Merge PDF</div>
+            <div class="tool-desc">Combine multiple PDFs into one</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fff7ed;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div><div class="dl s"></div><div class="dl"></div></div>
+              <div class="doc-badge" style="background:#f97316;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Split PDF</div>
+            <div class="tool-desc">Extract pages or ranges</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fefce8;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div><div class="dl s"></div></div>
+              <div class="doc-badge" style="background:#eab308;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Organize PDF</div>
+            <div class="tool-desc">Drag pages to reorder</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fff7ed;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div><div class="dl s"></div></div>
+              <div class="doc-badge" style="background:#f97316;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Delete Pages</div>
+            <div class="tool-desc">Remove unwanted pages</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Convert -->
+    <div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-label">Convert PDF</span>
+        <div class="cat-line"></div>
+      </div>
+      <div class="tool-grid">
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#f0f9ff;">
+            <div style="position:relative;display:flex;gap:3px;align-items:flex-end;">
+              <div class="doc-base">
+                <div class="doc-lines"><div class="dl"></div><div class="dl s"></div></div>
+                <div class="doc-badge" style="background:#ef4444;">PDF</div>
+              </div>
+              <div style="width:22px;height:27px;background:white;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.13);position:relative;">
+                <div class="doc-badge" style="background:#3b82f6;bottom:-5px;right:-6px;">JPG</div>
+              </div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">PDF to JPG</div>
+            <div class="tool-desc">Export pages as images</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#eff6ff;">
+            <div style="position:relative;display:flex;gap:3px;align-items:flex-end;">
+              <div style="width:22px;height:27px;background:white;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.13);position:relative;">
+                <div class="doc-badge" style="background:#3b82f6;bottom:-5px;right:-6px;">JPG</div>
+              </div>
+              <div class="doc-base">
+                <div class="doc-badge" style="background:#ef4444;">PDF</div>
+              </div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">JPG to PDF</div>
+            <div class="tool-desc">Turn images into a PDF</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <span class="badge-new">NEW</span>
+          <div class="tool-icon-wrap" style="background:#eff6ff;">
+            <div style="position:relative;display:flex;gap:3px;align-items:flex-end;">
+              <div class="doc-base">
+                <div class="doc-badge" style="background:#ef4444;">PDF</div>
+              </div>
+              <div style="width:22px;height:27px;background:white;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.13);position:relative;">
+                <div class="doc-badge" style="background:#2563eb;bottom:-5px;right:-6px;">DOC</div>
+              </div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">PDF to Word</div>
+            <div class="tool-desc">Export as editable .docx</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#f0fdf4;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div><div class="dl s"></div></div>
+              <div class="doc-badge" style="background:#22c55e;">ZIP</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Compress PDF</div>
+            <div class="tool-desc">Reduce file size</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Edit & Security -->
+    <div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-label">Edit &amp; Security</span>
+        <div class="cat-line"></div>
+      </div>
+      <div class="tool-grid">
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fdf4ff;">
+            <div class="doc-base">
+              <div style="display:flex;align-items:center;justify-content:center;height:100%;padding-top:3px;">
+                <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1.5" y="6" width="10" height="7.5" rx="1.8" fill="#e9d5ff" stroke="#a855f7" strokeWidth="1.1"/><path d="M3.5 6V4.5a3 3 0 016 0V6" stroke="#a855f7" strokeWidth="1.1"/><circle cx="6.5" cy="9.5" r="1" fill="#a855f7"/></svg>
+              </div>
+              <div class="doc-badge" style="background:#a855f7;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Protect PDF</div>
+            <div class="tool-desc">Add password protection</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fef2f2;">
+            <div class="doc-base">
+              <div style="display:flex;align-items:center;justify-content:center;height:100%;padding-top:3px;">
+                <svg width="13" height="14" viewBox="0 0 13 14" fill="none"><rect x="1.5" y="6" width="10" height="7.5" rx="1.8" fill="#fecaca" stroke="#ef4444" strokeWidth="1.1"/><path d="M3.5 6V4.5a3 3 0 016 0V6" stroke="#ef4444" strokeWidth="1.1"/><path d="M6.5 8.5v2" stroke="#ef4444" strokeWidth="1.1" strokeLinecap="round"/></svg>
+              </div>
+              <div class="doc-badge" style="background:#ef4444;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Unlock PDF</div>
+            <div class="tool-desc">Remove password instantly</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fff0f9;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div>
+                <div style="font-size:6px;color:#ec4899;font-weight:800;margin-top:1px;line-height:1;">DRAFT</div>
+              </div>
+              <div class="doc-badge" style="background:#ec4899;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Watermark PDF</div>
+            <div class="tool-desc">Add text or image overlay</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-icon-wrap" style="background:#fff7ed;">
+            <div class="doc-base">
+              <div class="doc-lines"><div class="dl"></div>
+                <svg width="16" height="7" viewBox="0 0 16 7" fill="none" style="margin-top:2px;"><path d="M1 5c1.5-3.5 3 3.5 5 0s3-3.5 4-1" stroke="#f97316" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              </div>
+              <div class="doc-badge" style="background:#f97316;">PDF</div>
+            </div>
+          </div>
+          <div class="tool-text">
+            <div class="tool-name">Sign PDF</div>
+            <div class="tool-desc">Draw or upload signature</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RizzPDF – Tool Card Redesign Options</title>
+<script>
+  function toggleSelect(el) {
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const events = (window._events = window._events || []);
+    events.push({type:'click',choice:el.dataset.choice,text:el.dataset.label,timestamp:Date.now()});
+    fetch('/__select', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice:el.dataset.choice,text:el.dataset.label})}).catch(()=>{});
+    document.getElementById('selection-indicator').textContent = '✓ Selected: ' + el.dataset.label;
+    document.getElementById('selection-indicator').style.opacity = '1';
+  }
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Inter', sans-serif; background: #0f0f13; color: #e2e8f0; padding: 32px 24px 60px; }
+  h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
+  .sub { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+  .designs { display: flex; flex-direction: column; gap: 40px; }
+  .option-card { border: 2px solid #1e293b; border-radius: 16px; overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .option-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+  .option-card.selected { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); }
+  .option-label { display: flex; align-items: center; gap: 10px; padding: 16px 20px 12px; background: #1e293b; }
+  .letter-badge { width: 28px; height: 28px; border-radius: 8px; background: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; flex-shrink: 0; }
+  .option-title { font-weight: 700; font-size: 15px; color: #f1f5f9; }
+  .option-desc { font-size: 12px; color: #94a3b8; margin-left: auto; }
+  #selection-indicator { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; padding: 10px 18px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+
+  /* ── OPTION A: iLovePDF clone — colored flat icon tiles ── */
+  .preview-a { background: #f5f5f5; padding: 28px; }
+  .preview-a .page-title { font-size: 28px; font-weight: 900; color: #111; text-align: center; margin-bottom: 6px; font-family: -apple-system,sans-serif; }
+  .preview-a .page-sub { text-align: center; color: #666; font-size: 14px; margin-bottom: 24px; }
+  .preview-a .grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; max-width: 700px; margin: 0 auto; }
+  .preview-a .tool { background: white; border-radius: 12px; padding: 18px 12px 14px; text-align: center; cursor: pointer; transition: box-shadow 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .preview-a .tool:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .preview-a .icon-wrap { width: 48px; height: 48px; border-radius: 10px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+  .preview-a .tool-name { font-size: 11px; font-weight: 700; color: #222; line-height: 1.3; }
+
+  /* ── OPTION B: Premium gradient — dark cards with glow icons ── */
+  .preview-b { background: #0a0a0f; padding: 28px; }
+  .preview-b .page-title { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 6px; background: linear-gradient(135deg,#a78bfa,#f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .preview-b .page-sub { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 24px; }
+  .preview-b .grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; max-width: 700px; margin: 0 auto; }
+  .preview-b .tool { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 18px 10px 14px; text-align: center; cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
+  .preview-b .tool:hover { border-color: #7c3aed; transform: translateY(-2px); }
+  .preview-b .icon-wrap { width: 44px; height: 44px; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .preview-b .tool-name { font-size: 11px; font-weight: 600; color: #cbd5e1; line-height: 1.3; }
+
+  /* ── OPTION C: Clean modern — white cards, SVG icons, red accent ── */
+  .preview-c { background: #ffffff; padding: 28px; }
+  .preview-c .page-title { font-size: 28px; font-weight: 900; color: #1a1a2e; text-align: center; margin-bottom: 6px; }
+  .preview-c .page-sub { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+  .preview-c .cats { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .preview-c .cat { padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1.5px solid #e5e7eb; color: #374151; cursor: pointer; }
+  .preview-c .cat.active { background: #dc2626; border-color: #dc2626; color: white; }
+  .preview-c .grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; max-width: 700px; margin: 0 auto; }
+  .preview-c .tool { background: #fff; border: 1.5px solid #f3f4f6; border-radius: 14px; padding: 20px 10px 14px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .preview-c .tool:hover { border-color: #dc2626; box-shadow: 0 4px 12px rgba(220,38,38,0.12); transform: translateY(-1px); }
+  .preview-c .icon-wrap { width: 44px; height: 44px; border-radius: 10px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .preview-c .tool-name { font-size: 11px; font-weight: 700; color: #111827; line-height: 1.3; }
+  .preview-c .tool-desc { font-size: 10px; color: #9ca3af; margin-top: 3px; display: none; }
+</style>
+</head>
+<body>
+<h1>Tool Card Redesign — 3 Directions</h1>
+<p class="sub">Click a design to select it. These are realistic mockups of the hub page tool grid.</p>
+
+<div class="designs">
+
+  <!-- OPTION A -->
+  <div class="option-card" data-choice="a" data-label="Option A – iLovePDF Style (clean white tiles)" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge">A</div>
+      <div class="option-title">iLovePDF Style — Clean white tiles with colored icon squares</div>
+      <div class="option-desc">Most familiar</div>
+    </div>
+    <div class="preview-a">
+      <div class="page-title">RizzPDF</div>
+      <div class="page-sub">Every PDF tool you need. Free, fast, and private.</div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap" style="background:#fff0f0"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="#ef4444" opacity=".15"/><path d="M8 12h8M12 8v8" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/></svg></div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff7ed"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M6 4h12v10l-6 6H6V4z" fill="#f97316" opacity=".15" stroke="#f97316" stroke-width="1.8"/><path d="M12 14v6l6-6h-6z" fill="#f97316" opacity=".3"/><path d="M8 9h8M8 12h5" stroke="#f97316" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f0fdf4"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M8 3h8l4 4v14H4V3h4z" fill="#22c55e" opacity=".12" stroke="#22c55e" stroke-width="1.8"/><path d="M9 13l2 2 4-4" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">Compress PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#eff6ff"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 4v16M12 4l-4 4M12 4l4 4" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/><path d="M5 20h14" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fdf4ff"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="#a855f7" opacity=".12" stroke="#a855f7" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">Sign PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff0f0"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 8h16M4 12h10M4 16h8" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">Watermark</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fefce8"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1" fill="#eab308" opacity=".2" stroke="#eab308" stroke-width="1.8"/><rect x="14" y="4" width="6" height="6" rx="1" fill="#eab308" opacity=".2" stroke="#eab308" stroke-width="1.8"/><rect x="4" y="14" width="6" height="6" rx="1" fill="#eab308" opacity=".2" stroke="#eab308" stroke-width="1.8"/><rect x="14" y="14" width="6" height="6" rx="1" fill="#eab308" opacity=".2" stroke="#eab308" stroke-width="1.8"/></svg></div><div class="tool-name">Organize PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f0fdfa"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 3L3 8l9 5 9-5-9-5z" fill="#14b8a6" opacity=".15" stroke="#14b8a6" stroke-width="1.8"/><path d="M3 16l9 5 9-5M3 12l9 5 9-5" stroke="#14b8a6" stroke-width="1.8"/></svg></div><div class="tool-name">Page Numbers</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff0f0"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M4 12h16M4 12l4-4M4 12l4 4" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">Rotate PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f5f3ff"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2" fill="#8b5cf6" opacity=".12" stroke="#8b5cf6" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h4" stroke="#8b5cf6" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="tool-name">Repair PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B -->
+  <div class="option-card" data-choice="b" data-label="Option B – Premium Dark (gradient glow cards)" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge" style="background:#7c3aed">B</div>
+      <div class="option-title">Premium Dark — Dark cards with gradient glows</div>
+      <div class="option-desc">Bold & distinctive</div>
+    </div>
+    <div class="preview-b">
+      <div class="page-title">RizzPDF</div>
+      <div class="page-sub">Every PDF tool you need. Free, fast, and private.</div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#7f1d1d,#dc2626)">📎</div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#7c2d12,#ea580c)">✂️</div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#14532d,#16a34a)">🗜️</div><div class="tool-name">Compress PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#1e3a5f,#2563eb)">🖼️</div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#581c87,#9333ea)">✍️</div><div class="tool-name">Sign PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#831843,#db2777)">💧</div><div class="tool-name">Watermark</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#713f12,#ca8a04)">🗂️</div><div class="tool-name">Organize PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#134e4a,#0d9488)">🔢</div><div class="tool-name">Page Numbers</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#1e3a5f,#0284c7)">🔄</div><div class="tool-name">Rotate PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:linear-gradient(135deg,#3b0764,#7c3aed)">🔧</div><div class="tool-name">Repair PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C -->
+  <div class="option-card" data-choice="c" data-label="Option C – iLovePDF Enhanced (white + red accent, SVG icons)" onclick="toggleSelect(this)">
+    <div class="option-label">
+      <div class="letter-badge" style="background:#dc2626">C</div>
+      <div class="option-title">iLovePDF Enhanced — White cards, red accent, category filter pills</div>
+      <div class="option-desc">My recommendation</div>
+    </div>
+    <div class="preview-c">
+      <div class="page-title">RizzPDF</div>
+      <div class="page-sub">Every PDF tool you need. Free, fast, and private.</div>
+      <div class="cats">
+        <div class="cat active">All</div>
+        <div class="cat">Organize</div>
+        <div class="cat">Convert</div>
+        <div class="cat">Edit</div>
+        <div class="cat">Security</div>
+      </div>
+      <div class="grid">
+        <div class="tool"><div class="icon-wrap" style="background:#fef2f2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h7v12H4V6z" fill="#fca5a5"/><path d="M13 6h7v12h-7V6z" fill="#ef4444"/><path d="M10 12h4" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="tool-name">Merge PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff7ed"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/><path d="M12 4v16M4 12h16" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2"/></svg></div><div class="tool-name">Split PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f0fdf4"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="#bbf7d0" stroke="#22c55e" stroke-width="1.5"/><path d="M12 12l8-4M12 12v8M12 12L4 8" stroke="#22c55e" stroke-width="1.5"/></svg></div><div class="tool-name">Compress</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#eff6ff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/><path d="M8 7h8M8 10h8M8 13h5" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/><path d="M14 17l2-2 2 2" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tool-name">PDF to JPG</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fdf4ff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="9" r="4" fill="#e9d5ff" stroke="#a855f7" stroke-width="1.5"/><path d="M8 20h8" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tool-name">Sign PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff0f9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 8l7-5 7 5v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8z" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/><path d="M10 21V14h4v7" stroke="#ec4899" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tool-name">Watermark</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fefce8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/></svg></div><div class="tool-name">Organize</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f0fdfa"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="#99f6e4" stroke="#14b8a6" stroke-width="1.5"/><path d="M8 8h8M8 12h6M8 16h4" stroke="#14b8a6" stroke-width="1.5" stroke-linecap="round"/><circle cx="17" cy="17" r="3" fill="#14b8a6"/><path d="M17 15v2l1 1" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg></div><div class="tool-name">Page Numbers</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#fff0f0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 108-8" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/><path d="M12 4V8M12 8l-3-3M12 8l3-3" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="tool-name">Rotate PDF</div></div>
+        <div class="tool"><div class="icon-wrap" style="background:#f5f3ff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 4l1.4 4.2H18l-3.7 2.7 1.4 4.2L12 12.4l-3.7 2.7 1.4-4.2L6 8.2h4.6L12 4z" fill="#ddd6fe" stroke="#8b5cf6" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 19h8" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg></div><div class="tool-name">Repair PDF</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="selection-indicator">✓ Selected</div>
+</body>
+</html>
