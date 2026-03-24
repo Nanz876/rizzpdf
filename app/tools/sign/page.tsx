@@ -321,7 +321,8 @@ export default function SignPage() {
   const pageDisplayWidth = PAGE_BASE_WIDTH * zoom;
 
   return (
-    <ToolShell name="Sign PDF" description="Draw your signature and drag it anywhere on your PDF." icon="✍️">
+    <ToolShell name="Sign PDF" description="Draw your signature and drag it anywhere on your PDF." icon="✍️"
+      svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.8"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><path d="M8 20h8" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>}>
       <div className="space-y-4">
         {!pdfFile && (
           <UploadZone onFilesAdded={f => { setPdfFile(f[0]); setStatus("idle"); setErr(""); }} disabled={false} />

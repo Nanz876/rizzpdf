@@ -1,125 +1,78 @@
 "use client";
-
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
-import { pdfToPng, downloadBlob } from "@/lib/pdf-tools";
+import WorkspaceBar from "@/components/pdf/WorkspaceBar";
+import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
+import { renderThumbnails, pdfToPng, downloadBlob } from "@/lib/pdf-tools";
 
-type Dpi = 72 | 150 | 300;
-type Status = "idle" | "processing" | "done" | "error";
-
-const DPI_OPTIONS: { value: Dpi; label: string; note: string }[] = [
-  { value: 72, label: "72 DPI", note: "Web / preview" },
-  { value: 150, label: "150 DPI", note: "Standard" },
-  { value: 300, label: "300 DPI", note: "High quality" },
-];
+type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
 export default function PdfToPngPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [dpi, setDpi] = useState<Dpi>(150);
+  const [thumbs, setThumbs] = useState<string[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [downloadedCount, setDownloadedCount] = useState(0);
+  const [error, setError] = useState("");
 
-  const handleFilesAdded = useCallback((files: File[]) => {
-    setFile(files[0]);
-    setStatus("idle");
-    setErrorMsg("");
+  const handleFile = useCallback(async (files: File[]) => {
+    setFile(files[0]); setStatus("loading");
+    const t = await renderThumbnails(files[0], 0.4);
+    setThumbs(t);
+    setSelected(new Set(t.map((_, i) => i + 1)));
+    setStatus("ready");
   }, []);
+
+  const togglePage = (pageNum: number) =>
+    setSelected(prev => { const s = new Set(prev); s.has(pageNum) ? s.delete(pageNum) : s.add(pageNum); return s; });
+
+  const pages: ThumbnailPage[] = thumbs.map((url, i) => ({ dataUrl: url, pageNumber: i + 1 }));
 
   const handleConvert = async () => {
     if (!file) return;
     setStatus("processing");
-    setErrorMsg("");
-
-    const result = await pdfToPng(file, dpi);
-
-    if (result.success && result.blobs && result.filenames) {
-      for (let i = 0; i < result.blobs.length; i++) {
-        await new Promise((r) => setTimeout(r, 150));
-        downloadBlob(result.blobs![i], result.filenames![i]);
-      }
-      setDownloadedCount(result.blobs.length);
+    const result = await pdfToPng(file);
+    if (result.success && result.blobs) {
+      result.blobs.forEach((blob, i) => {
+        if (selected.has(i + 1)) {
+          downloadBlob(blob, result.filenames?.[i] ?? `page_${i + 1}.png`);
+        }
+      });
       setStatus("done");
-    } else {
-      setErrorMsg(result.error || "Conversion failed.");
-      setStatus("error");
-    }
+    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
   };
 
-  const reset = () => {
-    setFile(null);
-    setDpi(150);
-    setStatus("idle");
-    setErrorMsg("");
-    setDownloadedCount(0);
-  };
+  const reset = () => { setFile(null); setThumbs([]); setSelected(new Set()); setStatus("idle"); setError(""); };
 
   return (
-    <ToolShell
-      name="PDF to PNG"
-      description="Convert each PDF page to a high-quality lossless PNG image."
-      icon="🎨"
-    >
-      <div className="space-y-5">
-        <UploadZone onFilesAdded={handleFilesAdded} disabled={status === "processing"} />
-
-        {file && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-700 truncate">{file.name}</p>
-              <button onClick={reset} className="text-sm text-gray-400 hover:text-red-500 transition-colors ml-4">
-                Remove
-              </button>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-3">Resolution</p>
-              <div className="flex gap-3">
-                {DPI_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setDpi(opt.value)}
-                    className={`flex-1 py-3 px-3 rounded-xl border text-sm font-semibold transition-all duration-150 ${
-                      dpi === opt.value
-                        ? "bg-red-600 border-red-600 text-white shadow-sm"
-                        : "bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-700"
-                    }`}
-                  >
-                    <span className="block">{opt.label}</span>
-                    <span className={`block text-xs font-normal mt-0.5 ${dpi === opt.value ? "text-red-100" : "text-gray-400"}`}>
-                      {opt.note}
-                    </span>
-                  </button>
-                ))}
+    <ToolShell name="PDF to PNG" description="Export PDF pages as high-quality PNG images." icon="🎨"
+      svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      steps={file ? undefined : ["Upload your PDF", "Select pages to export", "Download PNG images"]}>
+      {!file && <UploadZone onFilesAdded={handleFile} />}
+      {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
+      {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <WorkspaceBar
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/><circle cx="8" cy="8" r="1.5" fill="white"/><path d="M3 15l4-4 3 3 2-2 5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            title="PDF to PNG" subtitle={`${file.name} · ${thumbs.length} pages`}
+            onReset={reset}
+            primaryLabel={status === "processing" ? "Converting…" : status === "done" ? "✓ Downloaded!" : `Convert ${selected.size} page${selected.size !== 1 ? "s" : ""} →`}
+            onPrimary={status === "done" ? reset : handleConvert}
+            primaryDisabled={selected.size === 0 || status === "processing"} />
+          {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <div className="p-5 bg-gray-50">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-400">Click pages to select / deselect</p>
+              <div className="flex gap-2">
+                <button onClick={() => setSelected(new Set(thumbs.map((_, i) => i + 1)))} className="text-xs text-red-600 hover:underline">Select all</button>
+                <span className="text-xs text-gray-300">·</span>
+                <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:underline">Deselect all</button>
               </div>
-              <p className="text-xs text-gray-400 mt-2">PNG is lossless — all detail is perfectly preserved.</p>
             </div>
+            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={4} />
           </div>
-        )}
-
-        {status === "done" ? (
-          <div className="space-y-3">
-            <p className="text-center text-green-600 font-semibold">
-              Downloaded {downloadedCount} PNG image{downloadedCount !== 1 ? "s" : ""}!
-            </p>
-            <button onClick={reset} className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 transition-colors">
-              Convert another PDF
-            </button>
-          </div>
-        ) : (
-          <>
-            {status === "error" && <p className="text-center text-red-500 text-sm">{errorMsg}</p>}
-            <button
-              onClick={handleConvert}
-              disabled={!file || status === "processing"}
-              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {status === "processing" ? "Converting..." : "Convert to PNG"}
-            </button>
-          </>
-        )}
-      </div>
+        </div>
+      )}
     </ToolShell>
   );
 }

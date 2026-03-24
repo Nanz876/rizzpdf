@@ -1,150 +1,114 @@
 "use client";
-
-import { useState, useRef, DragEvent } from "react";
+import { useState, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
+import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, jpgToPdf } from "@/lib/pdf-tools";
+
+type Status = "idle" | "processing" | "done" | "error";
 
 export default function JpgToPdfPage() {
   const [images, setImages] = useState<File[]>([]);
-  const [dragging, setDragging] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragIdx = useRef<number | null>(null);
 
-  function addFiles(files: FileList | null) {
-    if (!files) return;
-    const valid = Array.from(files).filter((f) =>
-      ["image/jpeg", "image/png"].includes(f.type)
-    );
-    if (valid.length === 0) return;
-    setImages((prev) => [...prev, ...valid]);
-    setSuccess(false);
-    setError("");
-  }
+  const addImages = (files: File[]) => {
+    const valid = files.filter(f => f.type.startsWith("image/"));
+    const urls = valid.map(f => URL.createObjectURL(f));
+    setImages(prev => [...prev, ...valid]);
+    setPreviews(prev => [...prev, ...urls]);
+  };
 
-  function removeImage(index: number) {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setSuccess(false);
-  }
+  const removeImage = (idx: number) => {
+    URL.revokeObjectURL(previews[idx]);
+    setImages(prev => prev.filter((_, i) => i !== idx));
+    setPreviews(prev => prev.filter((_, i) => i !== idx));
+  };
 
-  function onDragOver(e: DragEvent<HTMLDivElement>) {
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    addImages(Array.from(e.dataTransfer.files));
+  };
+
+  const onDragStart = (idx: number) => { dragIdx.current = idx; };
+  const onDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
-    setDragging(true);
-  }
+    if (dragIdx.current === null || dragIdx.current === idx) return;
+    const from = dragIdx.current;
+    dragIdx.current = idx;
+    setImages(prev => { const a = [...prev]; const [el] = a.splice(from, 1); a.splice(idx, 0, el); return a; });
+    setPreviews(prev => { const a = [...prev]; const [el] = a.splice(from, 1); a.splice(idx, 0, el); return a; });
+  };
 
-  function onDragLeave(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragging(false);
-  }
-
-  function onDrop(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragging(false);
-    addFiles(e.dataTransfer.files);
-  }
-
-  async function handleConvert() {
+  const handleConvert = async () => {
     if (images.length === 0) return;
-    setLoading(true);
-    setError("");
-    setSuccess(false);
+    setStatus("processing");
+    const result = await jpgToPdf(images);
+    if (result.success && result.blob) {
+      downloadBlob(result.blob, result.filename ?? "images.pdf");
+      setStatus("done");
+    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
+  };
 
-    try {
-      const result = await jpgToPdf(images);
-      if (!result.success || !result.blob) {
-        setError(result.error ?? "Conversion failed.");
-      } else {
-        downloadBlob(result.blob, result.filename ?? "converted.pdf");
-        setSuccess(true);
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Unexpected error.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const reset = () => {
+    previews.forEach(url => URL.revokeObjectURL(url));
+    setImages([]); setPreviews([]); setStatus("idle"); setError("");
+  };
 
   return (
-    <ToolShell name="JPG to PDF" description="Combine JPEG and PNG images into a single PDF file." icon="📄">
-      <div className="space-y-4">
-        {/* Custom drag-drop zone */}
+    <ToolShell name="JPG to PDF" description="Convert JPG and PNG images into a PDF document." icon="📄"
+      svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      steps={images.length === 0 ? ["Upload images", "Arrange order", "Convert to PDF"] : undefined}>
+      {images.length === 0 ? (
         <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          className={`w-full border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
-            dragging
-              ? "border-red-500 bg-red-50"
-              : "border-gray-300 bg-gray-50 hover:border-red-400 hover:bg-red-50"
-          }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-            multiple
-            className="hidden"
-            onChange={(e) => addFiles(e.target.files)}
-          />
-          <div className="flex flex-col items-center gap-2">
-            <svg
-              className="w-10 h-10 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4"
-              />
+          onDrop={handleDrop} onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+          onClick={() => fileInputRef.current?.click()}
+          className={`relative border-2 border-dashed rounded-3xl p-12 text-center cursor-pointer transition-all
+            ${dragOver ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-red-400"}`}>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={e => { if (e.target.files) { addImages(Array.from(e.target.files)); e.target.value = ""; } }} />
+          <div className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            <p className="text-gray-600 font-medium text-sm">
-              Drag &amp; drop images here, or{" "}
-              <span className="text-red-600 font-semibold">browse</span>
-            </p>
-            <p className="text-gray-400 text-xs">JPEG and PNG files accepted</p>
           </div>
+          <p className="text-lg font-bold text-gray-800">Drop your images here</p>
+          <p className="text-sm text-gray-500 mt-1">or <span className="text-red-600 font-semibold">click to browse</span> — JPG, PNG supported</p>
         </div>
-
-        {images.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <p className="text-sm font-semibold text-gray-700">
-              {images.length} {images.length === 1 ? "image" : "images"} selected
-            </p>
-            <div>
-              {images.map((img, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                >
-                  <span className="text-sm text-gray-700 truncate flex-1">{img.name}</span>
-                  <button
-                    onClick={() => removeImage(i)}
-                    className="text-gray-400 hover:text-red-500 text-xs ml-4 transition-colors"
-                  >
-                    Remove
-                  </button>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <WorkspaceBar
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/><circle cx="8" cy="8" r="1.5" fill="white"/></svg>}
+            title="JPG to PDF" subtitle={`${images.length} image${images.length !== 1 ? "s" : ""}`}
+            onReset={reset}
+            secondaryLabel="+ Add more" onSecondary={() => fileInputRef.current?.click()}
+            primaryLabel={status === "processing" ? "Converting…" : status === "done" ? "✓ Downloaded!" : "Convert to PDF →"}
+            onPrimary={status === "done" ? reset : handleConvert}
+            primaryDisabled={status === "processing"} />
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+            onChange={e => { if (e.target.files) { addImages(Array.from(e.target.files)); e.target.value = ""; } }} />
+          {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <div className="p-5 bg-gray-50">
+            <p className="text-xs text-gray-400 mb-3">Drag to reorder</p>
+            <div className="grid grid-cols-4 gap-3">
+              {previews.map((url, i) => (
+                <div key={i}
+                  draggable onDragStart={() => onDragStart(i)} onDragOver={e => onDragOver(e, i)}
+                  className="relative bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm cursor-grab active:cursor-grabbing hover:border-red-300 transition-colors">
+                  <div className="aspect-[3/4] overflow-hidden bg-gray-50">
+                    <img src={url} alt={images[i].name} draggable={false} className="w-full h-full object-cover" />
+                  </div>
+                  <button onClick={() => removeImage(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs transition-colors">✕</button>
+                  <div className="px-2 py-1 text-xs text-gray-400 truncate">{images[i].name}</div>
                 </div>
               ))}
             </div>
-
-            <button
-              onClick={handleConvert}
-              disabled={loading || images.length === 0}
-              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "Converting…" : "Convert to PDF"}
-            </button>
-
-            {success && <p className="text-center text-green-600 font-semibold">PDF downloaded!</p>}
-            {error && <p className="text-center text-red-500 text-sm">{error}</p>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </ToolShell>
   );
 }

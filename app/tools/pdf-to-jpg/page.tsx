@@ -1,103 +1,78 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
-import { downloadBlob, pdfToJpg } from "@/lib/pdf-tools";
+import WorkspaceBar from "@/components/pdf/WorkspaceBar";
+import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
+import { renderThumbnails, pdfToJpg, downloadBlob } from "@/lib/pdf-tools";
 
-type DpiOption = 72 | 150 | 300;
+type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
 export default function PdfToJpgPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [dpi, setDpi] = useState<DpiOption>(150);
-  const [loading, setLoading] = useState(false);
+  const [thumbs, setThumbs] = useState<string[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const [downloadedCount, setDownloadedCount] = useState<number | null>(null);
 
-  async function handleConvert() {
+  const handleFile = useCallback(async (files: File[]) => {
+    setFile(files[0]); setStatus("loading");
+    const t = await renderThumbnails(files[0], 0.4);
+    setThumbs(t);
+    setSelected(new Set(t.map((_, i) => i + 1)));
+    setStatus("ready");
+  }, []);
+
+  const togglePage = (pageNum: number) =>
+    setSelected(prev => { const s = new Set(prev); s.has(pageNum) ? s.delete(pageNum) : s.add(pageNum); return s; });
+
+  const pages: ThumbnailPage[] = thumbs.map((url, i) => ({ dataUrl: url, pageNumber: i + 1 }));
+
+  const handleConvert = async () => {
     if (!file) return;
-    setLoading(true);
-    setError("");
-    setDownloadedCount(null);
-
-    try {
-      const result = await pdfToJpg(file, dpi);
-      if (!result.success || !result.blobs || !result.filenames) {
-        setError(result.error ?? "Conversion failed.");
-      } else {
-        for (let i = 0; i < result.blobs.length; i++) {
-          await new Promise((r) => setTimeout(r, 150));
-          downloadBlob(result.blobs![i], result.filenames![i]);
+    setStatus("processing");
+    const result = await pdfToJpg(file);
+    if (result.success && result.blobs) {
+      result.blobs.forEach((blob, i) => {
+        if (selected.has(i + 1)) {
+          downloadBlob(blob, result.filenames?.[i] ?? `page_${i + 1}.jpg`);
         }
-        setDownloadedCount(result.blobs.length);
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Unexpected error.");
-    } finally {
-      setLoading(false);
-    }
-  }
+      });
+      setStatus("done");
+    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
+  };
 
-  const dpiOptions: { label: string; value: DpiOption }[] = [
-    { label: "72 DPI", value: 72 },
-    { label: "150 DPI", value: 150 },
-    { label: "300 DPI", value: 300 },
-  ];
+  const reset = () => { setFile(null); setThumbs([]); setSelected(new Set()); setStatus("idle"); setError(""); };
 
   return (
-    <ToolShell name="PDF to JPG" icon="🖼️" description="Convert every page of your PDF into a JPG image.">
-      <div className="space-y-4">
-        <UploadZone onFilesAdded={(files) => { setFile(files[0]); setDownloadedCount(null); setError(""); }} />
-
-        {file && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-              <span className="text-sm text-gray-700 font-medium truncate">{file.name}</span>
-              <button
-                onClick={() => { setFile(null); setDownloadedCount(null); setError(""); }}
-                className="text-gray-400 hover:text-red-500 text-xs ml-4 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-
-            {/* DPI selector */}
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Output quality</p>
+    <ToolShell name="PDF to JPG" description="Convert each PDF page to a JPG image." icon="🖼️"
+      svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      steps={file ? undefined : ["Upload your PDF", "Select pages to convert", "Download JPG images"]}>
+      {!file && <UploadZone onFilesAdded={handleFile} />}
+      {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
+      {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <WorkspaceBar
+            icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/><circle cx="8" cy="8" r="1.5" fill="white"/><path d="M3 15l4-4 3 3 2-2 5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            title="PDF to JPG" subtitle={`${file.name} · ${thumbs.length} pages`}
+            onReset={reset}
+            primaryLabel={status === "processing" ? "Converting…" : status === "done" ? "✓ Downloaded!" : `Convert ${selected.size} page${selected.size !== 1 ? "s" : ""} →`}
+            onPrimary={status === "done" ? reset : handleConvert}
+            primaryDisabled={selected.size === 0 || status === "processing"} />
+          {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          <div className="p-5 bg-gray-50">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-400">Click pages to select / deselect</p>
               <div className="flex gap-2">
-                {dpiOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setDpi(opt.value)}
-                    className={
-                      dpi === opt.value
-                        ? "px-4 py-2 rounded-xl bg-red-600 text-white font-medium text-sm"
-                        : "px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm hover:border-red-400 transition-colors"
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+                <button onClick={() => setSelected(new Set(thumbs.map((_, i) => i + 1)))} className="text-xs text-red-600 hover:underline">Select all</button>
+                <span className="text-xs text-gray-300">·</span>
+                <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:underline">Deselect all</button>
               </div>
             </div>
-
-            <button
-              onClick={handleConvert}
-              disabled={loading}
-              className="w-full bg-red-600 text-white py-3 px-6 rounded-2xl font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "Converting…" : "Convert to JPG"}
-            </button>
-
-            {downloadedCount !== null && (
-              <p className="text-center text-green-600 font-semibold">
-                Downloaded {downloadedCount} {downloadedCount === 1 ? "image" : "images"}
-              </p>
-            )}
-            {error && <p className="text-center text-red-500 text-sm">{error}</p>}
+            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={4} />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </ToolShell>
   );
 }
