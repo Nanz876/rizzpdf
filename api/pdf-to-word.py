@@ -1,8 +1,24 @@
 from flask import Flask, request, send_file, jsonify
 from pdf2docx import Converter
-import tempfile, os, io
+import tempfile, os, io, zipfile
 
 app = Flask(__name__)
+
+
+def fix_image_wrap(docx_bytes):
+    """Convert anchored floating images (wrapNone) to wrapTopAndBottom so they don't overlap text."""
+    in_buf = io.BytesIO(docx_bytes)
+    out_buf = io.BytesIO()
+    with zipfile.ZipFile(in_buf, "r") as zin, zipfile.ZipFile(out_buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "word/document.xml":
+                xml = data.decode("utf-8")
+                xml = xml.replace("<wp:wrapNone/>", "<wp:wrapTopAndBottom/>")
+                data = xml.encode("utf-8")
+            zout.writestr(item, data)
+    return out_buf.getvalue()
+
 
 @app.route("/api/pdf-to-word", methods=["POST"])
 def convert():
@@ -28,6 +44,10 @@ def convert():
         # Read into memory before cleanup so temp files are deleted immediately
         with open(docx_path, "rb") as fh:
             docx_bytes = fh.read()
+
+        # Fix floating images: wrapNone causes images to overlap text.
+        # Change to wrapTopAndBottom so content flows below images.
+        docx_bytes = fix_image_wrap(docx_bytes)
 
         out_name = os.path.splitext(f.filename)[0] + ".docx"
 
