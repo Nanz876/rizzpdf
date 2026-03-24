@@ -4,11 +4,46 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "PDF Tips & Guides | RizzPDF",
   description:
-    "Free guides on how to unlock PDFs, convert PDF to Word, and work smarter with PDF files.",
+    "Free guides on how to merge, split, compress, sign, and convert PDFs online — no software, no account needed.",
   alternates: { canonical: "https://www.rizzpdf.com/blog" },
 };
 
 const posts = [
+  {
+    slug: "merge-pdf-files-online-free",
+    title: "How to Merge PDF Files Online Free — No Install, No Sign Up",
+    description: "Combine multiple PDF files into one in seconds. Works entirely in your browser — no uploads, no account.",
+    date: "March 24, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "compress-pdf-without-losing-quality",
+    title: "How to Compress a PDF Without Losing Quality",
+    description: "Reduce PDF file size without making it blurry. Three compression levels, runs in your browser, files never uploaded.",
+    date: "March 24, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "split-pdf-online-free",
+    title: "How to Split a PDF Online Free — Extract Pages Instantly",
+    description: "Split a PDF into separate pages or extract a range — free, no account, no upload. Everything runs in your browser.",
+    date: "March 24, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "jpg-to-pdf-online-free",
+    title: "JPG to PDF Online Free — Convert Images to PDF in Seconds",
+    description: "Convert one or more JPG images into a single PDF file. Free, no account, files never uploaded to any server.",
+    date: "March 24, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "sign-pdf-online-free",
+    title: "How to Sign a PDF Online Free — Draw or Upload Your Signature",
+    description: "Add your signature to any PDF without printing. Draw it or upload an image — free, no account, files stay in your browser.",
+    date: "March 24, 2026",
+    readTime: "5 min read",
+  },
   {
     slug: "convert-pdf-to-word-online-free",
     title: "Convert PDF to Word Online Free — No Email, No Sign Up",
