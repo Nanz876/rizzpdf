@@ -23,7 +23,7 @@ export default function OrganizePage() {
     setStatus("loading-thumbs");
 
     try {
-      const thumbs = await renderThumbnails(pdf, 0.3);
+      const thumbs = await renderThumbnails(pdf, 0.5);
       setThumbnails(thumbs);
       setPageOrder(thumbs.map((_, i) => i));
       setStatus("ready");
@@ -124,7 +124,7 @@ export default function OrganizePage() {
             {error && <p className="text-center text-red-500 text-sm px-5 py-2">{error}</p>}
 
             <div className="p-5 bg-gray-50">
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {pageOrder.map((originalIndex, displayIndex) => (
                   <div
                     key={originalIndex}

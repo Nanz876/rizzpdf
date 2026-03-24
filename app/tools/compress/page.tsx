@@ -1,9 +1,10 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
+import PaywallModal from "@/components/PaywallModal";
 import { compressPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Quality = "low" | "medium" | "high";
@@ -22,6 +23,13 @@ export default function CompressPage() {
   const [error, setError] = useState("");
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
+  const [isPro, setIsPro] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    const until = localStorage.getItem("rizzpdf_bulk_until");
+    if (until && Date.now() < Number(until)) setIsPro(true);
+  }, []);
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setOrigSize(files[0].size); setStatus("ready");
@@ -29,6 +37,7 @@ export default function CompressPage() {
 
   const handleCompress = async () => {
     if (!file) return;
+    if (!isPro) { setShowPaywall(true); return; }
     setStatus("processing");
     const result = await compressPDF(file, quality);
     if (result.success && result.blob) {
@@ -78,6 +87,12 @@ export default function CompressPage() {
             </div>
           </div>
         </div>
+      )}
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+        />
       )}
     </ToolShell>
   );

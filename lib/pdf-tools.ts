@@ -764,7 +764,9 @@ export type BatchOptions =
   | { tool: "rotate"; angle: 90 | 180 | 270 }
   | { tool: "pdf-to-jpg" }
   | { tool: "watermark"; text: string }
-  | { tool: "protect"; password: string };
+  | { tool: "protect"; password: string }
+  | { tool: "page-numbers"; position?: "bottom-center" | "bottom-right" | "bottom-left" }
+  | { tool: "unlock"; password?: string };
 
 export async function batchProcess(
   files: File[],
@@ -795,6 +797,22 @@ export async function batchProcess(
         }
       } else if (options.tool === "watermark") {
         result = await watermarkPDF(f, { text: options.text, opacity: 0.3, fontSize: 60, color: "gray" });
+      } else if (options.tool === "page-numbers") {
+        result = await addPageNumbers(f, { position: options.position ?? "bottom-center" });
+      } else if (options.tool === "unlock") {
+        try {
+          const { PDFDocument } = await import("pdf-lib");
+          const bytes = await f.arrayBuffer();
+          const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+          const out = await doc.save();
+          result = {
+            success: true,
+            blob: new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }),
+            filename: f.name.replace(/\.pdf$/i, "_unlocked.pdf"),
+          };
+        } catch {
+          result = { success: false, error: "Could not unlock PDF" };
+        }
       } else {
         result = await protectPDF(f, options.password);
       }

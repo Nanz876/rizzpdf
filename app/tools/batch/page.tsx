@@ -24,6 +24,8 @@ const TOOL_LABELS: Record<Tool, string> = {
   "pdf-to-jpg": "PDF to JPG",
   watermark: "Watermark",
   protect: "Protect",
+  "page-numbers": "Page Numbers",
+  unlock: "Unlock",
 };
 
 export default function BatchPage() {
@@ -33,6 +35,8 @@ export default function BatchPage() {
   const [angle, setAngle] = useState<90 | 180 | 270>(90);
   const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");
   const [password, setPassword] = useState("");
+  const [pageNumPosition, setPageNumPosition] = useState<"bottom-center" | "bottom-right" | "bottom-left">("bottom-center");
+  const [unlockPassword, setUnlockPassword] = useState("");
   const [running, setRunning] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPro, setIsPro] = useState(false);
@@ -64,6 +68,8 @@ export default function BatchPage() {
     if (tool === "rotate") return { tool: "rotate", angle };
     if (tool === "watermark") return { tool: "watermark", text: watermarkText || "CONFIDENTIAL" };
     if (tool === "protect") return { tool: "protect", password: password || "password" };
+    if (tool === "page-numbers") return { tool: "page-numbers", position: pageNumPosition };
+    if (tool === "unlock") return { tool: "unlock", password: unlockPassword || undefined };
     return { tool: "pdf-to-jpg" };
   };
 
@@ -203,6 +209,35 @@ export default function BatchPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter a password"
+                  className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                />
+              </div>
+            )}
+
+            {tool === "page-numbers" && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Position</label>
+                <div className="flex gap-2">
+                  {(["bottom-left", "bottom-center", "bottom-right"] as const).map((p) => (
+                    <button key={p} onClick={() => setPageNumPosition(p)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors capitalize ${
+                        pageNumPosition === p ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-600 hover:border-red-300"
+                      }`}>
+                      {p.replace("bottom-", "")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {tool === "unlock" && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password (if any)</label>
+                <input
+                  type="password"
+                  value={unlockPassword}
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  placeholder="Leave blank if unencrypted"
                   className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 />
               </div>

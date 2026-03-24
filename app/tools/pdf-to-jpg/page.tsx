@@ -18,7 +18,7 @@ export default function PdfToJpgPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
-    const t = await renderThumbnails(files[0], 0.4);
+    const t = await renderThumbnails(files[0], 0.5);
     setThumbs(t);
     setSelected(new Set(t.map((_, i) => i + 1)));
     setStatus("ready");
@@ -71,7 +71,7 @@ export default function PdfToJpgPage() {
                 <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:underline">Deselect all</button>
               </div>
             </div>
-            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={4} />
+            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={3} />
           </div>
         </div>
       )}

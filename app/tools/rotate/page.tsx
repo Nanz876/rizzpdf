@@ -18,7 +18,7 @@ export default function RotatePage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setRotations({});
-    const t = await renderThumbnails(files[0], 0.4);
+    const t = await renderThumbnails(files[0], 0.5);
     setThumbs(t); setStatus("ready");
   }, []);
 
@@ -31,6 +31,7 @@ export default function RotatePage() {
   const pages: ThumbnailPage[] = thumbs.map((url, i) => ({
     dataUrl: url,
     pageNumber: i + 1,
+    rotation: rotations[i + 1] ?? 0,
     label: rotations[i + 1] ? `${rotations[i + 1]}°` : undefined,
     labelColor: "bg-red-600",
   }));
@@ -82,7 +83,7 @@ export default function RotatePage() {
           <PdfPreviewArea files={[file]} />
           <div className="p-5 bg-gray-50 border-t border-gray-100">
             <ThumbnailGrid pages={pages} showRotateButtons
-              onRotateLeft={p => rotate(p, -90)} onRotateRight={p => rotate(p, 90)} columns={4} />
+              onRotateLeft={p => rotate(p, -90)} onRotateRight={p => rotate(p, 90)} columns={3} />
           </div>
         </div>
       )}

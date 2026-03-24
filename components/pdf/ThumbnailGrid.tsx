@@ -7,6 +7,7 @@ export interface ThumbnailPage {
   pageNumber: number;        // 1-based
   label?: string;            // override label (e.g. "90°")
   labelColor?: string;       // e.g. "bg-red-600"
+  rotation?: number;         // degrees: 0, 90, 180, 270
 }
 
 interface ThumbnailGridProps {
@@ -79,7 +80,8 @@ export default function ThumbnailGrid({
                 src={pg.dataUrl}
                 alt={`Page ${pg.pageNumber}`}
                 draggable={false}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain transition-transform duration-200"
+                style={pg.rotation ? { transform: `rotate(${pg.rotation}deg)` } : undefined}
               />
 
               {/* Rotate hover buttons */}

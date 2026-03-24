@@ -5,6 +5,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
+import PaywallModal from "@/components/PaywallModal";
 import { renderThumbnails, watermarkPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
@@ -21,6 +22,13 @@ export default function WatermarkPage() {
   const [fontSize, setFontSize] = useState(60);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [isPro, setIsPro] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    const until = localStorage.getItem("rizzpdf_bulk_until");
+    if (until && Date.now() < Number(until)) setIsPro(true);
+  }, []);
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -36,6 +44,7 @@ export default function WatermarkPage() {
 
   const handleApply = async () => {
     if (!file) return;
+    if (!isPro) { setShowPaywall(true); return; }
     setStatus("processing");
     const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
@@ -132,6 +141,12 @@ export default function WatermarkPage() {
             )}
           </SidebarWorkspace>
         </div>
+      )}
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+        />
       )}
     </ToolShell>
   );

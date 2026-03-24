@@ -18,7 +18,7 @@ export default function DeletePagesPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setSelected(new Set());
-    const t = await renderThumbnails(files[0], 0.4);
+    const t = await renderThumbnails(files[0], 0.5);
     setThumbs(t); setStatus("ready");
   }, []);
 
@@ -59,7 +59,7 @@ export default function DeletePagesPage() {
           <PdfPreviewArea files={[file]} />
           <div className="p-5 bg-gray-50 border-t border-gray-100">
             <p className="text-xs text-gray-400 mb-3">Click a page to select it for deletion</p>
-            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={4} />
+            <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={3} />
           </div>
         </div>
       )}
