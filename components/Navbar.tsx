@@ -44,6 +44,12 @@ export default function Navbar() {
           >
             All PDF Tools ▾
           </Link>
+          <Link
+            href="/pricing"
+            className="text-[13px] font-bold uppercase tracking-wide text-gray-700 hover:text-red-600 transition-colors whitespace-nowrap"
+          >
+            Pricing
+          </Link>
         </div>
 
         {/* Right side auth */}

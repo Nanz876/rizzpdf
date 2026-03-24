@@ -4,11 +4,18 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST() {
+export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const body = await req.json().catch(() => ({}));
+  const billing = body.billing === "annual" ? "annual" : "monthly";
+  const priceId =
+    billing === "annual"
+      ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID!
+      : process.env.STRIPE_PRO_PRICE_ID!;
 
   const user = await currentUser();
   const email = user?.emailAddresses[0]?.emailAddress;
@@ -18,7 +25,7 @@ export async function POST() {
     payment_method_types: ["card"],
     line_items: [
       {
-        price: process.env.STRIPE_PRO_PRICE_ID!,
+        price: priceId,
         quantity: 1,
       },
     ],
