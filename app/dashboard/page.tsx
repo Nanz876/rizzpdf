@@ -1,9 +1,10 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getUserTier } from "@/lib/tier";
+import { getUserTier, getSubscription } from "@/lib/tier";
 import { createAdminClient } from "@/lib/supabase";
 import SubscribeButton from "@/components/SubscribeButton";
+import CancelButton from "@/components/CancelButton";
 
 export default async function DashboardPage({
   searchParams,
@@ -16,9 +17,10 @@ export default async function DashboardPage({
   const params = await searchParams;
   const supabase = createAdminClient();
 
-  const [user, tier] = await Promise.all([
+  const [user, tier, subscription] = await Promise.all([
     currentUser(),
     getUserTier(userId),
+    getSubscription(userId),
   ]);
 
   const { data: unlocks } = await supabase
@@ -92,12 +94,15 @@ export default async function DashboardPage({
           </div>
           {tier !== "pro" && <SubscribeButton />}
           {tier === "pro" && (
-            <Link
-              href="/dashboard/bulk"
-              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors text-center"
-            >
-              CSV Bulk Unlock →
-            </Link>
+            <div className="flex flex-col items-end gap-2">
+              <Link
+                href="/dashboard/bulk"
+                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors text-center"
+              >
+                CSV Bulk Unlock →
+              </Link>
+              <CancelButton periodEnd={subscription?.current_period_end} />
+            </div>
           )}
         </div>
 
