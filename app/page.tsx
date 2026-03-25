@@ -1,6 +1,7 @@
 // app/page.tsx
 "use client";
 
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ToolCard from "@/components/ToolCard";
@@ -112,6 +113,8 @@ function CategorySection({ title, tools }: { title: string; tools: ToolEntry[] }
 }
 
 export default function Home() {
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifyState, setNotifyState] = useState<"idle" | "loading" | "done" | "error">("idle");
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -176,14 +179,35 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-              />
-              <button className="bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors">
-                Notify me
-              </button>
+              {notifyState === "done" ? (
+                <p className="text-sm text-green-600 font-semibold">✓ You&apos;re on the list!</p>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={notifyEmail}
+                    onChange={(e) => setNotifyEmail(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                  <button
+                    disabled={notifyState === "loading"}
+                    onClick={async () => {
+                      if (!notifyEmail.includes("@")) return;
+                      setNotifyState("loading");
+                      const res = await fetch("/api/notify-signup", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: notifyEmail }),
+                      });
+                      setNotifyState(res.ok ? "done" : "error");
+                    }}
+                    className="bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-60"
+                  >
+                    {notifyState === "loading" ? "…" : "Notify me"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
