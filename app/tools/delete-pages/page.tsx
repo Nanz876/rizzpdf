@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -29,7 +30,7 @@ export default function DeletePagesPage() {
 
   const handleDelete = async () => {
     if (!file || selected.size === 0) return;
-    setStatus("processing");
+    logTool("delete-pages"); setStatus("processing");
     const result = await deletePages(file, [...selected]);
     if (result.success && result.blob) {
       downloadBlob(result.blob, file.name.replace(/\.pdf$/i, "_deleted.pdf"));

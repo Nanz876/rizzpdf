@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback, useEffect } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -45,7 +46,7 @@ export default function WatermarkPage() {
   const handleApply = async () => {
     if (!file) return;
     if (!isPro) { setShowPaywall(true); return; }
-    setStatus("processing");
+    logTool("watermark"); setStatus("processing");
     const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_watermarked.pdf"));

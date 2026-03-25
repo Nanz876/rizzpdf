@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -23,7 +24,7 @@ export default function ProtectPage() {
 
   const handleProtect = async () => {
     if (!file || !password.trim()) return;
-    setStatus("processing"); setError("");
+    logTool("protect"); setStatus("processing"); setError("");
     const result = await protectPDF(file, password.trim(), ownerPassword.trim() || undefined);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_protected.pdf"));

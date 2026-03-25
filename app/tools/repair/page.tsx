@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -19,7 +20,7 @@ export default function RepairPage() {
 
   const handleRepair = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("repair"); setStatus("processing");
     const result = await repairPDF(file);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_repaired.pdf"));

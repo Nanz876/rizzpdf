@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -19,7 +20,7 @@ export default function PdfToWordPage() {
 
   const handleConvert = async () => {
     if (!file) return;
-    setStatus("processing"); setError("");
+    logTool("pdf-to-word"); setStatus("processing"); setError("");
     try {
       const form = new FormData();
       form.append("file", file);

@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
@@ -281,7 +282,7 @@ export default function SignPage() {
   // Sign
   const handleSign = async () => {
     if (!pdfFile || !sigDataUrl || !placement || placement.pageIndex >= pdfSizes.length) return;
-    setStatus("processing"); setErr("");
+    logTool("sign"); setStatus("processing"); setErr("");
     try {
       const bytes = await pdfFile.arrayBuffer();
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });

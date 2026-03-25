@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -38,7 +39,7 @@ export default function RotatePage() {
 
   const handleApply = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("rotate"); setStatus("processing");
     try {
       const { PDFDocument, degrees } = await import("pdf-lib");
       const bytes = await file.arrayBuffer();

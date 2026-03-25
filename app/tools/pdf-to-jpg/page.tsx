@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -31,7 +32,7 @@ export default function PdfToJpgPage() {
 
   const handleConvert = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("pdf-to-jpg"); setStatus("processing");
     const result = await pdfToJpg(file);
     if (result.success && result.blobs) {
       result.blobs.forEach((blob, i) => {

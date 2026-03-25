@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -50,7 +51,7 @@ export default function MergePage() {
 
   const handleMerge = async () => {
     if (files.length < 2) return;
-    setStatus("processing");
+    logTool("merge"); setStatus("processing");
     const result = await mergePDFs(files);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "merged.pdf");

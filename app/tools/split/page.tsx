@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -52,7 +53,7 @@ export default function SplitPage() {
 
   const handleSplit = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("split"); setStatus("processing");
     let mode: "every-page" | "range" = "range";
     let ranges: string | undefined;
     if (showAdvanced && rangeStr.trim()) {

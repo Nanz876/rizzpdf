@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -45,7 +46,7 @@ export default function PageNumbersPage() {
 
   const handleApply = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("page-numbers"); setStatus("processing");
     const result = await addPageNumbers(file, { position, format, fontSize, startFrom });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_numbered.pdf"));

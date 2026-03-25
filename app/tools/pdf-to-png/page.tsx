@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -30,7 +31,7 @@ export default function PdfToPngPage() {
 
   const handleConvert = async () => {
     if (!file) return;
-    setStatus("processing");
+    logTool("pdf-to-png"); setStatus("processing");
     const result = await pdfToPng(file);
     if (result.success && result.blobs) {
       result.blobs.forEach((blob, i) => {

@@ -1,4 +1,5 @@
 "use client";
+import { logTool } from "@/lib/logTool";
 import { useState, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
@@ -45,7 +46,7 @@ export default function JpgToPdfPage() {
 
   const handleConvert = async () => {
     if (images.length === 0) return;
-    setStatus("processing");
+    logTool("jpg-to-pdf"); setStatus("processing");
     const result = await jpgToPdf(images);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "images.pdf");
