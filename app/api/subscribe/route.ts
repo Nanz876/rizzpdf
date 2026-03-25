@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     customer_email: email,
     metadata: { userId },
     subscription_data: { metadata: { userId } },
+    allow_promotion_codes: true,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?upgraded=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
   });
