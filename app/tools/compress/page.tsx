@@ -1,6 +1,7 @@
 "use client";
 import { logTool } from "@/lib/logTool";
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
@@ -95,6 +96,29 @@ export default function CompressPage() {
           onPay={() => { setIsPro(true); setShowPaywall(false); }}
         />
       )}
+
+      {/* SEO copy block */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">
+        <h2 className="text-base font-bold text-gray-900">How to compress a PDF without losing quality</h2>
+        <ol className="list-decimal list-inside space-y-2">
+          <li>Upload your PDF using the drop zone above</li>
+          <li>Choose a compression level — <strong>Recommended</strong> balances size and quality for most files</li>
+          <li>Click <strong>Compress PDF</strong> to download the smaller file</li>
+        </ol>
+        <p>
+          Compression works by optimizing embedded images and removing redundant data. Text and vector
+          graphics are never degraded. A typical PDF with photos compresses 40–70% on the Recommended setting.
+        </p>
+        <p>
+          Trying to compress for email? Most email clients cap attachments at 25 MB. If your PDF is still too
+          large after compression, try{" "}
+          <Link href="/tools/delete-pages" className="text-red-600 hover:underline font-medium">removing unnecessary pages</Link>
+          {" "}first. Read our guide:{" "}
+          <Link href="/blog/compress-pdf-without-losing-quality" className="text-red-600 hover:underline font-medium">
+            How to compress a PDF without losing quality
+          </Link>.
+        </p>
+      </div>
     </ToolShell>
   );
 }

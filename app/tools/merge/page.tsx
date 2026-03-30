@@ -1,6 +1,7 @@
 "use client";
 import { logTool } from "@/lib/logTool";
 import { useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
@@ -130,6 +131,30 @@ export default function MergePage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* SEO copy block */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">
+        <h2 className="text-base font-bold text-gray-900">How to merge PDF files online for free</h2>
+        <ol className="list-decimal list-inside space-y-2">
+          <li>Upload two or more PDF files using the drop zone above</li>
+          <li>Drag the cards to reorder the files into your preferred sequence</li>
+          <li>Click <strong>Merge PDFs</strong> to download the combined document instantly</li>
+        </ol>
+        <p>
+          All processing happens in your browser — nothing is uploaded to a server. Safe for contracts,
+          financial records, and confidential documents. Works on Windows, Mac, iPhone, and Android.
+        </p>
+        <p>
+          Need to do the opposite?{" "}
+          <Link href="/tools/split" className="text-red-600 hover:underline font-medium">Split a PDF into separate files</Link>
+          {" "}or{" "}
+          <Link href="/tools/delete-pages" className="text-red-600 hover:underline font-medium">delete specific pages</Link>
+          {" "}before merging. Read our guide:{" "}
+          <Link href="/blog/merge-pdf-files-online-free" className="text-red-600 hover:underline font-medium">
+            How to merge PDFs free
+          </Link>.
+        </p>
       </div>
     </ToolShell>
   );

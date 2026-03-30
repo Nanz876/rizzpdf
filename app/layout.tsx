@@ -71,6 +71,37 @@ export const metadata: Metadata = {
   },
 };
 
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "RizzPDF",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Any",
+  url: BASE_URL,
+  description:
+    "Free online PDF tools that run 100% in your browser. Merge, split, compress, rotate, convert, sign, watermark and unlock PDFs — no uploads, no account required.",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  featureList: [
+    "Merge PDF",
+    "Split PDF",
+    "Compress PDF",
+    "Rotate PDF",
+    "Delete Pages",
+    "PDF to Word",
+    "PDF to JPG",
+    "JPG to PDF",
+    "Unlock PDF",
+    "Sign PDF",
+    "Watermark PDF",
+    "Organize PDF",
+  ],
+  publisher: {
+    "@type": "Organization",
+    name: "RizzPDF",
+    url: BASE_URL,
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -80,6 +111,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} antialiased bg-white text-gray-900`}>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+          />
           {children}
         </body>
       </html>
