@@ -1,6 +1,7 @@
 "use client";
 import { logTool } from "@/lib/logTool";
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
@@ -64,6 +65,28 @@ export default function DeletePagesPage() {
           </div>
         </div>
       )}
+
+      {/* SEO copy block */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">
+        <h2 className="text-base font-bold text-gray-900">How to delete a page from a PDF without Adobe Acrobat</h2>
+        <ol className="list-decimal list-inside space-y-2">
+          <li>Upload your PDF using the drop zone above</li>
+          <li>Page thumbnails appear — click any page to mark it for deletion</li>
+          <li>Click <strong>Delete Pages</strong> to download the cleaned PDF instantly</li>
+        </ol>
+        <p>
+          Everything runs in your browser. Your file is never uploaded to a server, making it safe for confidential
+          documents. Works on Windows, Mac, iPhone, and Android with no software to install.
+        </p>
+        <p>
+          Need to delete pages from a locked PDF?{" "}
+          <Link href="/tools/unlock" className="text-red-600 hover:underline font-medium">Unlock it first</Link>
+          {" "}— then come back here. For more details, see our guide on{" "}
+          <Link href="/blog/how-to-delete-pages-from-pdf-without-acrobat" className="text-red-600 hover:underline font-medium">
+            how to delete PDF pages without Acrobat
+          </Link>.
+        </p>
+      </div>
     </ToolShell>
   );
 }
