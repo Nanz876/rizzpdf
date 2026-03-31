@@ -8,11 +8,13 @@ import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { repairPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
+type Warning = string | null;
 
 export default function RepairPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState<Warning>(null);
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready");
@@ -24,16 +26,17 @@ export default function RepairPage() {
     const result = await repairPDF(file);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_repaired.pdf"));
+      if (result.warning) setWarning(result.warning);
       setStatus("done");
     } else { setError(result.error ?? "Repair failed."); setStatus("error"); }
   };
 
-  const reset = () => { setFile(null); setStatus("idle"); setError(""); };
+  const reset = () => { setFile(null); setStatus("idle"); setError(""); setWarning(null); };
 
   const fmt = (b: number) => b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`;
 
   return (
-    <ToolShell name="Repair PDF" description="Fix corrupted or damaged PDF files." icon="🔧"
+    <ToolShell name="Repair PDF" description="Recover corrupted or damaged PDFs. Lightly damaged files are repaired with structure intact. Severely damaged files are rebuilt from rendered pages." icon="🔧"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 4l1.4 4.2H18l-3.7 2.7 1.4 4.2L12 12.4l-3.7 2.7 1.4-4.2L6 8.2h4.6L12 4z" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/></svg>}
       steps={file ? undefined : ["Upload damaged PDF", "Click repair", "Download fixed file"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
@@ -47,6 +50,11 @@ export default function RepairPage() {
             onPrimary={status === "done" ? reset : handleRepair}
             primaryDisabled={status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
+          {warning && (
+            <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 text-sm text-amber-700 font-medium">
+              ⚠️ {warning}
+            </div>
+          )}
           <PdfPreviewArea files={[file]} />
           <div className="p-8 bg-gray-50 border-t border-gray-100 flex flex-col items-center justify-center gap-4">
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">

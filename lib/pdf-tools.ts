@@ -7,6 +7,7 @@ export interface ToolResult {
   filename?: string;
   filenames?: string[];
   error?: string;
+  warning?: string;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -516,12 +517,45 @@ export async function pdfToPng(file: File, dpi: number = 150): Promise<ToolResul
 // ─── Repair PDF ───────────────────────────────────────────────────────────────
 
 export async function repairPDF(file: File): Promise<ToolResult> {
+  const bytes = await file.arrayBuffer();
+
+  // Pass 1: structure-preserving — works for lightly damaged or permission-locked PDFs
   try {
-    const bytes = await file.arrayBuffer();
     const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
     const saved = await doc.save();
     const blob = new Blob([saved as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
     return { success: true, blob, filename: `${baseName(file)}_repaired.pdf` };
+  } catch {
+    // pdf-lib couldn't parse — fall through to rasterizing recovery
+  }
+
+  // Pass 2: pdfjs rasterization — rescues more severely damaged files
+  // pdfjs is more tolerant of malformed PDFs; pages are rendered to images and reassembled.
+  // Output will not have selectable text.
+  try {
+    const pdfjsLib = await getPdfjsLib();
+    const pdfJsDoc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
+    const numPages = pdfJsDoc.numPages;
+    const newPdf = await PDFDocument.create();
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const canvas = await renderPageToCanvas(pdfJsDoc, pageNum, 2.0);
+      const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      const base64 = jpegDataUrl.split(",")[1];
+      const jpegBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const jpegImage = await newPdf.embedJpg(jpegBytes);
+      const newPage = newPdf.addPage([canvas.width, canvas.height]);
+      newPage.drawImage(jpegImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+    }
+
+    const saved = await newPdf.save();
+    const blob = new Blob([saved as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
+    return {
+      success: true,
+      blob,
+      filename: `${baseName(file)}_repaired.pdf`,
+      warning: "Severe damage detected — pages were rebuilt from rendered images. Text is no longer selectable in the output.",
+    };
   } catch {
     return { success: false, error: "Failed to repair PDF. The file may be too corrupted to recover." };
   }
