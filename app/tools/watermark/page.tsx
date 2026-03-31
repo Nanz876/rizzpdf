@@ -25,10 +25,14 @@ export default function WatermarkPage() {
   const [error, setError] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [freeCount, setFreeCount] = useState(0);
+  const FREE_LIMIT = 3;
 
   useEffect(() => {
     const until = localStorage.getItem("rizzpdf_bulk_until");
     if (until && Date.now() < Number(until)) setIsPro(true);
+    const count = parseInt(localStorage.getItem("rizzpdf_watermark_count") ?? "0", 10);
+    setFreeCount(count);
   }, []);
 
   const handleFile = useCallback(async (files: File[]) => {
@@ -45,10 +49,15 @@ export default function WatermarkPage() {
 
   const handleApply = async () => {
     if (!file) return;
-    if (!isPro) { setShowPaywall(true); return; }
+    if (!isPro && freeCount >= FREE_LIMIT) { setShowPaywall(true); return; }
     logTool("watermark"); setStatus("processing");
     const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
+      if (!isPro) {
+        const next = freeCount + 1;
+        localStorage.setItem("rizzpdf_watermark_count", String(next));
+        setFreeCount(next);
+      }
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_watermarked.pdf"));
       setStatus("done");
     } else { setError(result.error ?? "Failed."); setStatus("error"); }
@@ -120,7 +129,8 @@ export default function WatermarkPage() {
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <WorkspaceBar
             icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/><path d="M7 12l3-4 3 4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>}
-            title="Watermark PDF" subtitle={file.name}
+            title="Watermark PDF"
+            subtitle={`${file.name}${!isPro ? ` · ${FREE_LIMIT - freeCount} free use${FREE_LIMIT - freeCount !== 1 ? "s" : ""} remaining` : ""}`}
             onReset={reset}
             primaryLabel={status === "processing" ? "Applying…" : status === "done" ? "✓ Downloaded!" : "Apply Watermark →"}
             onPrimary={status === "done" ? reset : handleApply}
