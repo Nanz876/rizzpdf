@@ -1,7 +1,7 @@
-export function logTool(tool: string, userId?: string) {
+export function logTool(tool: string) {
   fetch("/api/log-tool", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tool, userId }),
+    body: JSON.stringify({ tool }),
   }).catch(() => {});
 }

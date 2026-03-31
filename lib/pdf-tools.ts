@@ -530,33 +530,17 @@ export async function repairPDF(file: File): Promise<ToolResult> {
 // ─── Protect ──────────────────────────────────────────────────────────────────
 
 export async function protectPDF(
-  file: File,
-  userPassword: string,
-  // ownerPassword is reserved for future server-side encryption support
+  _file: File,
+  _userPassword: string,
   _ownerPassword?: string
 ): Promise<ToolResult> {
   // pdf-lib does not implement PDF encryption in the browser.
-  // We re-save the document as-is with a _password parameter placeholder.
-  // True AES/RC4 encryption requires server-side processing (future Pro feature).
-  // For now, validate the password is set and return the original PDF with a note.
-  if (!userPassword.trim()) {
-    return { success: false, error: "Password is required." };
-  }
-  try {
-    const bytes = await file.arrayBuffer();
-    // Reload and re-save via pdf-lib (normalises the PDF structure).
-    // Note: actual password encryption is not applied in this browser build.
-    const doc = await PDFDocument.load(bytes);
-    const out = await doc.save();
-    const blob = new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" });
-    return {
-      success: true,
-      blob,
-      filename: `${baseName(file)}_protected.pdf`,
-    };
-  } catch (e: unknown) {
-    return { success: false, error: e instanceof Error ? e.message : "Protection failed." };
-  }
+  // Returning a clear error prevents users from believing their file is
+  // password-protected when it is not — which would be a security hazard.
+  return {
+    success: false,
+    error: "PDF encryption requires server-side processing and is not available in the free browser tier. This feature is coming soon.",
+  };
 }
 
 // ─── PDF to Word ──────────────────────────────────────────────────────────────
@@ -800,19 +784,8 @@ export async function batchProcess(
       } else if (options.tool === "page-numbers") {
         result = await addPageNumbers(f, { position: options.position ?? "bottom-center" });
       } else if (options.tool === "unlock") {
-        try {
-          const { PDFDocument } = await import("pdf-lib");
-          const bytes = await f.arrayBuffer();
-          const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-          const out = await doc.save();
-          result = {
-            success: true,
-            blob: new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }),
-            filename: f.name.replace(/\.pdf$/i, "_unlocked.pdf"),
-          };
-        } catch {
-          result = { success: false, error: "Could not unlock PDF" };
-        }
+        const { unlockPDF } = await import("@/lib/pdf-unlock");
+        result = await unlockPDF(f, options.password ?? "");
       } else {
         result = await protectPDF(f, options.password);
       }

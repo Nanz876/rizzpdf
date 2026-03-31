@@ -1,15 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SuccessPage() {
   const router = useRouter();
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    // Set bulk session in localStorage so the main page knows they paid
-    localStorage.setItem("rizzpdf_bulk_until", String(Date.now() + 24 * 60 * 60 * 1000));
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+
+    if (!sessionId) {
+      router.replace("/");
+      return;
+    }
+
+    fetch(`/api/verify-session?session_id=${encodeURIComponent(sessionId)}`)
+      .then((r) => r.json())
+      .then(({ valid }) => {
+        if (valid) {
+          localStorage.setItem("rizzpdf_bulk_until", String(Date.now() + 24 * 60 * 60 * 1000));
+          setVerifying(false);
+        } else {
+          router.replace("/");
+        }
+      })
+      .catch(() => router.replace("/"));
+  }, [router]);
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-400 text-sm">Verifying payment…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">

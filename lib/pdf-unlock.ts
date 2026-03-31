@@ -10,29 +10,38 @@ export interface UnlockResult {
 export async function unlockPDF(file: File, password: string): Promise<UnlockResult> {
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
 
-    // Dynamically import pdfjs-dist (browser-only — avoids SSR DOMMatrix errors)
+    // First try: pdf-lib with ignoreEncryption.
+    // Works for permission-locked PDFs (no open password). Preserves text,
+    // links, form fields, annotations, and all vector content.
+    try {
+      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const saved = await doc.save();
+      const blob = new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" });
+      return { success: true, blob, filename: file.name.replace(/\.pdf$/i, "_unlocked.pdf") };
+    } catch {
+      // Falls through to rasterizing approach for strongly encrypted PDFs
+    }
+
+    // Fallback: use PDF.js to decrypt with the password, then re-render each page.
+    // This is lossy (rasterizes to images) but handles open-password encryption
+    // that pdf-lib cannot strip.
     const pdfjsLib = await import("pdfjs-dist");
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
       "pdfjs-dist/build/pdf.worker.mjs",
       import.meta.url
     ).toString();
 
-    // Load & decrypt with PDF.js
     let pdfJsDoc: import("pdfjs-dist").PDFDocumentProxy;
     try {
-      const loadingTask = pdfjsLib.getDocument({
-        data: new Uint8Array(arrayBuffer),
-        password,
-      });
+      const loadingTask = pdfjsLib.getDocument({ data: bytes, password });
       pdfJsDoc = await loadingTask.promise;
     } catch {
       return { success: false, error: "Incorrect password or unable to unlock this PDF." };
     }
 
     const numPages = pdfJsDoc.numPages;
-
-    // Render each page to canvas and embed as image in a new pdf-lib PDF
     const newPdf = await PDFDocument.create();
 
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
@@ -52,19 +61,19 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
       const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
       const pngImage = await newPdf.embedPng(pngBytes);
-      const newPage = newPdf.addPage([viewport.width / 2, viewport.height / 2]);
+      // Use full viewport dimensions — do not halve, which would shrink the output
+      const newPage = newPdf.addPage([viewport.width, viewport.height]);
       newPage.drawImage(pngImage, {
         x: 0,
         y: 0,
-        width: viewport.width / 2,
-        height: viewport.height / 2,
+        width: viewport.width,
+        height: viewport.height,
       });
     }
 
     const unlockedBytes = await newPdf.save();
     const blob = new Blob([unlockedBytes as unknown as BlobPart], { type: "application/pdf" });
-    const filename = file.name.replace(/\.pdf$/i, "_unlocked.pdf");
-    return { success: true, blob, filename };
+    return { success: true, blob, filename: file.name.replace(/\.pdf$/i, "_unlocked.pdf") };
   } catch {
     return { success: false, error: "Failed to process this file. Make sure it's a valid PDF." };
   }
