@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RizzPDF Pricing — Full Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #f9fafb; color: #111827; }
+
+  /* Nav */
+  nav { background: white; border-bottom: 1px solid #f3f4f6; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .logo { font-size: 18px; font-weight: 900; }
+  .logo span { color: #dc2626; }
+  .nav-right { display: flex; gap: 10px; align-items: center; }
+  .btn-signin { font-size: 13px; font-weight: 600; color: #6b7280; border: 1px solid #d1d5db; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .btn-signup { font-size: 13px; font-weight: 700; background: #dc2626; color: white; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+
+  /* Hero */
+  .hero { background: white; border-bottom: 1px solid #f3f4f6; text-align: center; padding: 56px 24px 48px; }
+  .hero h1 { font-size: 36px; font-weight: 900; color: #111827; margin-bottom: 12px; letter-spacing: -0.5px; }
+  .hero p { font-size: 16px; color: #6b7280; max-width: 440px; margin: 0 auto; line-height: 1.6; }
+  .privacy-badge { display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: #16a34a; margin-top: 16px; }
+
+  /* Cards */
+  .cards-section { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  .plan-card { background: white; border: 2px solid #e5e7eb; border-radius: 20px; padding: 28px 24px; display: flex; flex-direction: column; transition: box-shadow 0.2s; }
+  .plan-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .plan-card.featured { border-color: #dc2626; position: relative; }
+  .plan-card.day { border-color: #f59e0b; }
+
+  .best-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #dc2626; color: white; font-size: 11px; font-weight: 800; padding: 3px 12px; border-radius: 999px; white-space: nowrap; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .plan-name { font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .plan-card.featured .plan-name { color: #dc2626; }
+  .plan-card.day .plan-name { color: #d97706; }
+
+  .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px; }
+  .price-amount { font-size: 42px; font-weight: 900; color: #111827; letter-spacing: -1px; }
+  .price-period { font-size: 14px; color: #9ca3af; font-weight: 500; }
+
+  .plan-desc { font-size: 13px; color: #6b7280; margin-bottom: 24px; line-height: 1.5; min-height: 36px; }
+
+  .plan-features { list-style: none; flex: 1; margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
+  .plan-features li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #374151; }
+  .check { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; font-size: 9px; font-weight: 900; }
+  .check.green { background: #dcfce7; color: #16a34a; }
+  .check.red { background: #fee2e2; color: #dc2626; }
+  .check.amber { background: #fef3c7; color: #d97706; }
+  .check.gray { background: #f3f4f6; color: #9ca3af; }
+
+  .plan-btn { width: 100%; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; text-align: center; transition: opacity 0.15s; }
+  .plan-btn:hover { opacity: 0.88; }
+  .btn-free { background: #f3f4f6; color: #374151; }
+  .btn-day { background: #f59e0b; color: white; }
+  .btn-pro { background: #dc2626; color: white; }
+
+  /* Divider label */
+  .or-divider { text-align: center; font-size: 12px; color: #9ca3af; font-weight: 600; margin: 4px 0; display: none; }
+
+  /* Feature table */
+  .table-section { max-width: 700px; margin: 0 auto; padding: 0 24px 64px; }
+  .table-section h2 { font-size: 22px; font-weight: 800; color: #111827; text-align: center; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; border: 1px solid #f3f4f6; }
+  thead { background: #f9fafb; }
+  th { padding: 12px 16px; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+  th:first-child { text-align: left; }
+  td { padding: 12px 16px; font-size: 13px; color: #374151; border-top: 1px solid #f3f4f6; text-align: center; }
+  td:first-child { text-align: left; font-weight: 500; }
+  .td-pro { color: #dc2626; font-weight: 700; }
+  .td-day { color: #d97706; font-weight: 600; }
+  tr:hover { background: #fafafa; }
+
+  /* FAQ */
+  .faq-section { max-width: 600px; margin: 0 auto; padding: 0 24px 64px; }
+  .faq-section h2 { font-size: 20px; font-weight: 800; color: #111827; margin-bottom: 20px; text-align: center; }
+  .faq-item { border-top: 1px solid #f3f4f6; padding: 16px 0; }
+  .faq-q { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+  .faq-a { font-size: 13px; color: #6b7280; line-height: 1.6; }
+
+  /* Footer CTA */
+  .footer-cta { background: #dc2626; padding: 48px 24px; text-align: center; }
+  .footer-cta h2 { font-size: 24px; font-weight: 900; color: white; margin-bottom: 8px; }
+  .footer-cta p { color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 24px; }
+  .footer-cta a { background: white; color: #dc2626; font-weight: 800; padding: 12px 28px; border-radius: 12px; font-size: 14px; text-decoration: none; display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Rizz<span>PDF</span></div>
+  <div class="nav-right">
+    <div class="btn-signin">Sign in</div>
+    <div class="btn-signup">Sign up free</div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Simple, honest pricing</h1>
+  <p>Start free. Pay only when you need more. No subscriptions you'll forget about.</p>
+  <div class="privacy-badge">
+    <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" stroke="#16a34a" stroke-width="2"/><path d="M8 11V7a4 4 0 018 0v4" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/></svg>
+    Files never leave your browser
+  </div>
+</div>
+
+<!-- Pricing Cards -->
+<div class="cards-section">
+  <div class="cards-grid">
+
+    <!-- Free -->
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">
+        <span class="price-amount">$0</span>
+      </div>
+      <div class="plan-desc">3 files per tool, no account needed. Always free.</div>
+      <ul class="plan-features">
+        <li><span class="check green">✓</span> 3 files per tool per session</li>
+        <li><span class="check green">✓</span> All 16 PDF tools</li>
+        <li><span class="check green">✓</span> No account required</li>
+        <li><span class="check green">✓</span> Files stay in your browser</li>
+        <li><span class="check gray">—</span> <span style="color:#9ca3af">File history</span></li>
+        <li><span class="check gray">—</span> <span style="color:#9ca3af">200MB file size</span></li>
+      </ul>
+      <button class="plan-btn btn-free">Start for free</button>
+    </div>
+
+    <!-- Day Pass -->
+    <div class="plan-card day">
+      <div class="plan-name">Day Pass</div>
+      <div class="plan-price">
+        <span class="price-amount">$1</span>
+        <span class="price-period">/ 24 hours</span>
+      </div>
+      <div class="plan-desc">Need to blast through a batch today? One-time, no account.</div>
+      <ul class="plan-features">
+        <li><span class="check amber">✓</span> Unlimited files for 24 hrs</li>
+        <li><span class="check amber">✓</span> All 16 PDF tools</li>
+        <li><span class="check amber">✓</span> No account required</li>
+        <li><span class="check amber">✓</span> Files stay in your browser</li>
+        <li><span class="check gray">—</span> <span style="color:#9ca3af">File history</span></li>
+        <li><span class="check gray">—</span> <span style="color:#9ca3af">200MB file size</span></li>
+      </ul>
+      <button class="plan-btn btn-day">Buy day pass →</button>
+    </div>
+
+    <!-- Pro -->
+    <div class="plan-card featured">
+      <div class="best-badge">Most popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">
+        <span class="price-amount">$5</span>
+        <span class="price-period">/ month</span>
+      </div>
+      <div class="plan-desc">Unlimited everything, forever. Cancel any time.</div>
+      <ul class="plan-features">
+        <li><span class="check red">✓</span> Unlimited files, always</li>
+        <li><span class="check red">✓</span> All 16 PDF tools</li>
+        <li><span class="check red">✓</span> 200MB per file</li>
+        <li><span class="check red">✓</span> Files stay in your browser</li>
+        <li><span class="check red">✓</span> Full file history</li>
+        <li><span class="check red">✓</span> Priority support</li>
+      </ul>
+      <button class="plan-btn btn-pro">Get Pro — $5/mo →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="table-section">
+  <h2>Full comparison</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Free</th>
+        <th>Day Pass</th>
+        <th>Pro</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Files per session</td><td>3 per tool</td><td class="td-day">Unlimited</td><td class="td-pro">Unlimited</td></tr>
+      <tr><td>Max file size</td><td>50MB</td><td class="td-day">50MB</td><td class="td-pro">200MB</td></tr>
+      <tr><td>All 16 PDF tools</td><td>✓</td><td class="td-day">✓</td><td class="td-pro">✓</td></tr>
+      <tr><td>No account needed</td><td>✓</td><td class="td-day">✓</td><td>Req.</td></tr>
+      <tr><td>File history</td><td>—</td><td class="td-day">—</td><td class="td-pro">✓</td></tr>
+      <tr><td>Priority support</td><td>—</td><td class="td-day">—</td><td class="td-pro">✓</td></tr>
+      <tr><td>Price</td><td>Free</td><td class="td-day">$1 one-time</td><td class="td-pro">$5/month</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+  <h2>Common questions</h2>
+  <div class="faq-item">
+    <div class="faq-q">Do my files get uploaded anywhere?</div>
+    <div class="faq-a">Never. Every tool runs entirely in your browser using JavaScript. Your files don't touch our servers.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What's the difference between Day Pass and Pro?</div>
+    <div class="faq-a">Day Pass is a $1 one-time unlock that lasts 24 hours — great if you have a batch to process today. Pro is $5/month and adds 200MB file support, file history, and priority support with no time limit.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can I cancel Pro any time?</div>
+    <div class="faq-a">Yes — cancel any time from your dashboard. No questions asked, no cancellation fee.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What counts as a "file" on the free tier?</div>
+    <div class="faq-a">3 files per tool per browser session. So you can merge 3 PDFs, compress 3 PDFs, and convert 3 PDFs — all free in the same session.</div>
+  </div>
+</div>
+
+<!-- Footer CTA -->
+<div class="footer-cta">
+  <h2>Start free — no card needed</h2>
+  <p>Use all 16 tools for free. Upgrade only if you need more.</p>
+  <a href="#">Try RizzPDF free →</a>
+</div>
+
+</body>
+</html>

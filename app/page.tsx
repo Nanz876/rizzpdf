@@ -60,8 +60,7 @@ const CONVERT_TOOLS = [
 
 const SECURITY_TOOLS = [
   {
-    name: "Protect PDF", route: "/tools/protect", desc: "Add password protection to any PDF.",
-    badge: "NEW" as const,
+    name: "Protect PDF", route: "/tools/protect", desc: "Password protection — coming soon.",
     icon: <ToolIcon variant="single" bgColor="#fdf4ff" badgeColor="#a855f7" badgeLabel="PDF" />,
   },
   {
@@ -69,7 +68,7 @@ const SECURITY_TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" />,
   },
   {
-    name: "Watermark PDF", route: "/tools/watermark", desc: "Add text or image overlays.",
+    name: "Watermark PDF", route: "/tools/watermark", desc: "Add a text watermark to any PDF.",
     icon: <ToolIcon variant="single" bgColor="#fff0f9" badgeColor="#ec4899" badgeLabel="PDF" />,
   },
   {

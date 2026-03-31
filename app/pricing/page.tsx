@@ -64,9 +64,17 @@ export default function PricingPage() {
     }
   }
 
+  const [dayPassLoading, setDayPassLoading] = useState(false);
+
   async function handleDayPass() {
-    // Day pass uses the existing PaywallModal flow — redirect to tools
-    window.location.href = "/tools";
+    setDayPassLoading(true);
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch {
+      setDayPassLoading(false);
+    }
   }
 
   const proMonthlyDisplay = annual ? "$4" : "$5";
@@ -212,9 +220,10 @@ export default function PricingPage() {
               </div>
               <button
                 onClick={handleDayPass}
-                className="w-full py-3 rounded-xl text-[14px] font-bold bg-amber-400 hover:bg-amber-500 text-white transition-colors"
+                disabled={dayPassLoading}
+                className="w-full py-3 rounded-xl text-[14px] font-bold bg-amber-400 hover:bg-amber-500 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Buy day pass →
+                {dayPassLoading ? "Redirecting to Stripe…" : "Buy day pass →"}
               </button>
               {annual && (
                 <p className="text-[11px] text-amber-600 font-semibold text-center mt-2">

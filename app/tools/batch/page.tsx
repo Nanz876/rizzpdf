@@ -23,7 +23,6 @@ const TOOL_LABELS: Record<Tool, string> = {
   rotate: "Rotate",
   "pdf-to-jpg": "PDF to JPG",
   watermark: "Watermark",
-  protect: "Protect",
   "page-numbers": "Page Numbers",
   unlock: "Unlock",
 };
@@ -34,7 +33,6 @@ export default function BatchPage() {
   const [quality, setQuality] = useState<"low" | "medium" | "high">("medium");
   const [angle, setAngle] = useState<90 | 180 | 270>(90);
   const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");
-  const [password, setPassword] = useState("");
   const [pageNumPosition, setPageNumPosition] = useState<"bottom-center" | "bottom-right" | "bottom-left">("bottom-center");
   const [unlockPassword, setUnlockPassword] = useState("");
   const [running, setRunning] = useState(false);
@@ -67,7 +65,6 @@ export default function BatchPage() {
     if (tool === "compress") return { tool: "compress", quality };
     if (tool === "rotate") return { tool: "rotate", angle };
     if (tool === "watermark") return { tool: "watermark", text: watermarkText || "CONFIDENTIAL" };
-    if (tool === "protect") return { tool: "protect", password: password || "password" };
     if (tool === "page-numbers") return { tool: "page-numbers", position: pageNumPosition };
     if (tool === "unlock") return { tool: "unlock", password: unlockPassword || undefined };
     return { tool: "pdf-to-jpg" };
@@ -196,19 +193,6 @@ export default function BatchPage() {
                   value={watermarkText}
                   onChange={(e) => setWatermarkText(e.target.value)}
                   placeholder="CONFIDENTIAL"
-                  className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-                />
-              </div>
-            )}
-
-            {tool === "protect" && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter a password"
                   className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 />
               </div>

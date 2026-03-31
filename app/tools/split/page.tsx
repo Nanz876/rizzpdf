@@ -148,7 +148,7 @@ export default function SplitPage() {
                   <input
                     value={rangeStr}
                     onChange={e => setRangeStr(e.target.value)}
-                    placeholder="e.g. 1-3, 4-6, 7-end"
+                    placeholder="e.g. 1-3, 4-6, 7-9"
                     className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400"
                   />
                   <p className="text-xs text-gray-400 mt-1">Overrides visual splitters above</p>

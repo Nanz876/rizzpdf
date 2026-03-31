@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RizzPDF Pricing — iLovePDF-inspired</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; color: #1a1a2e; }
+
+  /* Nav */
+  nav { background: white; border-bottom: 1px solid #eaecf0; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 20px; font-weight: 900; color: #111; }
+  .logo span { color: #dc2626; }
+  .nav-right { display: flex; gap: 10px; align-items: center; }
+  .btn-signin { font-size: 13px; font-weight: 600; color: #555; border: 1px solid #d0d5dd; padding: 7px 16px; border-radius: 8px; cursor: pointer; background: white; }
+  .btn-signup { font-size: 13px; font-weight: 700; background: #dc2626; color: white; padding: 7px 16px; border-radius: 8px; cursor: pointer; }
+
+  /* Hero */
+  .hero { background: white; border-bottom: 1px solid #eaecf0; text-align: center; padding: 60px 24px 52px; }
+  .hero-eyebrow { display: inline-block; background: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 5px 14px; border-radius: 999px; margin-bottom: 20px; }
+  .hero h1 { font-size: 40px; font-weight: 900; color: #111; margin-bottom: 14px; letter-spacing: -0.8px; line-height: 1.15; }
+  .hero h1 span { color: #dc2626; }
+  .hero p { font-size: 16px; color: #667085; max-width: 480px; margin: 0 auto 28px; line-height: 1.65; }
+
+  /* Billing toggle */
+  .toggle-wrap { display: inline-flex; align-items: center; gap: 12px; background: #f9fafb; border: 1px solid #eaecf0; border-radius: 12px; padding: 8px 12px; cursor: pointer; user-select: none; }
+  .toggle-label { font-size: 13px; font-weight: 600; color: #9ca3af; transition: color 0.2s; }
+  .toggle-label.active { color: #111; }
+  .toggle-switch-track { position: relative; width: 44px; height: 24px; background: #e5e7eb; border-radius: 12px; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-switch-track.on { background: #dc2626; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.2s; }
+  .toggle-switch-track.on .toggle-thumb { left: 23px; }
+  .save-badge { background: #dc2626; color: white; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px; opacity: 0; transition: opacity 0.2s; }
+  .save-badge.visible { opacity: 1; }
+
+  /* Cards grid */
+  .cards-section { max-width: 980px; margin: 0 auto; padding: 48px 24px; }
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+
+  .plan-card { background: white; border: 1.5px solid #e4e7ec; border-radius: 20px; overflow: hidden; }
+  .plan-card.featured { border: 2.5px solid #dc2626; position: relative; }
+
+  .card-header { padding: 28px 26px 22px; }
+  .plan-card.featured .card-header { background: linear-gradient(135deg, #fff5f5 0%, #fff 60%); }
+
+  .popular-badge { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); background: #dc2626; color: white; font-size: 11px; font-weight: 800; padding: 4px 16px; border-radius: 0 0 10px 10px; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+
+  .plan-name { font-size: 13px; font-weight: 700; color: #667085; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+  .plan-card.day .plan-name { color: #b45309; }
+  .plan-card.featured .plan-name { color: #dc2626; }
+
+  .plan-price { display: flex; align-items: baseline; gap: 3px; margin-bottom: 6px; }
+  .price-currency { font-size: 22px; font-weight: 700; color: #111; }
+  .price-amount { font-size: 52px; font-weight: 900; color: #111; letter-spacing: -2px; line-height: 1; transition: all 0.2s; }
+  .price-period { font-size: 14px; color: #9ca3af; font-weight: 500; align-self: flex-end; padding-bottom: 6px; }
+
+  .price-billed { font-size: 12px; color: #9ca3af; margin-bottom: 20px; min-height: 16px; transition: all 0.2s; }
+  .price-billed .annual-note { display: none; }
+  .price-billed .monthly-note { display: inline; }
+  body.annual .price-billed .annual-note { display: inline; }
+  body.annual .price-billed .monthly-note { display: none; }
+
+  .annual-strikethrough { display: none; font-size: 13px; color: #9ca3af; text-decoration: line-through; margin-right: 4px; }
+  body.annual .annual-strikethrough { display: inline; }
+
+  .plan-btn { display: block; width: 100%; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; text-align: center; transition: all 0.15s; }
+  .btn-free { background: #f3f4f6; color: #374151; }
+  .btn-free:hover { background: #e9eaec; }
+  .btn-day { background: #f59e0b; color: white; }
+  .btn-day:hover { opacity: 0.9; }
+  .btn-pro { background: #dc2626; color: white; box-shadow: 0 4px 14px rgba(220,38,38,0.35); }
+  .btn-pro:hover { opacity: 0.92; }
+
+  /* Day pass annual note */
+  .day-annual-note { display: none; font-size: 11px; color: #d97706; font-weight: 600; text-align: center; margin-top: 8px; }
+  body.annual .day-annual-note { display: block; }
+
+  .card-divider { height: 1px; background: #f3f4f6; }
+
+  /* Features list */
+  .card-features { padding: 22px 26px 26px; }
+  .features-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+  .feature-list { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #344054; line-height: 1.4; }
+  .fi-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 9px; font-weight: 900; }
+  .fi-icon.green { background: #d1fae5; color: #059669; }
+  .fi-icon.amber { background: #fef3c7; color: #d97706; }
+  .fi-icon.red { background: #fee2e2; color: #dc2626; }
+  .fi-icon.gray { background: #f3f4f6; color: #d1d5db; }
+  .feature-item.muted span.feat-text { color: #9ca3af; }
+
+  /* Trust strip */
+  .trust-strip { display: flex; justify-content: center; gap: 32px; padding: 0 24px 48px; flex-wrap: wrap; }
+  .trust-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #667085; font-weight: 500; }
+
+  /* Comparison table */
+  .table-section { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; }
+  .section-title { font-size: 24px; font-weight: 800; color: #111; text-align: center; margin-bottom: 6px; }
+  .section-sub { font-size: 14px; color: #667085; text-align: center; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; border: 1px solid #eaecf0; }
+  thead { background: #f9fafb; }
+  th { padding: 14px 18px; font-size: 12px; font-weight: 700; color: #667085; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+  th:first-child { text-align: left; }
+  td { padding: 13px 18px; font-size: 13px; color: #344054; border-top: 1px solid #f3f4f6; text-align: center; }
+  td:first-child { text-align: left; font-weight: 500; }
+  .td-check-green { color: #059669; font-size: 16px; }
+  .td-check-red { color: #dc2626; font-size: 16px; font-weight: 700; }
+  .td-dash { color: #d1d5db; font-size: 16px; }
+  .td-pro { color: #dc2626; font-weight: 700; }
+  .td-day { color: #d97706; font-weight: 600; }
+  tr.highlight td { background: #fef2f2; }
+
+  /* FAQ */
+  .faq-section { max-width: 640px; margin: 0 auto; padding: 0 24px 72px; }
+  .faq-item { background: white; border: 1px solid #eaecf0; border-radius: 12px; padding: 18px 22px; margin-bottom: 10px; }
+  .faq-q { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 7px; display: flex; justify-content: space-between; align-items: center; }
+  .faq-q::after { content: "+"; color: #9ca3af; font-size: 18px; font-weight: 400; flex-shrink: 0; }
+  .faq-a { font-size: 13px; color: #667085; line-height: 1.65; }
+
+  /* Footer CTA */
+  .footer-cta { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 64px 24px; text-align: center; }
+  .footer-cta h2 { font-size: 28px; font-weight: 900; color: white; margin-bottom: 10px; letter-spacing: -0.3px; }
+  .footer-cta p { color: rgba(255,255,255,0.82); font-size: 15px; margin-bottom: 28px; }
+  .footer-cta a { display: inline-flex; align-items: center; gap: 8px; background: white; color: #dc2626; font-weight: 800; padding: 14px 32px; border-radius: 12px; font-size: 15px; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+  .footer-privacy { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Rizz<span>PDF</span></div>
+  <div class="nav-right">
+    <button class="btn-signin">Sign in</button>
+    <button class="btn-signup">Sign up free</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">Simple pricing</div>
+  <h1>Do more with <span>RizzPDF</span></h1>
+  <p>Start free — no card needed. Pay only when you need more. Every plan includes all 16 PDF tools.</p>
+
+  <div class="toggle-wrap" id="billingToggle" onclick="toggleBilling()">
+    <span class="toggle-label active" id="labelMonthly">Monthly</span>
+    <div class="toggle-switch-track" id="toggleTrack">
+      <div class="toggle-thumb"></div>
+    </div>
+    <span class="toggle-label" id="labelAnnual">Annual</span>
+    <span class="save-badge" id="saveBadge">Save 20%</span>
+  </div>
+</div>
+
+<!-- Pricing Cards -->
+<div class="cards-section">
+  <div class="cards-grid">
+
+    <!-- Free -->
+    <div class="plan-card">
+      <div class="card-header">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">0</span>
+        </div>
+        <div class="price-billed">&nbsp;</div>
+        <button class="plan-btn btn-free">Get started free</button>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-features">
+        <div class="features-label">What's included</div>
+        <ul class="feature-list">
+          <li class="feature-item"><span class="fi-icon green">✓</span> 3 files per tool per session</li>
+          <li class="feature-item"><span class="fi-icon green">✓</span> All 16 PDF tools</li>
+          <li class="feature-item"><span class="fi-icon green">✓</span> No account required</li>
+          <li class="feature-item"><span class="fi-icon green">✓</span> Files never leave your browser</li>
+          <li class="feature-item muted"><span class="fi-icon gray">—</span> <span class="feat-text">Up to 50MB per file</span></li>
+          <li class="feature-item muted"><span class="fi-icon gray">—</span> <span class="feat-text">No file history</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Day Pass -->
+    <div class="plan-card day">
+      <div class="card-header">
+        <div class="plan-name">Day Pass</div>
+        <div class="plan-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">1</span>
+          <span class="price-period">/day</span>
+        </div>
+        <div class="price-billed">One-time · expires after 24 hours</div>
+        <button class="plan-btn btn-day">Buy day pass →</button>
+        <div class="day-annual-note">Same price — no subscription needed</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-features">
+        <div class="features-label">What's included</div>
+        <ul class="feature-list">
+          <li class="feature-item"><span class="fi-icon amber">✓</span> <strong>Unlimited files</strong> for 24 hrs</li>
+          <li class="feature-item"><span class="fi-icon amber">✓</span> All 16 PDF tools</li>
+          <li class="feature-item"><span class="fi-icon amber">✓</span> No account required</li>
+          <li class="feature-item"><span class="fi-icon amber">✓</span> Files stay in your browser</li>
+          <li class="feature-item muted"><span class="fi-icon gray">—</span> <span class="feat-text">Up to 50MB per file</span></li>
+          <li class="feature-item muted"><span class="fi-icon gray">—</span> <span class="feat-text">No file history</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Pro — FEATURED -->
+    <div class="plan-card featured">
+      <div class="popular-badge">Most popular</div>
+      <div class="card-header">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount" id="proPrice">5</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-billed">
+          <span class="monthly-note">Billed $5/month · cancel anytime</span>
+          <span class="annual-note">Billed <strong>$48/year</strong> · save $12 · cancel anytime</span>
+        </div>
+        <button class="plan-btn btn-pro" id="proBtn">Get Pro — $5/month →</button>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-features">
+        <div class="features-label">Everything in Free, plus</div>
+        <ul class="feature-list">
+          <li class="feature-item"><span class="fi-icon red">✓</span> <strong>Unlimited files</strong>, always</li>
+          <li class="feature-item"><span class="fi-icon red">✓</span> All 16 PDF tools</li>
+          <li class="feature-item"><span class="fi-icon red">✓</span> <strong>200MB</strong> per file</li>
+          <li class="feature-item"><span class="fi-icon red">✓</span> Full file history</li>
+          <li class="feature-item"><span class="fi-icon red">✓</span> Files stay in your browser</li>
+          <li class="feature-item"><span class="fi-icon red">✓</span> Priority support</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Trust strip -->
+<div class="trust-strip">
+  <div class="trust-item">🔒 Files never leave your browser</div>
+  <div class="trust-item">✕ Cancel Pro any time</div>
+  <div class="trust-item">💳 No card for free tier</div>
+  <div class="trust-item">⚡ Instant access after payment</div>
+</div>
+
+<!-- Comparison Table -->
+<div class="table-section">
+  <div class="section-title">Full comparison</div>
+  <div class="section-sub">Everything you need to choose the right plan</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Free</th>
+        <th>Day Pass</th>
+        <th>Pro</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Files per session</td><td>3 per tool</td><td class="td-day">Unlimited</td><td class="td-pro">Unlimited</td></tr>
+      <tr><td>Max file size</td><td>50MB</td><td class="td-day">50MB</td><td class="td-pro">200MB</td></tr>
+      <tr><td>All 16 PDF tools</td><td class="td-check-green">✓</td><td class="td-check-green">✓</td><td class="td-check-green">✓</td></tr>
+      <tr><td>No account needed</td><td class="td-check-green">✓</td><td class="td-check-green">✓</td><td class="td-dash">Req.</td></tr>
+      <tr><td>Files stay in browser</td><td class="td-check-green">✓</td><td class="td-check-green">✓</td><td class="td-check-green">✓</td></tr>
+      <tr class="highlight"><td>File history</td><td class="td-dash">—</td><td class="td-dash">—</td><td class="td-check-red">✓</td></tr>
+      <tr class="highlight"><td>Priority support</td><td class="td-dash">—</td><td class="td-dash">—</td><td class="td-check-red">✓</td></tr>
+      <tr><td>Price</td><td>Free forever</td><td class="td-day">$1 one-time</td><td class="td-pro" id="tablePro">$5/month</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+  <div class="section-title">Common questions</div>
+  <div class="section-sub">Need something else? <a href="#" style="color:#dc2626;font-weight:600;">Contact us →</a></div>
+
+  <div class="faq-item">
+    <div class="faq-q">Do my files get uploaded anywhere?</div>
+    <div class="faq-a">Never. Every tool runs entirely in your browser using JavaScript. Your files don't touch our servers — not even temporarily.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What's the difference between Day Pass and Pro?</div>
+    <div class="faq-a">Day Pass is a $1 one-time unlock for 24 hours — perfect if you have a batch to process today and don't need an account. Pro is $5/month (or $4/month billed annually) and adds 200MB files, full history, and priority support.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can I cancel Pro any time?</div>
+    <div class="faq-a">Yes — cancel any time from your dashboard. No questions asked, no cancellation fees, no gotchas.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">What counts as a "file" on the free tier?</div>
+    <div class="faq-a">3 files per tool per browser session. So you can merge 3 PDFs, compress 3 PDFs, and convert 3 PDFs — all free in the same session across different tools.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Is annual billing worth it?</div>
+    <div class="faq-a">If you use RizzPDF regularly, the annual plan saves you $12 a year — two months free. You're billed $48 upfront instead of $5/month. You can still cancel any time for a prorated refund.</div>
+  </div>
+</div>
+
+<!-- Footer CTA -->
+<div class="footer-cta">
+  <h2>Start free — no card needed</h2>
+  <p>All 16 PDF tools, right in your browser. Upgrade only when you need more.</p>
+  <a href="#">Try RizzPDF free →</a>
+  <div class="footer-privacy">🔒 Files never leave your browser · Privacy guaranteed</div>
+</div>
+
+<script>
+  let isAnnual = false;
+
+  function toggleBilling() {
+    isAnnual = !isAnnual;
+    document.body.classList.toggle('annual', isAnnual);
+
+    // Toggle track
+    document.getElementById('toggleTrack').classList.toggle('on', isAnnual);
+
+    // Label active states
+    document.getElementById('labelMonthly').classList.toggle('active', !isAnnual);
+    document.getElementById('labelAnnual').classList.toggle('active', isAnnual);
+
+    // Save badge visibility
+    document.getElementById('saveBadge').classList.toggle('visible', isAnnual);
+
+    // Pro price
+    document.getElementById('proPrice').textContent = isAnnual ? '4' : '5';
+
+    // Pro button text
+    document.getElementById('proBtn').textContent = isAnnual
+      ? 'Get Pro — $48/year →'
+      : 'Get Pro — $5/month →';
+
+    // Table price
+    document.getElementById('tablePro').textContent = isAnnual ? '$4/mo (billed $48/yr)' : '$5/month';
+  }
+</script>
+</body>
+</html>

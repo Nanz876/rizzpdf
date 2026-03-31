@@ -1,0 +1,99 @@
+<h2>Pricing page — which layout?</h2>
+<p class="subtitle">All three show the same 3 tiers: Free · $1/day · $5/month Pro</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f9fafb;border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;text-align:center;color:#111;margin-bottom:10px;">FREE vs PRO — two big cards</div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;">
+          <div style="font-size:10px;font-weight:700;color:#374151;">FREE</div>
+          <div style="font-size:16px;font-weight:900;color:#111;margin:4px 0;">$0</div>
+          <div style="font-size:9px;color:#6b7280;line-height:1.5;">3 files per tool<br/>No account needed</div>
+          <div style="margin-top:8px;background:#f3f4f6;border-radius:4px;padding:4px 6px;font-size:9px;font-weight:700;text-align:center;color:#374151;">Get started free</div>
+        </div>
+        <div style="flex:1;border:2px solid #dc2626;border-radius:8px;padding:10px;background:#fff5f5;">
+          <div style="font-size:10px;font-weight:700;color:#dc2626;">PRO</div>
+          <div style="font-size:16px;font-weight:900;color:#111;margin:4px 0;">$5<span style="font-size:9px;font-weight:500;">/mo</span></div>
+          <div style="font-size:9px;color:#6b7280;line-height:1.5;">Unlimited · 200MB<br/>All tools + history</div>
+          <div style="margin-top:8px;background:#dc2626;border-radius:4px;padding:4px 6px;font-size:9px;font-weight:700;text-align:center;color:white;">Upgrade to Pro →</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;border:1px dashed #d1d5db;border-radius:6px;padding:7px;text-align:center;">
+        <div style="font-size:9px;color:#6b7280;">Need more for today only?</div>
+        <div style="font-size:10px;font-weight:700;color:#111;">$1 · 24-hour unlimited pass</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two-card + day pass strip</h3>
+      <p>Classic SaaS free/pro layout. Day pass sits below as a secondary option. Clean and familiar.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f9fafb;border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;text-align:center;color:#111;margin-bottom:10px;">THREE equal cards side by side</div>
+      <div style="display:flex;gap:6px;">
+        <div style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#374151;">FREE</div>
+          <div style="font-size:14px;font-weight:900;color:#111;margin:2px 0;">$0</div>
+          <div style="font-size:8px;color:#9ca3af;line-height:1.4;">3 files/tool<br/>No account</div>
+          <div style="margin-top:6px;border:1px solid #e5e7eb;border-radius:4px;padding:3px 0;font-size:8px;font-weight:700;color:#374151;">Start free</div>
+        </div>
+        <div style="flex:1;border:1.5px solid #fbbf24;border-radius:8px;padding:8px;text-align:center;background:#fffbeb;">
+          <div style="font-size:9px;font-weight:700;color:#d97706;">DAY PASS</div>
+          <div style="font-size:14px;font-weight:900;color:#111;margin:2px 0;">$1</div>
+          <div style="font-size:8px;color:#9ca3af;line-height:1.4;">24 hours<br/>Unlimited files</div>
+          <div style="margin-top:6px;background:#f59e0b;border-radius:4px;padding:3px 0;font-size:8px;font-weight:700;color:white;">Buy day pass</div>
+        </div>
+        <div style="flex:1;border:2px solid #dc2626;border-radius:8px;padding:8px;text-align:center;background:#fff5f5;">
+          <div style="font-size:8px;background:#dc2626;color:white;border-radius:3px;padding:1px 4px;font-weight:700;display:inline-block;margin-bottom:2px;">BEST VALUE</div>
+          <div style="font-size:9px;font-weight:700;color:#dc2626;">PRO</div>
+          <div style="font-size:14px;font-weight:900;color:#111;margin:2px 0;">$5<span style="font-size:8px;">/mo</span></div>
+          <div style="font-size:8px;color:#9ca3af;line-height:1.4;">Unlimited · 200MB<br/>All tools</div>
+          <div style="margin-top:6px;background:#dc2626;border-radius:4px;padding:3px 0;font-size:8px;font-weight:700;color:white;">Go Pro →</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Three equal cards</h3>
+      <p>All three tiers get equal weight. Day pass feels like a real product tier, not an afterthought.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f9fafb;border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;text-align:center;color:#111;margin-bottom:10px;">Cards + feature comparison table</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#374151;">FREE · $0</div>
+          <div style="font-size:8px;color:#9ca3af;margin-top:3px;">3 files · no account</div>
+        </div>
+        <div style="flex:1;border:2px solid #dc2626;border-radius:6px;padding:8px;text-align:center;background:#fff5f5;">
+          <div style="font-size:9px;font-weight:700;color:#dc2626;">PRO · $5/mo ⭐</div>
+          <div style="font-size:8px;color:#9ca3af;margin-top:3px;">Unlimited · 200MB</div>
+        </div>
+      </div>
+      <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:1fr 40px 40px;font-size:8px;font-weight:700;background:#f3f4f6;padding:4px 6px;color:#6b7280;">
+          <span>Feature</span><span style="text-align:center;">Free</span><span style="text-align:center;">Pro</span>
+        </div>
+        ${['Files per tool','File size limit','All tools','History'].map((f,i) => `
+        <div style="display:grid;grid-template-columns:1fr 40px 40px;font-size:8px;padding:3px 6px;border-top:1px solid #f3f4f6;color:#374151;">
+          <span>${f}</span>
+          <span style="text-align:center;color:#6b7280;">${['3','10MB','✓','—'][i]}</span>
+          <span style="text-align:center;color:#dc2626;font-weight:700;">${['∞','200MB','✓','✓'][i]}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Cards + feature table</h3>
+      <p>Shows Free vs Pro with a full comparison table below. More detail, longer page. Good for users who need convincing.</p>
+    </div>
+  </div>
+
+</div>

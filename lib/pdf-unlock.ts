@@ -28,10 +28,7 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
     // This is lossy (rasterizes to images) but handles open-password encryption
     // that pdf-lib cannot strip.
     const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.mjs",
-      import.meta.url
-    ).toString();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
     let pdfJsDoc: import("pdfjs-dist").PDFDocumentProxy;
     try {

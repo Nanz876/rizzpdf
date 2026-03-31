@@ -748,7 +748,6 @@ export type BatchOptions =
   | { tool: "rotate"; angle: 90 | 180 | 270 }
   | { tool: "pdf-to-jpg" }
   | { tool: "watermark"; text: string }
-  | { tool: "protect"; password: string }
   | { tool: "page-numbers"; position?: "bottom-center" | "bottom-right" | "bottom-left" }
   | { tool: "unlock"; password?: string };
 
@@ -766,7 +765,7 @@ export async function batchProcess(
     onProgress(i, "processing");
     try {
       const f = files[i];
-      let result: ToolResult;
+      let result: ToolResult = { success: false, error: "Unknown tool" };
 
       if (options.tool === "compress") {
         result = await compressPDF(f, options.quality);
@@ -786,8 +785,6 @@ export async function batchProcess(
       } else if (options.tool === "unlock") {
         const { unlockPDF } = await import("@/lib/pdf-unlock");
         result = await unlockPDF(f, options.password ?? "");
-      } else {
-        result = await protectPDF(f, options.password);
       }
 
       if (result.success && result.blob) {

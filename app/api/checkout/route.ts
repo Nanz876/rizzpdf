@@ -13,8 +13,8 @@ export async function POST() {
         price_data: {
           currency: "usd",
           product_data: {
-            name: "RizzPDF Bulk Unlock",
-            description: "Unlimited PDF password removal for 24 hours. Files never leave your browser.",
+            name: "RizzPDF Day Pass — All PDF Tools",
+            description: "Unlimited access to all 16 PDF tools for 24 hours. Files never leave your browser. No account required.",
             images: [],
           },
           unit_amount: 100, // $1.00 in cents
