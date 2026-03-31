@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "How to Compress a PDF Without Losing Quality — Free Online Tool",
+  title: "How to Compress a PDF to Reduce File Size — Free Online Tool",
   description:
-    "Reduce PDF file size without making it blurry or unreadable. Three compression levels, runs in your browser, files never uploaded.",
+    "Shrink PDF file size for email and sharing. Works best on scanned and image-heavy PDFs. Runs in your browser, files never uploaded.",
   keywords: [
     "compress PDF without losing quality",
     "reduce PDF file size",
@@ -48,7 +48,7 @@ export default function CompressPDFBlog() {
         <main className="max-w-2xl mx-auto px-6 py-12">
           <div className="text-xs font-bold uppercase tracking-widest text-red-600 mb-3">Guide</div>
           <h1 className="text-3xl font-black text-gray-900 mb-4 leading-tight">
-            How to Compress a PDF Without Losing Quality
+            How to Compress a PDF to Reduce File Size
           </h1>
           <p className="text-gray-500 text-sm mb-8">March 24, 2025 · 5 min read</p>
 
@@ -87,7 +87,7 @@ export default function CompressPDFBlog() {
             </div>
 
             <p>
-              For most use cases — sending a contract via email, uploading to a portal — <strong>Screen</strong> quality is fine. The text stays perfectly sharp; only image resolution drops slightly.
+              For most use cases — sending a scanned document via email, uploading to a portal — <strong>Screen</strong> quality is fine. Note: RizzPDF&apos;s compression re-renders each page as a JPEG image, so text in the output will be visually readable but not selectable or searchable. If you need to keep text selectable, remove unnecessary pages instead to reduce size while preserving structure.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Step-by-step: compress a PDF free</h2>
@@ -101,7 +101,7 @@ export default function CompressPDFBlog() {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Why is my PDF still large after compressing?</h2>
             <p>
-              If the file was already optimized or is mostly text (not images), compression gains will be small. PDFs that are primarily vector graphics or text often can&apos;t be reduced much further without degrading quality. Scanned documents with embedded images compress the most dramatically.
+              Because the tool re-renders every page as a JPEG, text-native PDFs will still compress — but the gains may be modest while the output loses text selectability. This tool is most effective on scanned documents and image-heavy PDFs. For text-only PDFs where file size is the issue, removing unnecessary pages is usually a better approach.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Email size limits by provider</h2>

@@ -13,9 +13,9 @@ type Quality = "low" | "medium" | "high";
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
 const QUALITY_OPTS: { value: Quality; label: string; emoji: string; desc: string }[] = [
-  { value: "low", label: "Extreme", emoji: "🔥", desc: "Smallest size, lower visual quality" },
-  { value: "medium", label: "Recommended", emoji: "✅", desc: "Best balance of size and quality" },
-  { value: "high", label: "Less", emoji: "🎯", desc: "Slight compression, best quality" },
+  { value: "low", label: "Extreme", emoji: "🔥", desc: "Smallest file — lower visual fidelity" },
+  { value: "medium", label: "Recommended", emoji: "✅", desc: "Good balance of size and sharpness" },
+  { value: "high", label: "Less", emoji: "🎯", desc: "Near-original sharpness, modest savings" },
 ];
 
 export default function CompressPage() {
@@ -54,7 +54,7 @@ export default function CompressPage() {
   const fmt = (b: number) => b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`;
 
   return (
-    <ToolShell name="Compress PDF" description="Reduce PDF file size while maintaining readability." icon="📦"
+    <ToolShell name="Compress PDF" description="Shrink PDFs for email and sharing. Each page is rasterized — text will no longer be selectable in the output." icon="📦"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.8"/><path d="M12 12l8-4M12 12v8M12 12L4 8" stroke="white" strokeWidth="1.5"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Choose quality level", "Download compressed file"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
@@ -99,24 +99,22 @@ export default function CompressPage() {
 
       {/* SEO copy block */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">
-        <h2 className="text-base font-bold text-gray-900">How to compress a PDF without losing quality</h2>
+        <h2 className="text-base font-bold text-gray-900">How to compress a PDF to reduce file size</h2>
         <ol className="list-decimal list-inside space-y-2">
           <li>Upload your PDF using the drop zone above</li>
-          <li>Choose a compression level — <strong>Recommended</strong> balances size and quality for most files</li>
+          <li>Choose a level — <strong>Recommended</strong> works well for most files</li>
           <li>Click <strong>Compress PDF</strong> to download the smaller file</li>
         </ol>
         <p>
-          Compression works by optimizing embedded images and removing redundant data. Text and vector
-          graphics are never degraded. A typical PDF with photos compresses 40–70% on the Recommended setting.
+          This tool re-renders each page as a compressed JPEG image, which significantly reduces file size.
+          The output is visually readable but <strong>text will not be selectable or searchable</strong>, and
+          hyperlinks or form fields will be removed. Best suited for scanned documents and image-heavy PDFs
+          you need to email or share.
         </p>
         <p>
-          Trying to compress for email? Most email clients cap attachments at 25 MB. If your PDF is still too
-          large after compression, try{" "}
+          For PDFs where you need to keep text selectable, consider{" "}
           <Link href="/tools/delete-pages" className="text-red-600 hover:underline font-medium">removing unnecessary pages</Link>
-          {" "}first. Read our guide:{" "}
-          <Link href="/blog/compress-pdf-without-losing-quality" className="text-red-600 hover:underline font-medium">
-            How to compress a PDF without losing quality
-          </Link>.
+          {" "}instead — that preserves the full PDF structure while reducing file count.
         </p>
       </div>
     </ToolShell>
