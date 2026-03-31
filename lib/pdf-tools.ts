@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
+import { PDFDocument, PDFRawStream, PDFName, PDFNumber, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
 
 export interface ToolResult {
   success: boolean;
@@ -130,29 +130,81 @@ export async function splitPDF(
 
 // ─── Compress ────────────────────────────────────────────────────────────────
 
+/** Re-encode a JPEG blob via canvas at the requested quality, returns new bytes */
+async function reencodeJpeg(jpegBytes: Uint8Array, quality: number): Promise<Uint8Array | null> {
+  return new Promise((resolve) => {
+    try {
+      const blob = new Blob([jpegBytes.buffer as ArrayBuffer], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        const base64 = dataUrl.split(",")[1];
+        resolve(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 export async function compressPDF(
   file: File,
   quality: "low" | "medium" | "high"
 ): Promise<ToolResult> {
   try {
-    // Server-side mupdf recompresses only the embedded raster images at the
-    // requested JPEG quality — text, fonts, and vector graphics are untouched,
-    // so text remains fully selectable in the output.
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("quality", quality);
+    // Recompress only the embedded JPEG images inside the PDF using pdf-lib's
+    // internal object API. Text, fonts, and vectors are never touched — text
+    // stays fully selectable in the output.
+    const jpegQualityMap = { low: 0.55, medium: 0.75, high: 0.90 };
+    const jpegQ = jpegQualityMap[quality];
 
-    const res = await fetch("/api/compress-pdf", {
-      method: "POST",
-      body: formData,
-    });
+    const bytes = await file.arrayBuffer();
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const context = doc.context;
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { success: false, error: (err as { error?: string }).error ?? "Failed to compress PDF." };
+    for (const [ref, obj] of context.enumerateIndirectObjects()) {
+      if (!(obj instanceof PDFRawStream)) continue;
+
+      const dict = obj.dict;
+      const subtype = dict.get(PDFName.of("Subtype"));
+      if (!subtype || subtype.toString() !== "/Image") continue;
+
+      // Only target JPEG images (DCTDecode filter)
+      const filter = dict.get(PDFName.of("Filter"));
+      if (!filter || filter.toString() !== "/DCTDecode") continue;
+
+      // Skip tiny images (icons, thumbnails)
+      const wObj = dict.get(PDFName.of("Width"));
+      const hObj = dict.get(PDFName.of("Height"));
+      if (!wObj || !hObj) continue;
+      const w = (wObj as PDFNumber).asNumber?.() ?? 0;
+      const h = (hObj as PDFNumber).asNumber?.() ?? 0;
+      if (w < 32 || h < 32) continue;
+
+      const original = obj.getContents();
+      const reencoded = await reencodeJpeg(original, jpegQ);
+
+      // Only replace if we made it smaller
+      if (reencoded && reencoded.length < original.length) {
+        // Update ColorSpace to DeviceRGB (canvas always outputs RGB JPEG)
+        dict.set(PDFName.of("ColorSpace"), PDFName.of("DeviceRGB"));
+        dict.set(PDFName.of("BitsPerComponent"), PDFNumber.of(8));
+        context.assign(ref, PDFRawStream.of(dict, reencoded));
+      }
     }
 
-    const blob = await res.blob();
+    const saved = await doc.save();
+    const blob = new Blob([saved as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
     return { success: true, blob, filename: `${baseName(file)}_compressed.pdf` };
   } catch {
     return { success: false, error: "Failed to compress PDF." };
