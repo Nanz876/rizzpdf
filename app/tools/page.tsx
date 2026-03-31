@@ -85,7 +85,7 @@ const TOOLS = [
   },
   {
     name: "Protect PDF", route: "/tools/protect", category: "Edit & Security",
-    desc: "Password protection — coming soon",
+    desc: "Password-protect PDFs with AES-256 encryption.",
     icon: <ToolIcon variant="single" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" />,
   },
   {

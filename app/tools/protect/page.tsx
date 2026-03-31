@@ -40,13 +40,10 @@ export default function ProtectPage() {
   return (
     <ToolShell
       name="Protect PDF"
-      description="Password-protect your PDF with AES encryption."
+      description="Password-protect your PDF with AES-256 encryption. Files stay in your browser."
       icon="🔒"
       steps={file ? undefined : ["Upload your PDF", "Set a password", "Download protected file"]}
     >
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
-        <strong>Coming soon:</strong> PDF password encryption requires server-side processing and is not yet available. This tool will be enabled in a future update.
-      </div>
       {!file && <UploadZone onFilesAdded={handleFile} />}
       {file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

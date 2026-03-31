@@ -60,7 +60,7 @@ const CONVERT_TOOLS = [
 
 const SECURITY_TOOLS = [
   {
-    name: "Protect PDF", route: "/tools/protect", desc: "Password protection — coming soon.",
+    name: "Protect PDF", route: "/tools/protect", desc: "Password-protect PDFs with AES-256 encryption.",
     icon: <ToolIcon variant="single" bgColor="#fdf4ff" badgeColor="#a855f7" badgeLabel="PDF" />,
   },
   {

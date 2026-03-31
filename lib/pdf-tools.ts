@@ -608,17 +608,30 @@ export async function repairPDF(file: File): Promise<ToolResult> {
 // ─── Protect ──────────────────────────────────────────────────────────────────
 
 export async function protectPDF(
-  _file: File,
-  _userPassword: string,
-  _ownerPassword?: string
+  file: File,
+  userPassword: string,
+  ownerPassword?: string
 ): Promise<ToolResult> {
-  // pdf-lib does not implement PDF encryption in the browser.
-  // Returning a clear error prevents users from believing their file is
-  // password-protected when it is not — which would be a security hazard.
-  return {
-    success: false,
-    error: "PDF encryption requires server-side processing and is not available in the free browser tier. This feature is coming soon.",
-  };
+  try {
+    const { encryptPDF } = await import("@pdfsmaller/pdf-encrypt");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const encrypted = await encryptPDF(bytes, userPassword, {
+      ownerPassword: ownerPassword || userPassword,
+      algorithm: "AES-256",
+      allowPrinting: true,
+      allowHighQualityPrint: true,
+      allowModifying: false,
+      allowCopying: false,
+      allowAnnotating: false,
+      allowFillingForms: true,
+      allowExtraction: false,
+      allowAssembly: false,
+    });
+    const blob = new Blob([encrypted.buffer as ArrayBuffer], { type: "application/pdf" });
+    return { success: true, blob, filename: `${baseName(file)}_protected.pdf` };
+  } catch {
+    return { success: false, error: "Failed to encrypt PDF." };
+  }
 }
 
 // ─── PDF to Word ──────────────────────────────────────────────────────────────
