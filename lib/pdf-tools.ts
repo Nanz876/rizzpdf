@@ -135,33 +135,25 @@ export async function compressPDF(
   quality: "low" | "medium" | "high"
 ): Promise<ToolResult> {
   try {
-    const scaleMap = { low: 0.5, medium: 0.72, high: 0.9 };
-    const jpegQualityMap = { low: 0.6, medium: 0.78, high: 0.9 };
-    const scale = scaleMap[quality];
-    const jpegQ = jpegQualityMap[quality];
+    // Server-side mupdf recompresses only the embedded raster images at the
+    // requested JPEG quality — text, fonts, and vector graphics are untouched,
+    // so text remains fully selectable in the output.
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("quality", quality);
 
-    const bytes = await file.arrayBuffer();
-    const pdfjsLib = await getPdfjsLib();
-    const pdfJsDoc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes) }).promise;
-    const numPages = pdfJsDoc.numPages;
+    const res = await fetch("/api/compress-pdf", {
+      method: "POST",
+      body: formData,
+    });
 
-    const newPdf = await PDFDocument.create();
-
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const canvas = await renderPageToCanvas(pdfJsDoc, pageNum, scale);
-      const jpegDataUrl = canvas.toDataURL("image/jpeg", jpegQ);
-      const base64 = jpegDataUrl.split(",")[1];
-      const jpegBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-      const jpegImage = await newPdf.embedJpg(jpegBytes);
-      const newPage = newPdf.addPage([canvas.width, canvas.height]);
-      newPage.drawImage(jpegImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: (err as { error?: string }).error ?? "Failed to compress PDF." };
     }
 
-    const saved = await newPdf.save();
-    const blob = new Blob([saved as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
-    const filename = `${baseName(file)}_compressed.pdf`;
-    return { success: true, blob, filename };
+    const blob = await res.blob();
+    return { success: true, blob, filename: `${baseName(file)}_compressed.pdf` };
   } catch {
     return { success: false, error: "Failed to compress PDF." };
   }

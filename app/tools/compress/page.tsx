@@ -54,7 +54,7 @@ export default function CompressPage() {
   const fmt = (b: number) => b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`;
 
   return (
-    <ToolShell name="Compress PDF" description="Shrink PDFs for email and sharing. Each page is rasterized — text will no longer be selectable in the output." icon="📦"
+    <ToolShell name="Compress PDF" description="Shrink PDFs by recompressing embedded images. Text stays fully selectable." icon="📦"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.8"/><path d="M12 12l8-4M12 12v8M12 12L4 8" stroke="white" strokeWidth="1.5"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Choose quality level", "Download compressed file"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
@@ -106,15 +106,14 @@ export default function CompressPage() {
           <li>Click <strong>Compress PDF</strong> to download the smaller file</li>
         </ol>
         <p>
-          This tool re-renders each page as a compressed JPEG image, which significantly reduces file size.
-          The output is visually readable but <strong>text will not be selectable or searchable</strong>, and
-          hyperlinks or form fields will be removed. Best suited for scanned documents and image-heavy PDFs
-          you need to email or share.
+          This tool recompresses only the raster images embedded in your PDF — photos, scans, and graphics.
+          Text, fonts, and vector graphics are left completely untouched, so <strong>text stays selectable
+          and searchable</strong> in the output. Savings depend on how many images your PDF contains.
         </p>
         <p>
-          For PDFs where you need to keep text selectable, consider{" "}
+          For very large PDFs with few images, consider{" "}
           <Link href="/tools/delete-pages" className="text-red-600 hover:underline font-medium">removing unnecessary pages</Link>
-          {" "}instead — that preserves the full PDF structure while reducing file count.
+          {" "}instead — that reduces file size while keeping everything intact.
         </p>
       </div>
     </ToolShell>

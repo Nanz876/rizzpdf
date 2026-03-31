@@ -49,7 +49,7 @@ const CONVERT_TOOLS = [
     icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#2563eb" badgeLabel2="DOC" />,
   },
   {
-    name: "Compress PDF", route: "/tools/compress", desc: "Shrink PDF file size for email and sharing.",
+    name: "Compress PDF", route: "/tools/compress", desc: "Shrink PDFs by recompressing images. Text stays selectable.",
     icon: <ToolIcon variant="single" bgColor="#f0fdf4" badgeColor="#22c55e" badgeLabel="ZIP" />,
   },
   {
