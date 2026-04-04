@@ -8,13 +8,19 @@
 
 ## 1. Overview
 
-A React Native (Expo) mobile app for iOS and Android that brings all 16 RizzPDF tools to mobile. Shares the same Clerk authentication and Supabase backend as the web app. Users who subscribe on web get Pro on mobile automatically, and vice versa via RevenueCat entitlement sync.
+A React Native (Expo) mobile app for iOS and Android that brings 15 active RizzPDF tools to mobile (Word→PDF deferred to v2 — no client-side path exists). Shares the same Clerk authentication and Supabase backend as the web app.
 
-**Goals:**
-- Full tool parity with the web app (all 16 tools)
+**v1 Goals:**
+- 15 active tools (Word→PDF shown as disabled "Coming soon")
 - All PDF processing is client-side only — files never leave the device
 - File-first UX: pick a PDF, then choose what to do with it
-- Single subscription works across web and mobile
+- Mobile IAP (RevenueCat) subscription works independently
+- Web Pro subscribers recognized on mobile via Clerk user ID lookup (v1 — see Section 8)
+
+**v2 Goals (out of scope for this spec):**
+- Full bidirectional Stripe ↔ RevenueCat entitlement sync
+- Word→PDF conversion
+- Background thread processing for large files
 
 ---
 
@@ -24,14 +30,15 @@ A React Native (Expo) mobile app for iOS and Android that brings all 16 RizzPDF 
 |---|---|---|
 | Framework | React Native + Expo (SDK 51+) | Fastest path, OTA updates, Expo Router |
 | Navigation | Expo Router (file-based) | Consistent with Next.js mental model |
+| Dev builds | expo-dev-client (required) | react-native-pdf requires native code; Expo Go not supported |
 | PDF processing | pdf-lib (direct) | Pure JS, works in RN Hermes runtime unchanged |
-| PDF encryption | @pdfsmaller/pdf-encrypt | Uses Web Crypto API, available in Expo |
+| PDF encryption | @pdfsmaller/pdf-encrypt | Uses SubtleCrypto — **must validate on Hermes before shipping Protect tool** (see Section 6) |
 | PDF thumbnails | react-native-pdf-thumbnail | Wraps native PDFKit/PdfRenderer per platform |
-| PDF→JPG output | react-native-pdf (native renderer) | Better quality than JS canvas alternatives |
+| PDF→JPG output | react-native-pdf (native renderer) | Better quality than JS canvas alternatives; requires expo-dev-client |
 | File I/O | expo-document-picker, expo-file-system, expo-camera | Standard Expo modules |
 | Sharing/output | expo-sharing | Opens native Share sheet |
 | Auth | @clerk/clerk-expo | Official Clerk RN SDK |
-| Subscriptions | RevenueCat (react-native-purchases) | Handles IAP + syncs entitlements with Supabase |
+| Subscriptions | RevenueCat (react-native-purchases) | Handles IAP; Supabase webhook for entitlement sync |
 | Cloud storage | expo-document-picker (iCloud/Drive built-in on device) | No custom integration needed |
 | Styling | NativeWind (Tailwind for RN) | Consistent with web codebase patterns |
 | Compression helper | JSZip | Pure JS, unchanged from web |
@@ -89,7 +96,7 @@ Tools tab (Home)
 
 Tool Picker screen
   → shows filename + size at top
-  → 4×4 grid of all 16 tools
+  → 4×4 grid of all 16 tools (Word→PDF disabled/greyed)
   → tool tapped              → Tool Config screen
 
 Tool Config screen
@@ -106,36 +113,36 @@ Result sheet
 
 ---
 
-## 5. All 16 Tools
+## 5. All Tools (v1)
 
 Ported from `lib/pdf-tools.ts`. Same logic, different I/O layer.
 
-| Tool | Web function | Notes |
-|---|---|---|
-| Compress | `compressPDF` | Same quality levels (low/med/high) |
-| Split | `splitPDF` | Output: zip of individual pages via JSZip |
-| Merge | `mergePDFs` | Multi-file select in picker |
-| Rotate | `rotatePDF` | 90/180/270° |
-| Watermark | `watermarkPDF` | Full options: text/position/opacity/size/color |
-| Page Numbers | `addPageNumbers` | Bottom-left/center/right |
-| Protect | `protectPDF` | AES-256 via @pdfsmaller/pdf-encrypt |
-| Unlock | `unlockPDF` | Password entry |
-| Repair | `repairPDF` | pdf-lib reload + re-save |
-| Crop | `cropPDF` | Margin sliders |
-| Flatten | `flattenPDF` | Remove form fields |
-| PDF→JPG | `pdfToJpg` | react-native-pdf renders each page natively; output as zip |
-| JPG→PDF | `jpgToPdf` | expo-image-picker → pdf-lib |
-| Word→PDF | (web: server) | **Deferred to v2** — no client-side solution on mobile |
-| Redact | `redactPDF` | Black rectangle overlay |
-| Resize | `resizePDF` | Page size presets (A4, Letter, etc.) |
-
-> **Word→PDF:** The web version requires a server-side LibreOffice conversion. On mobile there is no viable client-side path. This tool will be hidden in v1 with a "Coming soon" state.
+| Tool | Web function | Status | Notes |
+|---|---|---|---|
+| Compress | `compressPDF` | ✅ v1 | Same quality levels (low/med/high) |
+| Split | `splitPDF` | ✅ v1 | Output: zip of individual pages via JSZip |
+| Merge | `mergePDFs` | ✅ v1 | Multi-file select in picker |
+| Rotate | `rotatePDF` | ✅ v1 | 90/180/270° |
+| Watermark | `watermarkPDF` | ✅ v1 | Full options: text/position/opacity/size/color |
+| Page Numbers | `addPageNumbers` | ✅ v1 | Bottom-left/center/right |
+| Protect | `protectPDF` | ⚠️ v1 (pending validation) | AES-256 via @pdfsmaller/pdf-encrypt — Hermes SubtleCrypto must be confirmed |
+| Unlock | `unlockPDF` | ✅ v1 | Password entry |
+| Repair | `repairPDF` | ✅ v1 | pdf-lib reload + re-save |
+| Crop | `cropPDF` | ✅ v1 | Margin sliders |
+| Flatten | `flattenPDF` | ✅ v1 | Remove form fields |
+| PDF→JPG | `pdfToJpg` | ✅ v1 | react-native-pdf native renderer; output as zip for multi-page |
+| JPG→PDF | `jpgToPdf` | ✅ v1 | expo-image-picker → pdf-lib |
+| Word→PDF | (web: server) | 🚫 v2 | No client-side path on mobile — shown as disabled in grid |
+| Redact | `redactPDF` | ✅ v1 | Black rectangle overlay |
+| Resize | `resizePDF` | ✅ v1 | Page size presets (A4, Letter, etc.) |
 
 ---
 
 ## 6. PDF Processing Layer
 
-All processing runs in the React Native JS thread (Hermes). For large files this is blocking — mitigated by showing a progress indicator. A background thread via `react-native-workers` can be added in v2 if needed.
+All processing runs in the React Native JS thread (Hermes). Running synchronous JS on the main thread freezes UI, so v1 enforces a **50 MB file size gate** — files above this are rejected with a user-facing error ("File too large for mobile processing — use the web app for large files"). Background thread offloading via `react-native-workers` is planned for v2.
+
+**@pdfsmaller/pdf-encrypt + Hermes:** Hermes does not include `SubtleCrypto` by default. `expo-crypto` partially polyfills it in SDK 51+, but AES-256 GCM compatibility across both iOS and Android Hermes builds must be validated with a test build before the Protect tool ships. If validation fails, Protect is moved to v2 and a fallback (e.g., `react-native-crypto` via node-libs-expo) will be evaluated.
 
 **Replacing web I/O:**
 
@@ -144,7 +151,7 @@ All processing runs in the React Native JS thread (Hermes). For large files this
 | `FileReader.readAsArrayBuffer` | `expo-file-system.readAsStringAsync` (base64) → decode to Uint8Array |
 | `URL.createObjectURL` | Write bytes to `FileSystem.cacheDirectory` |
 | `<a download>` click | `expo-sharing.shareAsync(localUri)` |
-| Canvas API (JPG rendering) | `react-native-pdf-thumbnail` or `react-native-pdf` native renderer |
+| Canvas API (JPG rendering) | `react-native-pdf` native renderer (requires expo-dev-client) |
 
 **Output for multi-file results (Split, PDF→JPG):**
 - Multiple output files → JSZip → single `.zip` → share/save
@@ -158,66 +165,89 @@ All processing runs in the React Native JS thread (Hermes). For large files this
 - Sign-in via email magic link or social (Google/Apple)
 - `useUser()` hook available app-wide via ClerkProvider in `_layout.tsx`
 
-**Pro tier check** (`lib/useProStatus.ts`):
+---
+
+## 8. Pro Tier Check
+
+There are two Pro paths that must be reconciled. RevenueCat is the source of truth for IAP purchases. The web API is the fallback for users who subscribed on the web before the mobile app existed.
+
+**Priority order in `lib/useProStatus.ts`:**
+
 ```
 1. Check AsyncStorage for bulk day pass (`rizzpdf_bulk_until` timestamp)
-2. If not found/expired, check Clerk user signed in
-3. If signed in, fetch /api/user/subscription from web API
-4. If tier === "pro" → isPro = true
-5. Else → free tier (3 ops/session, tracked in AsyncStorage)
+   → if valid: isPro = true, done
+
+2. Check RevenueCat entitlement cache (local, no network)
+   → if "pro" entitlement active: isPro = true, done
+
+3. If Clerk user is signed in, fetch `https://rizzpdf.com/api/user/subscription`
+   with Clerk session token as Authorization header
+   → if tier === "pro": isPro = true, done
+   → on network error: fail open, isPro = false (do not block usage)
+
+4. Default: free tier
 ```
+
+RevenueCat is checked before the web API to minimize network calls. The web API call only fires for signed-in users who have no RevenueCat entitlement — typically web-only subscribers in v1.
+
+**v2:** Full bidirectional Stripe ↔ RevenueCat webhook sync will eliminate the web API fallback call entirely.
 
 ---
 
-## 8. Monetization
+## 9. Monetization
 
 **Three tiers (same as web):**
 
 | Tier | Price | Access |
 |---|---|---|
-| Free | $0 | 3 operations per session |
+| Free | $0 | 3 operations (persistent across sessions, same as web) |
 | Bulk | $1 / 24hr | Unlimited for 24 hours, no account needed |
-| Pro | $7/mo | Unlimited, synced across web + mobile |
+| Pro | $7/mo | Unlimited |
 
 **Implementation:**
 - **RevenueCat** (`react-native-purchases`) manages iOS App Store + Google Play IAP
 - RevenueCat webhook → Supabase `subscriptions` table (same table web uses)
-- Web Pro subscribers: entitlement synced via Clerk user ID in RevenueCat
-- Bulk day pass: stored in AsyncStorage, same logic as web localStorage
+- Bulk day pass: stored in AsyncStorage (`rizzpdf_bulk_until` timestamp, same semantics as web localStorage)
 
-**Paywall trigger:** Same as web — after 3rd free operation, `PaywallSheet` bottom sheet appears with two options: Bulk ($1) and Pro ($7/mo).
-
----
-
-## 9. Free Tier Tracking
-
-- AsyncStorage key: `rizzpdf_free_count` (integer, reset each app session)
-- AsyncStorage key: `rizzpdf_bulk_until` (timestamp ms, same as web)
-- Pro check via RevenueCat entitlement (cached locally, refreshed on app foreground)
+**Paywall trigger:** After 3rd free operation, `PaywallSheet` bottom sheet appears with two options: Bulk ($1) and Pro ($7/mo).
 
 ---
 
-## 10. Error Handling
+## 10. Free Tier Tracking
+
+- AsyncStorage key: `rizzpdf_free_count` — persistent integer (not reset on app restart, matching web behavior)
+- AsyncStorage key: `rizzpdf_bulk_until` — timestamp ms
+- Pro entitlement: RevenueCat local cache, refreshed on app foreground
+
+---
+
+## 11. Error Handling
 
 - Processing errors: shown inline on Result sheet with plain-English message
+- File too large (>50 MB): rejected before processing with clear message
 - Auth errors: silent fail → user stays on free tier
 - File I/O errors: toast notification via `react-native-toast-message`
 - Network errors (subscription check): fail open → treat as free tier (don't block usage)
 
 ---
 
-## 11. Out of Scope (v1)
+## 12. Pre-Submission Checklist
 
-- Word→PDF conversion
-- Background processing (large files block UI — acceptable for v1)
-- Offline subscription verification (always online check)
-- iPad-specific layout optimizations
-- Push notifications
-- File sync / cloud backup of processed files
+Before App Store / Play Store submission:
+
+- [ ] **AES-256 export compliance (iOS):** Set `ITSAppUsesNonExemptEncryption = YES` in `Info.plist` and complete the annual encryption self-classification report in App Store Connect. This is a concrete required step, not optional.
+- [ ] **Hermes SubtleCrypto validation:** Confirm `@pdfsmaller/pdf-encrypt` works on both iOS and Android Hermes builds in a development build (not Expo Go)
+- [ ] **50 MB gate tested** on both platforms with a large PDF
+- [ ] **RevenueCat sandbox** purchases tested on both iOS (TestFlight) and Android (internal track)
 
 ---
 
-## 12. Open Questions (deferred)
+## 13. Out of Scope (v1)
 
-- **Apple review:** PDF tools with encryption may require export compliance documentation
-- **RevenueCat ↔ Stripe sync:** Manual webhook mapping needed to sync web Stripe subscriptions to RevenueCat entitlements — implementation detail for auth/billing phase
+- Word→PDF conversion
+- Background thread processing for large files (react-native-workers)
+- Full Stripe ↔ RevenueCat bidirectional webhook sync
+- iPad-specific layout optimizations
+- Push notifications
+- File sync / cloud backup of processed files
+- Offline subscription verification
