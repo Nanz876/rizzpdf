@@ -19,7 +19,7 @@ const PAGE_BASE_WIDTH = 620; // px at zoom 1
 const RENDER_SCALE = 1.5;
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-function removeWhiteBackground(dataUrl: string, threshold = 230): Promise<string> {
+function removeBackground(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -29,11 +29,49 @@ function removeWhiteBackground(dataUrl: string, threshold = 230): Promise<string
       const ctx = c.getContext("2d")!;
       ctx.drawImage(img, 0, 0);
       const d = ctx.getImageData(0, 0, c.width, c.height);
-      for (let i = 0; i < d.data.length; i += 4) {
-        if (d.data[i] > threshold && d.data[i + 1] > threshold && d.data[i + 2] > threshold) {
-          d.data[i + 3] = 0;
+      const px = d.data;
+      const w = c.width, h = c.height;
+
+      // Convert to grayscale array
+      const gray = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) {
+        gray[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+      }
+
+      // Build integral image for O(1) local area sums
+      const intg = new Float64Array((w + 1) * (h + 1));
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          intg[(y + 1) * (w + 1) + (x + 1)] =
+            gray[y * w + x]
+            + intg[y * (w + 1) + (x + 1)]
+            + intg[(y + 1) * (w + 1) + x]
+            - intg[y * (w + 1) + x];
         }
       }
+
+      // Bradley-Roth adaptive thresholding:
+      // pixel is ink if it's darker than (local_mean * (1 - k))
+      const radius = Math.max(10, Math.floor(Math.min(w, h) / 16));
+      const k = 0.18; // sensitivity: higher = remove more background
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const x1 = Math.max(0, x - radius), y1 = Math.max(0, y - radius);
+          const x2 = Math.min(w - 1, x + radius), y2 = Math.min(h - 1, y + radius);
+          const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+          const sum =
+            intg[(y2 + 1) * (w + 1) + (x2 + 1)]
+            - intg[y1 * (w + 1) + (x2 + 1)]
+            - intg[(y2 + 1) * (w + 1) + x1]
+            + intg[y1 * (w + 1) + x1];
+          const localMean = sum / count;
+          if (gray[y * w + x] > localMean * (1 - k)) {
+            px[(y * w + x) * 4 + 3] = 0;
+          }
+        }
+      }
+
       ctx.putImageData(d, 0, 0);
       resolve(c.toDataURL("image/png"));
     };
@@ -175,11 +213,12 @@ export default function SignPage() {
     const f = e.target.files?.[0];
     if (!f || !pageUrls.length) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       const url = ev.target!.result as string;
       setOrigUpload(url);
-      setSigDataUrl(url);
-      setBgRemoved(false);
+      const cleaned = await removeBackground(url);
+      setSigDataUrl(cleaned);
+      setBgRemoved(true);
       setPlacement({ pageIndex: 0, xFrac: 0.63, yFrac: 0.80 });
     };
     reader.readAsDataURL(f);
@@ -188,7 +227,7 @@ export default function SignPage() {
   const toggleBgRemoval = async () => {
     if (!origUpload) return;
     if (!bgRemoved) {
-      const cleaned = await removeWhiteBackground(origUpload);
+      const cleaned = await removeBackground(origUpload);
       setSigDataUrl(cleaned);
       setBgRemoved(true);
     } else {
@@ -390,11 +429,16 @@ export default function SignPage() {
 
                 {/* Sig preview */}
                 {sigDataUrl && (
-                  <div className="border border-red-200 rounded-xl p-3 bg-red-50 space-y-1" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
+                  <div className="border border-red-200 rounded-xl p-3 space-y-2" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
                     <img src={sigDataUrl} alt="Signature" className="max-h-14 object-contain mx-auto" draggable={false} />
-                    <p className="text-xs text-center text-red-600 font-medium mt-1">
+                    <p className="text-xs text-center text-red-600 font-medium">
                       {placement ? "Drag to reposition · corner to resize" : "Click on the PDF to place"}
                     </p>
+                    <button
+                      onClick={() => { setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false); setPlacement(null); }}
+                      className="w-full py-1.5 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                      ✕ Remove signature
+                    </button>
                   </div>
                 )}
 
