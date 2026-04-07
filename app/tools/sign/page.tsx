@@ -96,10 +96,11 @@ export default function SignPage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const drawRef = useRef<HTMLCanvasElement>(null);
 
-  // Signature edit (eraser) mode
+  // Signature edit mode
   const [isEditing, setIsEditing] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
   const [eraserSize, setEraserSize] = useState(20);
+  const [darkness, setDarkness] = useState(1);   // 1 = normal, >1 = darker
   const editCanvasRef = useRef<HTMLCanvasElement>(null);
   const preEditUrl = useRef<string | null>(null);
 
@@ -230,9 +231,36 @@ export default function SignPage() {
     img.src = sigDataUrl;
   }, [isEditing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startEditing = () => { preEditUrl.current = sigDataUrl; setIsEditing(true); };
-  const cancelEdit = () => { setSigDataUrl(preEditUrl.current); setIsEditing(false); };
-  const confirmEdit = () => { setSigDataUrl(editCanvasRef.current!.toDataURL("image/png")); setIsEditing(false); };
+  const startEditing = () => { preEditUrl.current = sigDataUrl; setDarkness(1); setIsEditing(true); };
+  const cancelEdit = () => { setSigDataUrl(preEditUrl.current); setDarkness(1); setIsEditing(false); };
+
+  const confirmEdit = () => {
+    const src = editCanvasRef.current!;
+    const out = document.createElement("canvas");
+    out.width = src.width; out.height = src.height;
+    const ctx = out.getContext("2d")!;
+    // Bake darkness: darken non-transparent pixels via contrast filter
+    if (darkness !== 1) {
+      ctx.filter = `contrast(${darkness}) brightness(${2 - darkness})`;
+    }
+    ctx.drawImage(src, 0, 0);
+    setSigDataUrl(out.toDataURL("image/png"));
+    setDarkness(1);
+    setIsEditing(false);
+  };
+
+  // Rotate canvas content by ±90° (baked immediately)
+  const rotateCanvas = (deg: 90 | -90) => {
+    const src = editCanvasRef.current!;
+    const tmp = document.createElement("canvas");
+    tmp.width = src.height; tmp.height = src.width;
+    const ctx = tmp.getContext("2d")!;
+    ctx.translate(tmp.width / 2, tmp.height / 2);
+    ctx.rotate((deg * Math.PI) / 180);
+    ctx.drawImage(src, -src.width / 2, -src.height / 2);
+    src.width = tmp.width; src.height = tmp.height;
+    src.getContext("2d")!.drawImage(tmp, 0, 0);
+  };
 
   const getEditXY = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const c = editCanvasRef.current!;
@@ -462,22 +490,49 @@ export default function SignPage() {
                   <div className="space-y-2">
                     {isEditing ? (
                       <>
-                        <p className="text-xs text-gray-500 font-medium text-center">Paint over lines to erase them</p>
+                        <p className="text-xs text-gray-500 font-medium text-center">Edit your signature</p>
                         <canvas
                           ref={editCanvasRef}
                           width={400} height={140}
                           className="w-full rounded-xl border border-gray-200 touch-none"
-                          style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 10px 10px", cursor: "cell" }}
+                          style={{
+                            background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 10px 10px",
+                            cursor: "cell",
+                            filter: darkness !== 1 ? `contrast(${darkness}) brightness(${2 - darkness})` : undefined,
+                          }}
                           onMouseDown={onEditStart} onMouseMove={onEditMove} onMouseUp={onEditEnd} onMouseLeave={onEditEnd}
                           onTouchStart={onEditStart} onTouchMove={onEditMove} onTouchEnd={onEditEnd}
                         />
-                        <div className="flex items-center gap-2 px-1">
-                          <span className="text-xs text-gray-400 shrink-0">Eraser</span>
+
+                        {/* Rotate */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 shrink-0 w-12">Rotate</span>
+                          <div className="flex gap-1 flex-1">
+                            <button onClick={() => rotateCanvas(-90)}
+                              className="flex-1 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50" title="Rotate left">↺</button>
+                            <button onClick={() => rotateCanvas(90)}
+                              className="flex-1 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50" title="Rotate right">↻</button>
+                          </div>
+                        </div>
+
+                        {/* Darkness */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 shrink-0 w-12">Darker</span>
+                          <input type="range" min={0.8} max={3} step={0.05} value={darkness}
+                            onChange={e => setDarkness(Number(e.target.value))}
+                            className="flex-1 accent-red-600" />
+                          <span className="text-xs text-gray-500 w-8 text-right">{darkness.toFixed(1)}×</span>
+                        </div>
+
+                        {/* Eraser */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400 shrink-0 w-12">Eraser</span>
                           <input type="range" min={6} max={60} value={eraserSize}
                             onChange={e => setEraserSize(Number(e.target.value))}
                             className="flex-1 accent-red-600" />
-                          <span className="text-xs text-gray-500 w-6 text-right">{eraserSize}</span>
+                          <span className="text-xs text-gray-500 w-8 text-right">{eraserSize}px</span>
                         </div>
+
                         <div className="flex gap-2">
                           <button onClick={cancelEdit} className="flex-1 py-2 text-xs text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
                           <button onClick={confirmEdit} className="flex-1 py-2 text-xs font-bold bg-red-600 text-white rounded-xl hover:bg-red-700">Done</button>
