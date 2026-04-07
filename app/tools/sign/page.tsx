@@ -96,6 +96,13 @@ export default function SignPage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const drawRef = useRef<HTMLCanvasElement>(null);
 
+  // Signature edit (eraser) mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
+  const [eraserSize, setEraserSize] = useState(20);
+  const editCanvasRef = useRef<HTMLCanvasElement>(null);
+  const preEditUrl = useRef<string | null>(null);
+
   // Placement + drag
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -207,6 +214,47 @@ export default function SignPage() {
     setSigDataUrl(drawRef.current.toDataURL("image/png"));
     setPlacement({ pageIndex: 0, xFrac: 0.63, yFrac: 0.80 });
   };
+
+  // Load sig into edit canvas when editing starts
+  useEffect(() => {
+    if (!isEditing || !sigDataUrl || !editCanvasRef.current) return;
+    const c = editCanvasRef.current;
+    const ctx = c.getContext("2d")!;
+    const img = new Image();
+    img.onload = () => {
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = sigDataUrl;
+  }, [isEditing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startEditing = () => { preEditUrl.current = sigDataUrl; setIsEditing(true); };
+  const cancelEdit = () => { setSigDataUrl(preEditUrl.current); setIsEditing(false); };
+  const confirmEdit = () => { setSigDataUrl(editCanvasRef.current!.toDataURL("image/png")); setIsEditing(false); };
+
+  const getEditXY = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const c = editCanvasRef.current!;
+    const r = c.getBoundingClientRect();
+    const sx = c.width / r.width, sy = c.height / r.height;
+    if ("touches" in e) return { x: (e.touches[0].clientX - r.left) * sx, y: (e.touches[0].clientY - r.top) * sy };
+    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+  };
+
+  const eraseAt = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const { x, y } = getEditXY(e);
+    const ctx = editCanvasRef.current!.getContext("2d")!;
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(x, y, eraserSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  };
+
+  const onEditStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => { e.preventDefault(); setIsErasing(true); eraseAt(e); };
+  const onEditMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => { e.preventDefault(); if (isErasing) eraseAt(e); };
+  const onEditEnd = () => setIsErasing(false);
 
   // Upload + background removal
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -412,30 +460,63 @@ export default function SignPage() {
                 {/* Upload */}
                 {sigTab === "upload" && (
                   <div className="space-y-2">
-                    <label className="flex flex-col items-center gap-2 py-6 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-red-300 transition-colors">
-                      <span className="text-3xl">🖼️</span>
-                      <span className="text-sm text-gray-500 font-medium">Upload signature image</span>
-                      <span className="text-xs text-gray-400">PNG, JPG, WEBP</span>
-                      <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleUpload} disabled={!pageUrls.length} />
-                    </label>
-                    {origUpload && (
-                      <button onClick={toggleBgRemoval}
-                        className={`w-full py-2 text-xs font-semibold rounded-xl border transition-colors ${bgRemoved ? "bg-green-50 border-green-300 text-green-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:border-red-300"}`}>
-                        {bgRemoved ? "✓ Background removed" : "Remove white background"}
-                      </button>
+                    {isEditing ? (
+                      <>
+                        <p className="text-xs text-gray-500 font-medium text-center">Paint over lines to erase them</p>
+                        <canvas
+                          ref={editCanvasRef}
+                          width={400} height={140}
+                          className="w-full rounded-xl border border-gray-200 touch-none"
+                          style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 10px 10px", cursor: "cell" }}
+                          onMouseDown={onEditStart} onMouseMove={onEditMove} onMouseUp={onEditEnd} onMouseLeave={onEditEnd}
+                          onTouchStart={onEditStart} onTouchMove={onEditMove} onTouchEnd={onEditEnd}
+                        />
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="text-xs text-gray-400 shrink-0">Eraser</span>
+                          <input type="range" min={6} max={60} value={eraserSize}
+                            onChange={e => setEraserSize(Number(e.target.value))}
+                            className="flex-1 accent-red-600" />
+                          <span className="text-xs text-gray-500 w-6 text-right">{eraserSize}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={cancelEdit} className="flex-1 py-2 text-xs text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+                          <button onClick={confirmEdit} className="flex-1 py-2 text-xs font-bold bg-red-600 text-white rounded-xl hover:bg-red-700">Done</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <label className="flex flex-col items-center gap-2 py-6 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-red-300 transition-colors">
+                          <span className="text-3xl">🖼️</span>
+                          <span className="text-sm text-gray-500 font-medium">Upload signature image</span>
+                          <span className="text-xs text-gray-400">PNG, JPG, WEBP</span>
+                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleUpload} disabled={!pageUrls.length} />
+                        </label>
+                        {origUpload && (
+                          <button onClick={toggleBgRemoval}
+                            className={`w-full py-2 text-xs font-semibold rounded-xl border transition-colors ${bgRemoved ? "bg-green-50 border-green-300 text-green-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:border-red-300"}`}>
+                            {bgRemoved ? "✓ Background removed" : "Remove background"}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
 
                 {/* Sig preview */}
-                {sigDataUrl && (
+                {sigDataUrl && !isEditing && (
                   <div className="border border-red-200 rounded-xl p-3 space-y-2" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
                     <img src={sigDataUrl} alt="Signature" className="max-h-14 object-contain mx-auto" draggable={false} />
                     <p className="text-xs text-center text-red-600 font-medium">
                       {placement ? "Drag to reposition · corner to resize" : "Click on the PDF to place"}
                     </p>
+                    {sigTab === "upload" && (
+                      <button onClick={startEditing}
+                        className="w-full py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        ✏️ Edit signature
+                      </button>
+                    )}
                     <button
-                      onClick={() => { setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false); setPlacement(null); }}
+                      onClick={() => { setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false); setPlacement(null); setIsEditing(false); }}
                       className="w-full py-1.5 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
                       ✕ Remove signature
                     </button>
