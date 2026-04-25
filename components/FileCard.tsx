@@ -19,15 +19,16 @@ interface FileCardProps {
 export default function FileCard({ entry, onRemove, onStatusChange }: FileCardProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [warning, setWarning] = useState("");
 
   const fileSizeMB = (entry.file.size / 1024 / 1024).toFixed(2);
 
   async function handleUnlock() {
-    if (!password.trim()) return;
     onStatusChange(entry.id, "processing");
     const result = await unlockPDF(entry.file, password);
     if (result.success && result.blob && result.filename) {
       downloadBlob(result.blob, result.filename);
+      if (result.warning) setWarning(result.warning);
       onStatusChange(entry.id, "done");
     } else {
       onStatusChange(entry.id, "error", result.error);
@@ -74,6 +75,13 @@ export default function FileCard({ entry, onRemove, onStatusChange }: FileCardPr
         <p className="mt-2 text-xs text-red-500">{entry.error}</p>
       )}
 
+      {entry.status === "done" && warning && (
+        <div className="mt-2 flex items-start gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+          <span className="text-amber-500 text-sm leading-none mt-px">⚠️</span>
+          <p className="text-xs text-amber-700 leading-snug">{warning}</p>
+        </div>
+      )}
+
       {entry.status !== "done" && (
         <div className="mt-3 flex gap-2">
           <div className="relative flex-1">
@@ -82,7 +90,7 @@ export default function FileCard({ entry, onRemove, onStatusChange }: FileCardPr
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-              placeholder="Enter PDF password"
+              placeholder="Password (leave blank if permission-locked only)"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
               disabled={entry.status === "processing"}
             />
@@ -105,7 +113,7 @@ export default function FileCard({ entry, onRemove, onStatusChange }: FileCardPr
           </div>
           <button
             onClick={handleUnlock}
-            disabled={!password.trim() || entry.status === "processing"}
+            disabled={entry.status === "processing"}
             className="bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
           >
             Unlock
