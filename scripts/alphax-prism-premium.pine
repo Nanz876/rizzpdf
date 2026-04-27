@@ -1,0 +1,480 @@
+// AlphaX Prism Premium
+//@version=6
+indicator("AlphaX Prism Premium", shorttitle="Prism Premium", overlay=true, max_labels_count=300, max_boxes_count=300, max_lines_count=300, max_bars_back=500)
+
+// Inputs
+klSwingLen       = input.int(8, "Key Level Swing Length", minval=2, maxval=20, group="Key Levels")
+klMergeATR       = input.float(1.2, "Merge Zones (x ATR)", minval=0.3, maxval=3.0, step=0.1, group="Key Levels")
+klMaxZones       = input.int(6, "Max Active Zones", minval=2, maxval=15, group="Key Levels")
+klMaxAge         = input.int(250, "Zone Max Age (bars)", minval=50, maxval=1000, group="Key Levels")
+klMinTouches     = input.int(2, "Min Touches to Confirm", minval=1, maxval=5, group="Key Levels")
+showKLZones      = input.bool(true, "Show Key Level Zones", group="Key Levels")
+showKLLines      = input.bool(true, "Show Key Level Lines", group="Key Levels")
+
+showPatterns      = input.bool(true, "Show Context Pattern Markers", group="Price Action")
+insideBarBO       = input.bool(true, "Show Inside Bar Breakouts", group="Price Action")
+showMomentumShift = input.bool(true, "Show Momentum Shift", group="Price Action")
+paMinBodyRatio    = input.float(0.4, "Min Body Ratio (Engulf)", minval=0.2, maxval=0.8, step=0.05, group="Price Action")
+pinWickRatio      = input.float(2.5, "Pin Bar Wick Ratio", minval=1.5, maxval=5.0, step=0.5, group="Price Action")
+
+instBodyMulti = input.float(1.8, "Inst. Body Size (x Avg)", minval=1.2, maxval=4.0, step=0.1, group="Institutional Flow")
+instVolMulti  = input.float(1.3, "Inst. Volume (x Avg)", minval=1.1, maxval=3.0, step=0.1, group="Institutional Flow")
+showInstFP    = input.bool(true, "Show Institutional Activity", group="Institutional Flow")
+
+trendSwingLen   = input.int(12, "Trend Swing Length", minval=3, maxval=30, group="Trend Context")
+showTrendLabels = input.bool(true, "Show Trend Shift Labels", group="Trend Context")
+trendCooldown   = input.int(18, "Trend Label Cooldown", minval=5, maxval=50, group="Trend Context")
+adxLen          = input.int(14, "ADX Length", minval=7, maxval=30, group="Trend Context")
+adxThresh       = input.int(22, "ADX Trend Threshold", minval=10, maxval=40, group="Trend Context")
+
+rsiLen         = input.int(14, "RSI Length", minval=5, maxval=30, group="Momentum")
+showDivergence = input.bool(true, "Show RSI Divergence", group="Momentum")
+volLen         = input.int(20, "Volume MA Length", minval=5, maxval=50, group="Volume")
+
+showEmaFast   = input.bool(true, "Show Fast EMA", group="EMA Settings")
+showEmaMedium = input.bool(true, "Show Medium EMA", group="EMA Settings")
+showEmaSlow   = input.bool(true, "Show Slow EMA", group="EMA Settings")
+emaFastLen    = input.int(21, "Fast EMA Length", minval=1, maxval=500, group="EMA Settings")
+emaMedLen     = input.int(50, "Medium EMA Length", minval=1, maxval=500, group="EMA Settings")
+emaSlowLen    = input.int(200, "Slow EMA Length", minval=1, maxval=500, group="EMA Settings")
+
+minConfluence = input.int(4, "Min Confluence Score", minval=2, maxval=10, group="Confluence")
+minConfidence = input.float(45.0, "Min Confidence %", minval=15, maxval=90, step=1, group="Confluence")
+signalCooldown= input.int(12, "Signal Cooldown", minval=2, maxval=50, group="Confluence")
+showSignals   = input.bool(true, "Show Entry Signals", group="Confluence")
+showExits     = input.bool(true, "Show Exit Signals", group="Confluence")
+
+showDash    = input.bool(true, "Show Dashboard", group="Display")
+dashPos     = input.string("Top Right", "Dashboard Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group="Display")
+dashSize    = input.string("Tiny", "Dashboard Text Size", options=["Tiny", "Small", "Normal"], group="Display")
+compactView = input.bool(true, "Compact View", group="Display")
+
+color BULL_PRIMARY = input.color(#c8e624, "Bull Primary", group="Theme")
+color BULL_DIM     = input.color(#9ab81c, "Bull Dim", group="Theme")
+color BEAR_PRIMARY = input.color(#ff1744, "Bear Primary", group="Theme")
+color BEAR_DIM     = input.color(#d50032, "Bear Dim", group="Theme")
+color KL_SUP_CLR   = input.color(#c8e624, "Support Color", group="Theme")
+color KL_RES_CLR   = input.color(#ff1744, "Resistance Color", group="Theme")
+color KL_NEUTRAL   = input.color(#7b7b7b, "Neutral Zone", group="Theme")
+color PA_CLR       = input.color(#8aa7ff, "Pattern Accent", group="Theme")
+color INST_CLR     = input.color(#ffd740, "Institutional Color", group="Theme")
+color EMA_FAST_CLR = input.color(#d5e85a, "Fast EMA", group="Theme")
+color EMA_MED_CLR  = input.color(#8d8d8d, "Medium EMA", group="Theme")
+color EMA_SLOW_CLR = input.color(#4d4d4d, "Slow EMA", group="Theme")
+color DASH_BG      = input.color(#0d0d0f, "Dashboard Background", group="Theme")
+
+atrVal    = ta.atr(14)
+emaFast   = ta.ema(close, emaFastLen)
+emaMedium = ta.ema(close, emaMedLen)
+emaSlow   = ta.ema(close, emaSlowLen)
+
+emaTrendBull  = emaFast > emaMedium and emaMedium > emaSlow
+emaTrendBear  = emaFast < emaMedium and emaMedium < emaSlow
+priceAboveEma = close > emaSlow
+priceBelowEma = close < emaSlow
+overExtended  = math.abs(close - emaFast) > atrVal * 2.2
+
+plot(showEmaFast ? emaFast : na, "Fast EMA", color=color.new(EMA_FAST_CLR, 10), linewidth=1)
+plot(showEmaMedium ? emaMedium : na, "Medium EMA", color=color.new(EMA_MED_CLR, 10), linewidth=1)
+plot(showEmaSlow ? emaSlow : na, "Slow EMA", color=color.new(EMA_SLOW_CLR, 0), linewidth=2)
+
+float bodySize  = math.abs(close - open)
+float candleRng = high - low
+float upperWick = high - math.max(close, open)
+float lowerWick = math.min(close, open) - low
+float bodyRatio = candleRng > 0 ? bodySize / candleRng : 0.0
+bool isBullC    = close > open
+bool isBearC    = close < open
+float avgBody   = ta.sma(bodySize, 20)
+
+[diPlus, diMinus, adxValue] = ta.dmi(adxLen, adxLen)
+bool adxTrending   = adxValue > adxThresh
+bool adxStrongBull = adxTrending and diPlus > diMinus
+bool adxStrongBear = adxTrending and diMinus > diPlus
+
+volSma      = ta.sma(volume, volLen)
+volAboveAvg = volume > volSma
+volSpike    = volume > volSma * instVolMulti
+relVol      = volSma > 0 ? volume / volSma : 1.0
+
+rsiRaw       = ta.rsi(close, rsiLen)
+rsiSmoothed  = ta.ema(rsiRaw, 5)
+rsiSlopeUp   = rsiSmoothed > rsiSmoothed[1] and rsiSmoothed > rsiSmoothed[2]
+rsiSlopeDown = rsiSmoothed < rsiSmoothed[1] and rsiSmoothed < rsiSmoothed[2]
+rsiOB        = rsiRaw > 70
+rsiOS        = rsiRaw < 30
+rsiBullZone  = rsiRaw > 40 and rsiRaw < 70
+rsiBearZone  = rsiRaw < 60 and rsiRaw > 30
+
+[macdLine, macdSignal, macdHist] = ta.macd(close, 12, 26, 9)
+macdBull    = macdLine > macdSignal
+macdBear    = macdLine < macdSignal
+macdMomUp   = macdHist > macdHist[1]
+macdMomDown = macdHist < macdHist[1]
+
+pivLB = 5
+rsiPH = ta.pivothigh(rsiRaw, pivLB, pivLB)
+rsiPL = ta.pivotlow(rsiRaw, pivLB, pivLB)
+prcPH = ta.pivothigh(high, pivLB, pivLB)
+prcPL = ta.pivotlow(low, pivLB, pivLB)
+
+var float pRL = na
+var float pPL = na
+var int pRLB = na
+var float cRL = na
+var float cPL = na
+var int cRLB = na
+var float pRH = na
+var float pPH = na
+var int pRHB = na
+var float cRH = na
+var float cPH = na
+var int cRHB = na
+
+if not na(rsiPL)
+    pRL := cRL
+    pPL := cPL
+    pRLB := cRLB
+    cRL := rsiPL
+    cPL := prcPL
+    cRLB := bar_index - pivLB
+if not na(rsiPH)
+    pRH := cRH
+    pPH := cPH
+    pRHB := cRHB
+    cRH := rsiPH
+    cPH := prcPH
+    cRHB := bar_index - pivLB
+
+bool rsiBullDiv = showDivergence and not na(pPL) and not na(cPL) and not na(pRL) and not na(cRL) and cPL < pPL and cRL > pRL and bar_index - cRLB <= 3 and cRLB - pRLB >= 5 and cRLB - pRLB <= 50
+bool rsiBearDiv = showDivergence and not na(pPH) and not na(cPH) and not na(pRH) and not na(cRH) and cPH > pPH and cRH < pRH and bar_index - cRHB <= 3 and cRHB - pRHB >= 5 and cRHB - pRHB <= 50
+
+bool bullEngulf = isBullC and isBearC[1] and close > open[1] and open < close[1] and bodySize > bodySize[1] * 0.8 and bodyRatio >= paMinBodyRatio and candleRng > atrVal * 0.4
+bool bearEngulf = isBearC and isBullC[1] and close < open[1] and open > close[1] and bodySize > bodySize[1] * 0.8 and bodyRatio >= paMinBodyRatio and candleRng > atrVal * 0.4
+bool pinBarBull = lowerWick > bodySize * pinWickRatio and lowerWick > upperWick * 2.0 and candleRng > atrVal * 0.5 and close > (high + low) / 2
+bool pinBarBear = upperWick > bodySize * pinWickRatio and upperWick > lowerWick * 2.0 and candleRng > atrVal * 0.5 and close < (high + low) / 2
+bool insideBar   = high < high[1] and low > low[1]
+bool ibBullBreak = insideBarBO and insideBar[1] and close > high[1] and isBullC and bodyRatio > 0.35
+bool ibBearBreak = insideBarBO and insideBar[1] and close < low[1] and isBearC and bodyRatio > 0.35
+bool momShiftBull = showMomentumShift and isBearC[2] and isBearC[1] and isBullC and close > high[1] and bodySize > bodySize[1] and bodyRatio > 0.5
+bool momShiftBear = showMomentumShift and isBullC[2] and isBullC[1] and isBearC and close < low[1] and bodySize > bodySize[1] and bodyRatio > 0.5
+bool anyBullPA = bullEngulf or pinBarBull or ibBullBreak or momShiftBull
+bool anyBearPA = bearEngulf or pinBarBear or ibBearBreak or momShiftBear
+
+bool instBullCandle = isBullC and bodySize > avgBody * instBodyMulti and volume > volSma * instVolMulti and bodyRatio > 0.55 and close > (high + low + close) / 3
+bool instBearCandle = isBearC and bodySize > avgBody * instBodyMulti and volume > volSma * instVolMulti and bodyRatio > 0.55 and close < (high + low + close) / 3
+bool instAbsorbBull = lowerWick > bodySize * 2.0 and bodyRatio < 0.45 and volume > volSma * instVolMulti and lowerWick > upperWick * 1.5 and candleRng > atrVal * 0.5
+bool instAbsorbBear = upperWick > bodySize * 2.0 and bodyRatio < 0.45 and volume > volSma * instVolMulti and upperWick > lowerWick * 1.5 and candleRng > atrVal * 0.5
+bool anyInstBull = instBullCandle or instAbsorbBull
+bool anyInstBear = instBearCandle or instAbsorbBear
+
+trendPivH = ta.pivothigh(high, trendSwingLen, trendSwingLen)
+trendPivL = ta.pivotlow(low, trendSwingLen, trendSwingLen)
+var float lastSwingHigh = na
+var float prevSwingHigh = na
+var float lastSwingLow = na
+var float prevSwingLow = na
+var int trendState = 0
+var int lastTrendLabel = na
+
+if not na(trendPivH)
+    prevSwingHigh := lastSwingHigh
+    lastSwingHigh := trendPivH
+if not na(trendPivL)
+    prevSwingLow := lastSwingLow
+    lastSwingLow := trendPivL
+
+bool structureBull = not na(lastSwingHigh) and not na(prevSwingHigh) and not na(lastSwingLow) and not na(prevSwingLow) and lastSwingHigh > prevSwingHigh and lastSwingLow > prevSwingLow
+bool structureBear = not na(lastSwingHigh) and not na(prevSwingHigh) and not na(lastSwingLow) and not na(prevSwingLow) and lastSwingHigh < prevSwingHigh and lastSwingLow < prevSwingLow
+
+bool bullTrendShift = structureBull and trendState != 1 and (na(lastTrendLabel) or bar_index - lastTrendLabel >= trendCooldown)
+bool bearTrendShift = structureBear and trendState != -1 and (na(lastTrendLabel) or bar_index - lastTrendLabel >= trendCooldown)
+if bullTrendShift
+    trendState := 1
+    lastTrendLabel := bar_index
+if bearTrendShift
+    trendState := -1
+    lastTrendLabel := bar_index
+if trendState == 0
+    trendState := emaTrendBull ? 1 : emaTrendBear ? -1 : 0
+
+if showTrendLabels and bullTrendShift
+    label.new(bar_index, low, "UPTREND", style=label.style_label_up, textcolor=color.black, color=color.new(BULL_PRIMARY, 0), size=size.tiny)
+if showTrendLabels and bearTrendShift
+    label.new(bar_index, high, "DOWNTREND", style=label.style_label_down, textcolor=color.white, color=color.new(BEAR_PRIMARY, 0), size=size.tiny)
+
+type KeyLevel
+    float level
+    float upper
+    float lower
+    int firstBar
+    int lastTouchBar
+    int touches
+    bool isSupport
+    bool active
+    box bx
+    line ln
+
+var array<KeyLevel> klZones = array.new<KeyLevel>()
+mergeThresh = atrVal * klMergeATR
+klPivH = ta.pivothigh(high, klSwingLen, klSwingLen)
+klPivL = ta.pivotlow(low, klSwingLen, klSwingLen)
+
+findKL(float price) =>
+    int found = -1
+    if array.size(klZones) > 0
+        for i = 0 to array.size(klZones) - 1
+            z = array.get(klZones, i)
+            if z.active and math.abs(z.level - price) < mergeThresh
+                found := i
+                break
+    found
+
+addOrMergeKL(float price, bool isSup) =>
+    int idx = findKL(price)
+    if idx >= 0
+        z = array.get(klZones, idx)
+        z.level := (z.level * z.touches + price) / (z.touches + 1)
+        z.touches += 1
+        z.lastTouchBar := bar_index - klSwingLen
+        if isSup
+            z.isSupport := true
+        z.upper := z.level + atrVal * 0.25
+        z.lower := z.level - atrVal * 0.25
+        if not na(z.bx)
+            box.set_top(z.bx, z.upper)
+            box.set_bottom(z.bx, z.lower)
+        if not na(z.ln)
+            line.set_y1(z.ln, z.level)
+            line.set_y2(z.ln, z.level)
+        array.set(klZones, idx, z)
+    else
+        if array.size(klZones) >= klMaxZones
+            oldest = array.shift(klZones)
+            if not na(oldest.bx)
+                box.delete(oldest.bx)
+            if not na(oldest.ln)
+                line.delete(oldest.ln)
+        zU = price + atrVal * 0.25
+        zD = price - atrVal * 0.25
+        zB = bar_index - klSwingLen
+        newZ = KeyLevel.new(level=price, upper=zU, lower=zD, firstBar=zB, lastTouchBar=zB, touches=1, isSupport=isSup, active=true,
+          bx=showKLZones ? box.new(zB, zU, bar_index + 2, zD, border_color=color.new(KL_NEUTRAL, 72), bgcolor=color.new(KL_NEUTRAL, 96), border_width=1, extend=extend.right) : na,
+          ln=showKLLines ? line.new(zB, price, bar_index + 2, price, color=color.new(KL_NEUTRAL, 75), style=line.style_dotted, width=1, extend=extend.right) : na)
+        array.push(klZones, newZ)
+
+if not na(klPivH)
+    addOrMergeKL(klPivH, false)
+if not na(klPivL)
+    addOrMergeKL(klPivL, true)
+
+bool nearSupport = false
+bool nearResistance = false
+bool bounceSupport = false
+bool rejectResistance = false
+
+if array.size(klZones) > 0
+    for i = array.size(klZones) - 1 to 0 by -1
+        z = array.get(klZones, i)
+        zoneAge = bar_index - z.firstBar
+        inZone = high >= z.lower and low <= z.upper
+        if zoneAge > klMaxAge
+            if not na(z.bx)
+                box.delete(z.bx)
+            if not na(z.ln)
+                line.delete(z.ln)
+            array.remove(klZones, i)
+        else
+            if inZone
+                z.lastTouchBar := bar_index
+                if z.isSupport
+                    nearSupport := z.touches >= klMinTouches
+                    bounceSupport := z.touches >= klMinTouches and close > z.level and isBullC and bodyRatio > 0.45
+                else
+                    nearResistance := z.touches >= klMinTouches
+                    rejectResistance := z.touches >= klMinTouches and close < z.level and isBearC and bodyRatio > 0.45
+            if close < z.lower and z.isSupport
+                z.isSupport := false
+            if close > z.upper and not z.isSupport
+                z.isSupport := true
+            zoneColor = z.touches >= klMinTouches ? (z.isSupport ? KL_SUP_CLR : KL_RES_CLR) : KL_NEUTRAL
+            if not na(z.bx)
+                box.set_right(z.bx, bar_index + 2)
+                box.set_border_color(z.bx, color.new(zoneColor, 68))
+                box.set_bgcolor(z.bx, color.new(zoneColor, compactView ? 94 : 90))
+            if not na(z.ln)
+                line.set_x2(z.ln, bar_index + 2)
+                line.set_color(z.ln, color.new(zoneColor, 58))
+            array.set(klZones, i, z)
+
+bool contextBull = nearSupport or bounceSupport or trendState == 1 or anyInstBull
+bool contextBear = nearResistance or rejectResistance or trendState == -1 or anyInstBear
+bool showBullPattern = showPatterns and contextBull
+bool showBearPattern = showPatterns and contextBear
+
+int bullScore = 0
+int bearScore = 0
+bullScore += (nearSupport or bounceSupport) ? 1 : 0
+bearScore += (nearResistance or rejectResistance) ? 1 : 0
+bullScore += anyBullPA ? 1 : 0
+bearScore += anyBearPA ? 1 : 0
+bullScore += (bullEngulf or momShiftBull) ? 1 : 0
+bearScore += (bearEngulf or momShiftBear) ? 1 : 0
+bullScore += anyInstBull ? 1 : 0
+bearScore += anyInstBear ? 1 : 0
+bullScore += structureBull ? 1 : 0
+bearScore += structureBear ? 1 : 0
+bullScore += (macdBull and macdMomUp) ? 1 : 0
+bearScore += (macdBear and macdMomDown) ? 1 : 0
+bullScore += (rsiSlopeUp and rsiBullZone) ? 1 : 0
+bearScore += (rsiSlopeDown and rsiBearZone) ? 1 : 0
+bullScore += rsiBullDiv ? 1 : 0
+bearScore += rsiBearDiv ? 1 : 0
+bullScore += volAboveAvg ? 1 : 0
+bearScore += volAboveAvg ? 1 : 0
+bullScore += (emaTrendBull or priceAboveEma) ? 1 : 0
+bearScore += (emaTrendBear or priceBelowEma) ? 1 : 0
+
+float bullConfidence = 0.0
+float bearConfidence = 0.0
+bullConfidence += bounceSupport ? 18 : nearSupport ? 12 : 0
+bearConfidence += rejectResistance ? 18 : nearResistance ? 12 : 0
+bullConfidence += bullEngulf ? 14 : momShiftBull ? 12 : pinBarBull ? 10 : ibBullBreak ? 8 : 0
+bearConfidence += bearEngulf ? 14 : momShiftBear ? 12 : pinBarBear ? 10 : ibBearBreak ? 8 : 0
+bullConfidence += instBullCandle ? 12 : instAbsorbBull ? 8 : 0
+bearConfidence += instBearCandle ? 12 : instAbsorbBear ? 8 : 0
+bullConfidence += structureBull ? 10 : trendState == 1 ? 6 : 0
+bearConfidence += structureBear ? 10 : trendState == -1 ? 6 : 0
+bullConfidence += macdBull and macdMomUp ? 6 : macdBull ? 3 : 0
+bearConfidence += macdBear and macdMomDown ? 6 : macdBear ? 3 : 0
+bullConfidence += rsiSlopeUp and rsiBullZone ? 5 : 0
+bearConfidence += rsiSlopeDown and rsiBearZone ? 5 : 0
+bullConfidence += rsiBullDiv ? 8 : 0
+bearConfidence += rsiBearDiv ? 8 : 0
+bullConfidence += volSpike ? 6 : volAboveAvg ? 3 : 0
+bearConfidence += volSpike ? 6 : volAboveAvg ? 3 : 0
+bullConfidence += emaTrendBull ? 8 : priceAboveEma ? 3 : 0
+bearConfidence += emaTrendBear ? 8 : priceBelowEma ? 3 : 0
+bullConfidence += adxStrongBull ? 6 : 0
+bearConfidence += adxStrongBear ? 6 : 0
+
+bullConfidence += rsiOB ? -12 : 0
+bearConfidence += rsiOS ? -12 : 0
+bullConfidence += trendState == -1 ? -15 : 0
+bearConfidence += trendState == 1 ? -15 : 0
+bullConfidence += adxTrending ? 0 : -6
+bearConfidence += adxTrending ? 0 : -6
+bullConfidence += overExtended ? -8 : 0
+bearConfidence += overExtended ? -8 : 0
+bullConfidence += anyBullPA ? 0 : -10
+bearConfidence += anyBearPA ? 0 : -10
+bullConfidence += volAboveAvg ? 0 : -4
+bearConfidence += volAboveAvg ? 0 : -4
+bullConfidence := math.max(0, math.min(100, bullConfidence))
+bearConfidence := math.max(0, math.min(100, bearConfidence))
+
+gradeFromConfidence(float c) =>
+    string result = "D"
+    if c >= 70
+        result := "A+"
+    else if c >= 55
+        result := "A"
+    else if c >= 40
+        result := "B"
+    else if c >= 25
+        result := "C"
+    result
+
+bullGrade = gradeFromConfidence(bullConfidence)
+bearGrade = gradeFromConfidence(bearConfidence)
+
+bool cleanBullCandle = not rsiOB and not overExtended and bodyRatio > 0.35
+bool cleanBearCandle = not rsiOS and not overExtended and bodyRatio > 0.35
+bool longSignalRaw = bullScore >= minConfluence and bullConfidence >= minConfidence and anyBullPA and (nearSupport or anyInstBull or trendState == 1) and cleanBullCandle and adxTrending and bullConfidence > bearConfidence
+bool shortSignalRaw = bearScore >= minConfluence and bearConfidence >= minConfidence and anyBearPA and (nearResistance or anyInstBear or trendState == -1) and cleanBearCandle and adxTrending and bearConfidence > bullConfidence
+
+var int lastLongSignalBar = na
+var int lastShortSignalBar = na
+bool longSignal = longSignalRaw and (na(lastLongSignalBar) or bar_index - lastLongSignalBar >= signalCooldown)
+bool shortSignal = shortSignalRaw and (na(lastShortSignalBar) or bar_index - lastShortSignalBar >= signalCooldown)
+if longSignal
+    lastLongSignalBar := bar_index
+if shortSignal
+    lastShortSignalBar := bar_index
+
+var int activeTrade = 0
+if longSignal
+    activeTrade := 1
+if shortSignal
+    activeTrade := -1
+
+bool longExit = showExits and activeTrade == 1 and ((nearResistance and bearEngulf) or (trendState == -1 and close < emaMedium and macdBear) or (instBearCandle and close < emaFast) or (rsiOB and anyBearPA))
+bool shortExit = showExits and activeTrade == -1 and ((nearSupport and bullEngulf) or (trendState == 1 and close > emaMedium and macdBull) or (instBullCandle and close > emaFast) or (rsiOS and anyBullPA))
+if longExit
+    activeTrade := 0
+if shortExit
+    activeTrade := 0
+
+barcolor(showInstFP ? instBullCandle ? color.new(INST_CLR, 15) : instBearCandle ? color.new(BEAR_PRIMARY, 15) : na : na)
+plotshape(showInstFP and instAbsorbBull, title="Inst Absorption Bull", style=shape.circle, location=location.bottom, color=color.new(INST_CLR, 25), size=size.tiny)
+plotshape(showInstFP and instAbsorbBear, title="Inst Absorption Bear", style=shape.circle, location=location.bottom, color=color.new(BEAR_DIM, 25), size=size.tiny)
+plotshape(showInstFP and volSpike and not anyInstBull and not anyInstBear, title="Neutral Volume Spike", style=shape.circle, location=location.bottom, color=color.new(KL_NEUTRAL, 25), size=size.tiny)
+
+plotshape(showDivergence and rsiBullDiv, title="Bullish Divergence", style=shape.diamond, location=location.belowbar, color=color.new(BULL_DIM, compactView ? 25 : 5), size=size.tiny)
+plotshape(showDivergence and rsiBearDiv, title="Bearish Divergence", style=shape.diamond, location=location.abovebar, color=color.new(BEAR_DIM, compactView ? 25 : 5), size=size.tiny)
+
+plotshape(showBullPattern and bullEngulf and (bounceSupport or trendState == 1), title="Bull Engulf", style=shape.labelup, location=location.belowbar, color=color.new(BULL_PRIMARY, 5), text="ENG", textcolor=color.black, size=size.tiny)
+plotshape(showBearPattern and bearEngulf and (rejectResistance or trendState == -1), title="Bear Engulf", style=shape.labeldown, location=location.abovebar, color=color.new(BEAR_PRIMARY, 5), text="ENG", textcolor=color.white, size=size.tiny)
+plotshape(showBullPattern and pinBarBull and nearSupport, title="Bull Pin", style=shape.triangleup, location=location.belowbar, color=color.new(PA_CLR, 0), size=size.tiny)
+plotshape(showBearPattern and pinBarBear and nearResistance, title="Bear Pin", style=shape.triangledown, location=location.abovebar, color=color.new(PA_CLR, 0), size=size.tiny)
+plotshape(showBullPattern and ibBullBreak and trendState == 1, title="IB Bull Break", style=shape.circle, location=location.belowbar, color=color.new(BULL_PRIMARY, 25), size=size.tiny)
+plotshape(showBearPattern and ibBearBreak and trendState == -1, title="IB Bear Break", style=shape.circle, location=location.abovebar, color=color.new(BEAR_PRIMARY, 25), size=size.tiny)
+plotshape(showBullPattern and momShiftBull and (nearSupport or anyInstBull), title="Momentum Shift Bull", style=shape.arrowup, location=location.belowbar, color=color.new(BULL_DIM, 5), size=size.tiny)
+plotshape(showBearPattern and momShiftBear and (nearResistance or anyInstBear), title="Momentum Shift Bear", style=shape.arrowdown, location=location.abovebar, color=color.new(BEAR_DIM, 5), size=size.tiny)
+
+plotshape(showSignals and longSignal, title="Long Signal", style=shape.labelup, location=location.belowbar, color=color.new(BULL_PRIMARY, 0), text="BUY", textcolor=color.black, size=size.small)
+plotshape(showSignals and shortSignal, title="Short Signal", style=shape.labeldown, location=location.abovebar, color=color.new(BEAR_PRIMARY, 0), text="SELL", textcolor=color.white, size=size.small)
+plotshape(showExits and longExit, title="Long Exit", style=shape.xcross, location=location.abovebar, color=color.new(BULL_DIM, 0), size=size.tiny)
+plotshape(showExits and shortExit, title="Short Exit", style=shape.xcross, location=location.belowbar, color=color.new(BEAR_DIM, 0), size=size.tiny)
+
+alertcondition(longSignal, title="Prism Premium Long", message="AlphaX Prism Premium long signal")
+alertcondition(shortSignal, title="Prism Premium Short", message="AlphaX Prism Premium short signal")
+alertcondition(longExit, title="Prism Premium Long Exit", message="AlphaX Prism Premium long exit")
+alertcondition(shortExit, title="Prism Premium Short Exit", message="AlphaX Prism Premium short exit")
+
+dashPosition =
+     dashPos == "Top Left" ? position.top_left :
+     dashPos == "Bottom Right" ? position.bottom_right :
+     dashPos == "Bottom Left" ? position.bottom_left :
+     position.top_right
+
+dashTextSize =
+     dashSize == "Small" ? size.small :
+     dashSize == "Normal" ? size.normal :
+     size.tiny
+
+var table dash = table.new(dashPosition, 2, 7, border_width=1)
+verdict = bullConfidence > bearConfidence ? "BULL" : bearConfidence > bullConfidence ? "BEAR" : "NEUTRAL"
+verdictColor = bullConfidence > bearConfidence ? BULL_PRIMARY : bearConfidence > bullConfidence ? BEAR_PRIMARY : KL_NEUTRAL
+paText = bullEngulf ? "BULL ENGULF" : bearEngulf ? "BEAR ENGULF" : pinBarBull ? "BULL PIN" : pinBarBear ? "BEAR PIN" : ibBullBreak ? "IB UP" : ibBearBreak ? "IB DOWN" : momShiftBull ? "SHIFT UP" : momShiftBear ? "SHIFT DOWN" : "NONE"
+zoneText = bounceSupport ? "BOUNCE SUPPORT" : rejectResistance ? "REJECT RESIST" : nearSupport ? "AT SUPPORT" : nearResistance ? "AT RESIST" : "MID RANGE"
+flowText = instBullCandle ? "INST BUY" : instBearCandle ? "INST SELL" : instAbsorbBull ? "ABSORB BUY" : instAbsorbBear ? "ABSORB SELL" : volSpike ? "VOL SPIKE" : "QUIET"
+
+if showDash and barstate.islast
+    table.cell(dash, 0, 0, "VERDICT", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 0, verdict, text_color=verdictColor, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 1, "BULL", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 1, str.tostring(bullScore) + " | " + str.tostring(bullConfidence, "#") + "% " + bullGrade, text_color=BULL_PRIMARY, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 2, "BEAR", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 2, str.tostring(bearScore) + " | " + str.tostring(bearConfidence, "#") + "% " + bearGrade, text_color=BEAR_PRIMARY, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 3, "ZONE", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 3, zoneText, text_color=nearSupport or bounceSupport ? KL_SUP_CLR : nearResistance or rejectResistance ? KL_RES_CLR : KL_NEUTRAL, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 4, "PA", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 4, paText, text_color=PA_CLR, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 5, "FLOW", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 5, flowText, text_color=instBullCandle or instAbsorbBull ? INST_CLR : instBearCandle or instAbsorbBear ? BEAR_PRIMARY : KL_NEUTRAL, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 0, 6, "TREND", text_color=color.white, bgcolor=DASH_BG, text_size=dashTextSize)
+    table.cell(dash, 1, 6, (trendState == 1 ? "UP" : trendState == -1 ? "DOWN" : "NEUTRAL") + " | RSI " + str.tostring(rsiRaw, "#.0") + " | RV " + str.tostring(relVol, "#.00"), text_color=trendState == 1 ? BULL_DIM : trendState == -1 ? BEAR_DIM : KL_NEUTRAL, bgcolor=DASH_BG, text_size=dashTextSize)
+
+if not showDash and barstate.islast
+    table.clear(dash, 0, 0, 1, 6)

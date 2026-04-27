@@ -1,0 +1,366 @@
+// AlphaX Prism Strategy
+//@version=6
+strategy("AlphaX Prism Strategy", shorttitle="Prism Strategy", overlay=true, initial_capital=10000, pyramiding=0, commission_type=strategy.commission.percent, commission_value=0.05, max_bars_back=500)
+
+klSwingLen     = input.int(8, "Key Level Swing Length", minval=2, maxval=20, group="Key Levels")
+klMergeATR     = input.float(1.2, "Merge Zones (x ATR)", minval=0.3, maxval=3.0, step=0.1, group="Key Levels")
+klMaxZones     = input.int(6, "Max Active Zones", minval=2, maxval=15, group="Key Levels")
+klMaxAge       = input.int(250, "Zone Max Age (bars)", minval=50, maxval=1000, group="Key Levels")
+klMinTouches   = input.int(2, "Min Touches to Confirm", minval=1, maxval=5, group="Key Levels")
+trendSwingLen  = input.int(12, "Trend Swing Length", minval=3, maxval=30, group="Trend Context")
+adxLen         = input.int(14, "ADX Length", minval=7, maxval=30, group="Trend Context")
+adxThresh      = input.int(22, "ADX Trend Threshold", minval=10, maxval=40, group="Trend Context")
+rsiLen         = input.int(14, "RSI Length", minval=5, maxval=30, group="Momentum")
+volLen         = input.int(20, "Volume MA Length", minval=5, maxval=50, group="Momentum")
+emaFastLen     = input.int(21, "Fast EMA Length", minval=1, maxval=500, group="EMA")
+emaMedLen      = input.int(50, "Medium EMA Length", minval=1, maxval=500, group="EMA")
+emaSlowLen     = input.int(200, "Slow EMA Length", minval=1, maxval=500, group="EMA")
+paMinBodyRatio = input.float(0.4, "Min Body Ratio (Engulf)", minval=0.2, maxval=0.8, step=0.05, group="Triggers")
+pinWickRatio   = input.float(2.5, "Pin Bar Wick Ratio", minval=1.5, maxval=5.0, step=0.5, group="Triggers")
+instBodyMulti  = input.float(1.8, "Inst. Body Size (x Avg)", minval=1.2, maxval=4.0, step=0.1, group="Triggers")
+instVolMulti   = input.float(1.3, "Inst. Volume (x Avg)", minval=1.1, maxval=3.0, step=0.1, group="Triggers")
+minConfluence  = input.int(4, "Min Confluence Score", minval=2, maxval=10, group="Triggers")
+minConfidence  = input.float(45.0, "Min Confidence %", minval=15, maxval=90, group="Triggers")
+signalCooldown = input.int(12, "Signal Cooldown", minval=2, maxval=50, group="Triggers")
+slAtrMult      = input.float(1.5, "Stop Loss ATR", minval=0.5, maxval=5.0, step=0.1, group="Risk")
+tpRR           = input.float(2.0, "Take Profit R Multiple", minval=0.5, maxval=10.0, step=0.1, group="Risk")
+trailAfterRR   = input.float(1.0, "Move Stop to Breakeven At R", minval=0.5, maxval=5.0, step=0.1, group="Risk")
+useZoneStop    = input.bool(true, "Use Zone Swing Stop Buffer", group="Risk")
+riskPct        = input.float(10.0, "Position Size % of Equity", minval=1.0, maxval=100.0, step=1.0, group="Risk")
+allowLongs     = input.bool(true, "Allow Longs", group="Backtest")
+allowShorts    = input.bool(true, "Allow Shorts", group="Backtest")
+startDate      = input.time(timestamp(2024, 1, 1, 0, 0), "Start Date", group="Backtest")
+endDate        = input.time(timestamp(2035, 12, 31, 0, 0), "End Date", group="Backtest")
+showMarks      = input.bool(true, "Show Entry/Exit Marks", group="Backtest")
+
+inDateRange   = time >= startDate and time <= endDate
+atrVal        = ta.atr(14)
+emaFast       = ta.ema(close, emaFastLen)
+emaMedium     = ta.ema(close, emaMedLen)
+emaSlow       = ta.ema(close, emaSlowLen)
+emaTrendBull  = emaFast > emaMedium and emaMedium > emaSlow
+emaTrendBear  = emaFast < emaMedium and emaMedium < emaSlow
+priceAboveEma = close > emaSlow
+priceBelowEma = close < emaSlow
+overExtended  = math.abs(close - emaFast) > atrVal * 2.2
+
+plot(emaFast, "Fast EMA", color=color.new(#c8e624, 10), linewidth=1)
+plot(emaMedium, "Medium EMA", color=color.new(#888888, 10), linewidth=1)
+plot(emaSlow, "Slow EMA", color=color.new(#555555, 0), linewidth=2)
+
+float bodySize  = math.abs(close - open)
+float candleRng = high - low
+float upperWick = high - math.max(close, open)
+float lowerWick = math.min(close, open) - low
+float bodyRatio = candleRng > 0 ? bodySize / candleRng : 0.0
+bool isBullC    = close > open
+bool isBearC    = close < open
+float avgBody   = ta.sma(bodySize, 20)
+
+[diPlus, diMinus, adxValue] = ta.dmi(adxLen, adxLen)
+bool adxTrending   = adxValue > adxThresh
+bool adxStrongBull = adxTrending and diPlus > diMinus
+bool adxStrongBear = adxTrending and diMinus > diPlus
+
+volSma      = ta.sma(volume, volLen)
+volAboveAvg = volume > volSma
+volSpike    = volume > volSma * instVolMulti
+rsiRaw      = ta.rsi(close, rsiLen)
+rsiSmoothed = ta.ema(rsiRaw, 5)
+rsiSlopeUp   = rsiSmoothed > rsiSmoothed[1] and rsiSmoothed > rsiSmoothed[2]
+rsiSlopeDown = rsiSmoothed < rsiSmoothed[1] and rsiSmoothed < rsiSmoothed[2]
+rsiOB       = rsiRaw > 70
+rsiOS       = rsiRaw < 30
+rsiBullZone = rsiRaw > 40 and rsiRaw < 70
+rsiBearZone = rsiRaw < 60 and rsiRaw > 30
+
+[macdLine, macdSignal, macdHist] = ta.macd(close, 12, 26, 9)
+macdBull    = macdLine > macdSignal
+macdBear    = macdLine < macdSignal
+macdMomUp   = macdHist > macdHist[1]
+macdMomDown = macdHist < macdHist[1]
+
+pivLB = 5
+rsiPH = ta.pivothigh(rsiRaw, pivLB, pivLB)
+rsiPL = ta.pivotlow(rsiRaw, pivLB, pivLB)
+prcPH = ta.pivothigh(high, pivLB, pivLB)
+prcPL = ta.pivotlow(low, pivLB, pivLB)
+
+var float pRL = na
+var float pPL = na
+var int pRLB = na
+var float cRL = na
+var float cPL = na
+var int cRLB = na
+var float pRH = na
+var float pPH = na
+var int pRHB = na
+var float cRH = na
+var float cPH = na
+var int cRHB = na
+
+if not na(rsiPL)
+    pRL := cRL
+    pPL := cPL
+    pRLB := cRLB
+    cRL := rsiPL
+    cPL := prcPL
+    cRLB := bar_index - pivLB
+if not na(rsiPH)
+    pRH := cRH
+    pPH := cPH
+    pRHB := cRHB
+    cRH := rsiPH
+    cPH := prcPH
+    cRHB := bar_index - pivLB
+
+bool rsiBullDiv = not na(pPL) and not na(cPL) and not na(pRL) and not na(cRL) and cPL < pPL and cRL > pRL and bar_index - cRLB <= 3 and cRLB - pRLB >= 5 and cRLB - pRLB <= 50
+bool rsiBearDiv = not na(pPH) and not na(cPH) and not na(pRH) and not na(cRH) and cPH > pPH and cRH < pRH and bar_index - cRHB <= 3 and cRHB - pRHB >= 5 and cRHB - pRHB <= 50
+
+bool bullEngulf = isBullC and isBearC[1] and close > open[1] and open < close[1] and bodySize > bodySize[1] * 0.8 and bodyRatio >= paMinBodyRatio and candleRng > atrVal * 0.4
+bool bearEngulf = isBearC and isBullC[1] and close < open[1] and open > close[1] and bodySize > bodySize[1] * 0.8 and bodyRatio >= paMinBodyRatio and candleRng > atrVal * 0.4
+bool pinBarBull = lowerWick > bodySize * pinWickRatio and lowerWick > upperWick * 2.0 and candleRng > atrVal * 0.5 and close > (high + low) / 2
+bool pinBarBear = upperWick > bodySize * pinWickRatio and upperWick > lowerWick * 2.0 and candleRng > atrVal * 0.5 and close < (high + low) / 2
+bool insideBar  = high < high[1] and low > low[1]
+bool ibBullBreak = insideBar[1] and close > high[1] and isBullC and bodyRatio > 0.35
+bool ibBearBreak = insideBar[1] and close < low[1] and isBearC and bodyRatio > 0.35
+bool momShiftBull = isBearC[2] and isBearC[1] and isBullC and close > high[1] and bodySize > bodySize[1] and bodyRatio > 0.5
+bool momShiftBear = isBullC[2] and isBullC[1] and isBearC and close < low[1] and bodySize > bodySize[1] and bodyRatio > 0.5
+bool anyBullPA = bullEngulf or pinBarBull or ibBullBreak or momShiftBull
+bool anyBearPA = bearEngulf or pinBarBear or ibBearBreak or momShiftBear
+
+bool instBullCandle = isBullC and bodySize > avgBody * instBodyMulti and volume > volSma * instVolMulti and bodyRatio > 0.55 and close > (high + low + close) / 3
+bool instBearCandle = isBearC and bodySize > avgBody * instBodyMulti and volume > volSma * instVolMulti and bodyRatio > 0.55 and close < (high + low + close) / 3
+bool instAbsorbBull = lowerWick > bodySize * 2.0 and bodyRatio < 0.45 and volume > volSma * instVolMulti and lowerWick > upperWick * 1.5 and candleRng > atrVal * 0.5
+bool instAbsorbBear = upperWick > bodySize * 2.0 and bodyRatio < 0.45 and volume > volSma * instVolMulti and upperWick > lowerWick * 1.5 and candleRng > atrVal * 0.5
+bool anyInstBull = instBullCandle or instAbsorbBull
+bool anyInstBear = instBearCandle or instAbsorbBear
+
+trendPivH = ta.pivothigh(high, trendSwingLen, trendSwingLen)
+trendPivL = ta.pivotlow(low, trendSwingLen, trendSwingLen)
+var float lastSwingHigh = na
+var float prevSwingHigh = na
+var float lastSwingLow = na
+var float prevSwingLow = na
+var int trendState = 0
+
+if not na(trendPivH)
+    prevSwingHigh := lastSwingHigh
+    lastSwingHigh := trendPivH
+if not na(trendPivL)
+    prevSwingLow := lastSwingLow
+    lastSwingLow := trendPivL
+
+bool structureBull = not na(lastSwingHigh) and not na(prevSwingHigh) and not na(lastSwingLow) and not na(prevSwingLow) and lastSwingHigh > prevSwingHigh and lastSwingLow > prevSwingLow
+bool structureBear = not na(lastSwingHigh) and not na(prevSwingHigh) and not na(lastSwingLow) and not na(prevSwingLow) and lastSwingHigh < prevSwingHigh and lastSwingLow < prevSwingLow
+trendState := structureBull ? 1 : structureBear ? -1 : emaTrendBull ? 1 : emaTrendBear ? -1 : trendState
+
+type KeyLevel
+    float level
+    float upper
+    float lower
+    int firstBar
+    int touches
+    bool isSupport
+    bool active
+
+var array<KeyLevel> klZones = array.new<KeyLevel>()
+mergeThresh = atrVal * klMergeATR
+klPivH = ta.pivothigh(high, klSwingLen, klSwingLen)
+klPivL = ta.pivotlow(low, klSwingLen, klSwingLen)
+
+findKL(float price) =>
+    int found = -1
+    if array.size(klZones) > 0
+        for i = 0 to array.size(klZones) - 1
+            z = array.get(klZones, i)
+            if z.active and math.abs(z.level - price) < mergeThresh
+                found := i
+                break
+    found
+
+addOrMergeKL(float price, bool isSup) =>
+    int idx = findKL(price)
+    if idx >= 0
+        z = array.get(klZones, idx)
+        z.level := (z.level * z.touches + price) / (z.touches + 1)
+        z.upper := z.level + atrVal * 0.25
+        z.lower := z.level - atrVal * 0.25
+        z.touches += 1
+        if isSup
+            z.isSupport := true
+        array.set(klZones, idx, z)
+    else
+        if array.size(klZones) >= klMaxZones
+            array.shift(klZones)
+        array.push(klZones, KeyLevel.new(price, price + atrVal * 0.25, price - atrVal * 0.25, bar_index - klSwingLen, 1, isSup, true))
+
+if not na(klPivH)
+    addOrMergeKL(klPivH, false)
+if not na(klPivL)
+    addOrMergeKL(klPivL, true)
+
+bool nearSupport = false
+bool nearResistance = false
+bool bounceSupport = false
+bool rejectResistance = false
+float supportFloor = na
+float resistanceCeiling = na
+
+if array.size(klZones) > 0
+    for i = array.size(klZones) - 1 to 0 by -1
+        z = array.get(klZones, i)
+        if bar_index - z.firstBar > klMaxAge
+            array.remove(klZones, i)
+        else
+            inZone = high >= z.lower and low <= z.upper
+            if inZone and z.touches >= klMinTouches
+                if z.isSupport
+                    nearSupport := true
+                    bounceSupport := close > z.level and isBullC and bodyRatio > 0.45
+                    supportFloor := na(supportFloor) ? z.lower : math.min(supportFloor, z.lower)
+                else
+                    nearResistance := true
+                    rejectResistance := close < z.level and isBearC and bodyRatio > 0.45
+                    resistanceCeiling := na(resistanceCeiling) ? z.upper : math.max(resistanceCeiling, z.upper)
+            if close < z.lower and z.isSupport
+                z.isSupport := false
+            if close > z.upper and not z.isSupport
+                z.isSupport := true
+            array.set(klZones, i, z)
+
+int bullScore = 0
+int bearScore = 0
+bullScore += (nearSupport or bounceSupport) ? 1 : 0
+bearScore += (nearResistance or rejectResistance) ? 1 : 0
+bullScore += anyBullPA ? 1 : 0
+bearScore += anyBearPA ? 1 : 0
+bullScore += (bullEngulf or momShiftBull) ? 1 : 0
+bearScore += (bearEngulf or momShiftBear) ? 1 : 0
+bullScore += anyInstBull ? 1 : 0
+bearScore += anyInstBear ? 1 : 0
+bullScore += structureBull ? 1 : 0
+bearScore += structureBear ? 1 : 0
+bullScore += (macdBull and macdMomUp) ? 1 : 0
+bearScore += (macdBear and macdMomDown) ? 1 : 0
+bullScore += (rsiSlopeUp and rsiBullZone) ? 1 : 0
+bearScore += (rsiSlopeDown and rsiBearZone) ? 1 : 0
+bullScore += rsiBullDiv ? 1 : 0
+bearScore += rsiBearDiv ? 1 : 0
+bullScore += volAboveAvg ? 1 : 0
+bearScore += volAboveAvg ? 1 : 0
+bullScore += (emaTrendBull or priceAboveEma) ? 1 : 0
+bearScore += (emaTrendBear or priceBelowEma) ? 1 : 0
+
+float bullConfidence = 0.0
+float bearConfidence = 0.0
+bullConfidence += bounceSupport ? 18 : nearSupport ? 12 : 0
+bearConfidence += rejectResistance ? 18 : nearResistance ? 12 : 0
+bullConfidence += bullEngulf ? 14 : momShiftBull ? 12 : pinBarBull ? 10 : ibBullBreak ? 8 : 0
+bearConfidence += bearEngulf ? 14 : momShiftBear ? 12 : pinBarBear ? 10 : ibBearBreak ? 8 : 0
+bullConfidence += instBullCandle ? 12 : instAbsorbBull ? 8 : 0
+bearConfidence += instBearCandle ? 12 : instAbsorbBear ? 8 : 0
+bullConfidence += structureBull ? 10 : trendState == 1 ? 6 : 0
+bearConfidence += structureBear ? 10 : trendState == -1 ? 6 : 0
+bullConfidence += macdBull and macdMomUp ? 6 : macdBull ? 3 : 0
+bearConfidence += macdBear and macdMomDown ? 6 : macdBear ? 3 : 0
+bullConfidence += rsiSlopeUp and rsiBullZone ? 5 : 0
+bearConfidence += rsiSlopeDown and rsiBearZone ? 5 : 0
+bullConfidence += rsiBullDiv ? 8 : 0
+bearConfidence += rsiBearDiv ? 8 : 0
+bullConfidence += volSpike ? 6 : volAboveAvg ? 3 : 0
+bearConfidence += volSpike ? 6 : volAboveAvg ? 3 : 0
+bullConfidence += emaTrendBull ? 8 : priceAboveEma ? 3 : 0
+bearConfidence += emaTrendBear ? 8 : priceBelowEma ? 3 : 0
+bullConfidence += adxStrongBull ? 6 : 0
+bearConfidence += adxStrongBear ? 6 : 0
+bullConfidence += rsiOB ? -12 : 0
+bearConfidence += rsiOS ? -12 : 0
+bullConfidence += trendState == -1 ? -15 : 0
+bearConfidence += trendState == 1 ? -15 : 0
+bullConfidence += adxTrending ? 0 : -6
+bearConfidence += adxTrending ? 0 : -6
+bullConfidence += overExtended ? -8 : 0
+bearConfidence += overExtended ? -8 : 0
+bullConfidence += anyBullPA ? 0 : -10
+bearConfidence += anyBearPA ? 0 : -10
+bullConfidence += volAboveAvg ? 0 : -4
+bearConfidence += volAboveAvg ? 0 : -4
+bullConfidence := math.max(0, math.min(100, bullConfidence))
+bearConfidence := math.max(0, math.min(100, bearConfidence))
+
+bool cleanBullCandle = not rsiOB and not overExtended and bodyRatio > 0.35
+bool cleanBearCandle = not rsiOS and not overExtended and bodyRatio > 0.35
+bool longSetup = inDateRange and allowLongs and bullScore >= minConfluence and bullConfidence >= minConfidence and anyBullPA and (nearSupport or anyInstBull or trendState == 1) and cleanBullCandle and adxTrending and bullConfidence > bearConfidence
+bool shortSetup = inDateRange and allowShorts and bearScore >= minConfluence and bearConfidence >= minConfidence and anyBearPA and (nearResistance or anyInstBear or trendState == -1) and cleanBearCandle and adxTrending and bearConfidence > bullConfidence
+
+var int lastLongSignalBar = na
+var int lastShortSignalBar = na
+bool longEntry = longSetup and strategy.position_size <= 0 and (na(lastLongSignalBar) or bar_index - lastLongSignalBar >= signalCooldown)
+bool shortEntry = shortSetup and strategy.position_size >= 0 and (na(lastShortSignalBar) or bar_index - lastShortSignalBar >= signalCooldown)
+if longEntry
+    lastLongSignalBar := bar_index
+if shortEntry
+    lastShortSignalBar := bar_index
+
+capitalToUse = strategy.equity * (riskPct / 100.0)
+qty = capitalToUse / close
+
+float longStop = na
+float shortStop = na
+float longTarget = na
+float shortTarget = na
+float longRisk = na
+float shortRisk = na
+
+if longEntry
+    longStop := useZoneStop and not na(supportFloor) ? math.min(supportFloor - atrVal * 0.15, close - atrVal * slAtrMult) : close - atrVal * slAtrMult
+    longRisk := close - longStop
+    longTarget := close + longRisk * tpRR
+    strategy.entry("Long", strategy.long, qty=qty)
+    strategy.exit("Long Exit", "Long", stop=longStop, limit=longTarget)
+
+if shortEntry
+    shortStop := useZoneStop and not na(resistanceCeiling) ? math.max(resistanceCeiling + atrVal * 0.15, close + atrVal * slAtrMult) : close + atrVal * slAtrMult
+    shortRisk := shortStop - close
+    shortTarget := close - shortRisk * tpRR
+    strategy.entry("Short", strategy.short, qty=qty)
+    strategy.exit("Short Exit", "Short", stop=shortStop, limit=shortTarget)
+
+var float liveLongStop = na
+var float liveShortStop = na
+
+if strategy.position_size > 0
+    if na(liveLongStop)
+        entryRisk = strategy.position_avg_price - (useZoneStop and not na(supportFloor) ? math.min(supportFloor - atrVal * 0.15, strategy.position_avg_price - atrVal * slAtrMult) : strategy.position_avg_price - atrVal * slAtrMult)
+        liveLongStop := strategy.position_avg_price - entryRisk
+    openLongR = (close - strategy.position_avg_price) / math.max(strategy.position_avg_price - liveLongStop, syminfo.mintick)
+    if openLongR >= trailAfterRR
+        liveLongStop := math.max(liveLongStop, strategy.position_avg_price)
+    strategy.exit("Long Exit", "Long", stop=liveLongStop, limit=strategy.position_avg_price + (strategy.position_avg_price - liveLongStop) * tpRR)
+else
+    liveLongStop := na
+
+if strategy.position_size < 0
+    if na(liveShortStop)
+        entryRisk = (useZoneStop and not na(resistanceCeiling) ? math.max(resistanceCeiling + atrVal * 0.15, strategy.position_avg_price + atrVal * slAtrMult) : strategy.position_avg_price + atrVal * slAtrMult) - strategy.position_avg_price
+        liveShortStop := strategy.position_avg_price + entryRisk
+    openShortR = (strategy.position_avg_price - close) / math.max(liveShortStop - strategy.position_avg_price, syminfo.mintick)
+    if openShortR >= trailAfterRR
+        liveShortStop := math.min(liveShortStop, strategy.position_avg_price)
+    strategy.exit("Short Exit", "Short", stop=liveShortStop, limit=strategy.position_avg_price - (liveShortStop - strategy.position_avg_price) * tpRR)
+else
+    liveShortStop := na
+
+bool longEarlyExit = strategy.position_size > 0 and ((nearResistance and bearEngulf) or (trendState == -1 and close < emaMedium and macdBear) or (instBearCandle and close < emaFast) or (rsiOB and anyBearPA))
+bool shortEarlyExit = strategy.position_size < 0 and ((nearSupport and bullEngulf) or (trendState == 1 and close > emaMedium and macdBull) or (instBullCandle and close > emaFast) or (rsiOS and anyBullPA))
+
+if longEarlyExit
+    strategy.close("Long", comment="Context Exit")
+if shortEarlyExit
+    strategy.close("Short", comment="Context Exit")
+
+plotshape(showMarks and longEntry, title="Long Entry", style=shape.labelup, location=location.belowbar, color=#c8e624, text="BUY", textcolor=color.black, size=size.small)
+plotshape(showMarks and shortEntry, title="Short Entry", style=shape.labeldown, location=location.abovebar, color=#ff1744, text="SELL", textcolor=color.white, size=size.small)
+plotshape(showMarks and longEarlyExit, title="Long Early Exit", style=shape.xcross, location=location.abovebar, color=#9ab81c, size=size.tiny)
+plotshape(showMarks and shortEarlyExit, title="Short Early Exit", style=shape.xcross, location=location.belowbar, color=#d50032, size=size.tiny)

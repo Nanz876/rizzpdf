@@ -1,1 +1,1 @@
-{"version":"0.0.1","configurations":[{"name":"rizzpdf-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000}]}
+{"version":"0.0.1","configurations":[{"name":"rizzpdf-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000},{"name":"token-dashboard","runtimeExecutable":"node","runtimeArgs":["C:/Users/kael_/OneDrive/Desktop/token-dashboard/server.js"],"port":3777}]}

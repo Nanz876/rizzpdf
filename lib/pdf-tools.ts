@@ -165,7 +165,7 @@ export async function compressPDF(
     // Recompress only the embedded JPEG images inside the PDF using pdf-lib's
     // internal object API. Text, fonts, and vectors are never touched — text
     // stays fully selectable in the output.
-    const jpegQualityMap = { low: 0.55, medium: 0.75, high: 0.90 };
+    const jpegQualityMap = { low: 0.65, medium: 0.82, high: 0.92 };
     const jpegQ = jpegQualityMap[quality];
 
     const bytes = await file.arrayBuffer();
@@ -627,10 +627,11 @@ export async function protectPDF(
       allowExtraction: false,
       allowAssembly: false,
     });
-    const blob = new Blob([encrypted.buffer as ArrayBuffer], { type: "application/pdf" });
+    const blob = new Blob([encrypted.buffer.slice(encrypted.byteOffset, encrypted.byteOffset + encrypted.byteLength) as ArrayBuffer], { type: "application/pdf" });
     return { success: true, blob, filename: `${baseName(file)}_protected.pdf` };
-  } catch {
-    return { success: false, error: "Failed to encrypt PDF." };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return { success: false, error: `Failed to encrypt PDF: ${msg}` };
   }
 }
 
@@ -838,7 +839,7 @@ export type BatchOptions =
   | { tool: "compress"; quality: "low" | "medium" | "high" }
   | { tool: "rotate"; angle: 90 | 180 | 270 }
   | { tool: "pdf-to-jpg" }
-  | { tool: "watermark"; text: string }
+  | { tool: "watermark"; text: string; opacity?: number; position?: "center" | "diagonal"; fontSize?: number; color?: "gray" | "red" | "blue" }
   | { tool: "page-numbers"; position?: "bottom-center" | "bottom-right" | "bottom-left" }
   | { tool: "unlock"; password?: string };
 
@@ -865,12 +866,29 @@ export async function batchProcess(
       } else if (options.tool === "pdf-to-jpg") {
         result = await pdfToJpg(f);
         if (result.success && result.blobs && result.blobs.length > 0) {
-          results[i] = { blob: result.blobs[0], filename: result.filenames?.[0] ?? f.name.replace(/\.pdf$/i, "_p1.jpg") };
+          if (result.blobs.length === 1) {
+            results[i] = { blob: result.blobs[0], filename: result.filenames?.[0] ?? f.name.replace(/\.pdf$/i, ".jpg") };
+          } else {
+            // Multiple pages — zip them all
+            const JSZip = (await import("jszip")).default;
+            const zip = new JSZip();
+            result.blobs.forEach((b, idx) => {
+              zip.file(result.filenames?.[idx] ?? `page_${idx + 1}.jpg`, b);
+            });
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            results[i] = { blob: zipBlob, filename: f.name.replace(/\.pdf$/i, "_pages.zip") };
+          }
           onProgress(i, "done");
           return;
         }
       } else if (options.tool === "watermark") {
-        result = await watermarkPDF(f, { text: options.text, opacity: 0.3, fontSize: 60, color: "gray" });
+        result = await watermarkPDF(f, {
+          text: options.text,
+          opacity: options.opacity ?? 0.3,
+          position: options.position ?? "diagonal",
+          fontSize: options.fontSize ?? 60,
+          color: options.color ?? "gray",
+        });
       } else if (options.tool === "page-numbers") {
         result = await addPageNumbers(f, { position: options.position ?? "bottom-center" });
       } else if (options.tool === "unlock") {

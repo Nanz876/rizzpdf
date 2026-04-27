@@ -13,7 +13,11 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__upload_file",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
-      "Bash(ls -la C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.js C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.mjs)"
+      "Bash(ls -la C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.js C:/Users/kael_/OneDrive/Desktop/rizzpdf-app/public/*.mjs)",
+      "Bash(mkdir \"C:/Users/kael_/AlphaX-Prism\")",
+      "Bash(cp \"C:/Users/kael_/rizzpdf-app/scripts/alphax-prism-v2-ctrader.cs\" \"C:/Users/kael_/AlphaX-Prism/alphax-prism-v2-ctrader.cs\")",
+      "Bash(python3 -c ' *)",
+      "PowerShell($env:PYTHONIOENCODING = \"utf-8\"; cd \"C:\\\\Users\\\\kael_\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\9bb57a58-9a7b-458e-9d7e-cb698ebe51ae\\\\961368c5-716a-4823-adac-0dad05129ad6\\\\skills\\\\skill-creator\"; python -m scripts.package_skill \"..\\\\code\")"
     ]
   }
 }
