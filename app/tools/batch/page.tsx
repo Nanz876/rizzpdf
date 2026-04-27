@@ -4,6 +4,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import PaywallModal from "@/components/PaywallModal";
 import { batchProcess, BatchOptions, downloadBlob } from "@/lib/pdf-tools";
+import { useProStatus } from "@/lib/useProStatus";
 
 const FREE_LIMIT = 3;
 
@@ -33,22 +34,21 @@ export default function BatchPage() {
   const [quality, setQuality] = useState<"low" | "medium" | "high">("medium");
   const [angle, setAngle] = useState<90 | 180 | 270>(90);
   const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");
+  const [watermarkPosition, setWatermarkPosition] = useState<"diagonal" | "center">("diagonal");
+  const [watermarkOpacity, setWatermarkOpacity] = useState(0.3);
+  const [watermarkFontSize, setWatermarkFontSize] = useState(60);
+  const [watermarkColor, setWatermarkColor] = useState<"gray" | "red" | "blue">("gray");
   const [pageNumPosition, setPageNumPosition] = useState<"bottom-center" | "bottom-right" | "bottom-left">("bottom-center");
   const [unlockPassword, setUnlockPassword] = useState("");
   const [running, setRunning] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [isPro, setIsPro] = useState(false);
+  const { isPro, loading: proLoading } = useProStatus();
   const resultsRef = useRef<Array<{ blob: Blob; filename: string } | null>>([]);
-
-  useEffect(() => {
-    const until = localStorage.getItem("rizzpdf_bulk_until");
-    if (until && Date.now() < Number(until)) setIsPro(true);
-  }, []);
 
   const handleFilesAdded = useCallback(
     (newFiles: File[]) => {
       const currentCount = files.length;
-      const allowed = isPro ? Infinity : FREE_LIMIT;
+      const allowed = proLoading || isPro ? Infinity : FREE_LIMIT;
       if (currentCount >= allowed) { setShowPaywall(true); return; }
       const toAdd = newFiles.slice(0, allowed - currentCount);
       const overflow = newFiles.length - toAdd.length;
@@ -58,13 +58,13 @@ export default function BatchPage() {
       setFiles((prev) => [...prev, ...entries]);
       if (overflow > 0) setTimeout(() => setShowPaywall(true), 300);
     },
-    [files.length, isPro]
+    [files.length, isPro, proLoading]
   );
 
   const buildOptions = (): BatchOptions => {
     if (tool === "compress") return { tool: "compress", quality };
     if (tool === "rotate") return { tool: "rotate", angle };
-    if (tool === "watermark") return { tool: "watermark", text: watermarkText || "CONFIDENTIAL" };
+    if (tool === "watermark") return { tool: "watermark", text: watermarkText || "CONFIDENTIAL", opacity: watermarkOpacity, position: watermarkPosition, fontSize: watermarkFontSize, color: watermarkColor };
     if (tool === "page-numbers") return { tool: "page-numbers", position: pageNumPosition };
     if (tool === "unlock") return { tool: "unlock", password: unlockPassword || undefined };
     return { tool: "pdf-to-jpg" };
@@ -114,7 +114,7 @@ export default function BatchPage() {
       {/* Upload zone always visible */}
       <UploadZone onFilesAdded={handleFilesAdded} />
 
-      {!isPro && files.length > 0 && (
+      {!proLoading && !isPro && files.length > 0 && (
         <div className="flex items-center justify-center gap-2 mt-2">
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -186,15 +186,55 @@ export default function BatchPage() {
             )}
 
             {tool === "watermark" && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Watermark text</label>
-                <input
-                  type="text"
-                  value={watermarkText}
-                  onChange={(e) => setWatermarkText(e.target.value)}
-                  placeholder="CONFIDENTIAL"
-                  className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Watermark text</label>
+                  <input
+                    type="text"
+                    value={watermarkText}
+                    onChange={(e) => setWatermarkText(e.target.value)}
+                    placeholder="CONFIDENTIAL"
+                    className="w-full max-w-xs border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1.5">Position</label>
+                    <div className="flex gap-2">
+                      {(["diagonal", "center"] as const).map((p) => (
+                        <button key={p} onClick={() => setWatermarkPosition(p)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${watermarkPosition === p ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-600 hover:border-red-300"}`}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1.5">Color</label>
+                    <div className="flex gap-2">
+                      {(["gray", "red", "blue"] as const).map((c) => (
+                        <button key={c} onClick={() => setWatermarkColor(c)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${watermarkColor === c ? "bg-red-600 text-white border-red-600" : "border-gray-200 text-gray-600 hover:border-red-300"}`}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-6">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Opacity: {Math.round(watermarkOpacity * 100)}%</label>
+                    <input type="range" min={0.1} max={0.8} step={0.05} value={watermarkOpacity}
+                      onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
+                      className="w-32 accent-red-600" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Font size: {watermarkFontSize}px</label>
+                    <input type="range" min={20} max={120} step={5} value={watermarkFontSize}
+                      onChange={(e) => setWatermarkFontSize(parseInt(e.target.value))}
+                      className="w-32 accent-red-600" />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -298,7 +338,7 @@ export default function BatchPage() {
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+          onPay={() => setShowPaywall(false)}
         />
       )}
     </ToolShell>

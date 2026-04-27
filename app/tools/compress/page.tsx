@@ -1,6 +1,6 @@
 "use client";
 import { logTool } from "@/lib/logTool";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -8,6 +8,7 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import PaywallModal from "@/components/PaywallModal";
 import { compressPDF, downloadBlob } from "@/lib/pdf-tools";
+import { useProStatus } from "@/lib/useProStatus";
 
 type Quality = "low" | "medium" | "high";
 type Status = "idle" | "ready" | "processing" | "done" | "error";
@@ -25,13 +26,8 @@ export default function CompressPage() {
   const [error, setError] = useState("");
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
-  const [isPro, setIsPro] = useState(false);
+  const { isPro, loading: proLoading } = useProStatus();
   const [showPaywall, setShowPaywall] = useState(false);
-
-  useEffect(() => {
-    const until = localStorage.getItem("rizzpdf_bulk_until");
-    if (until && Date.now() < Number(until)) setIsPro(true);
-  }, []);
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setOrigSize(files[0].size); setStatus("ready");
@@ -39,7 +35,7 @@ export default function CompressPage() {
 
   const handleCompress = async () => {
     if (!file) return;
-    if (!isPro) { setShowPaywall(true); return; }
+    if (!proLoading && !isPro) { setShowPaywall(true); return; }
     logTool("compress"); setStatus("processing");
     const result = await compressPDF(file, quality);
     if (result.success && result.blob) {
@@ -93,7 +89,7 @@ export default function CompressPage() {
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+          onPay={() => setShowPaywall(false)}
         />
       )}
 

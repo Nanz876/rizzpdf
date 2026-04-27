@@ -1,27 +1,23 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import FileCard, { FileEntry } from "@/components/FileCard";
 import PaywallModal from "@/components/PaywallModal";
+import { useProStatus } from "@/lib/useProStatus";
 
 const FREE_LIMIT = 3;
 
 export default function UnlockPage() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [isPro, setIsPro] = useState(false);
-
-  useEffect(() => {
-    const until = localStorage.getItem("rizzpdf_bulk_until");
-    if (until && Date.now() < Number(until)) setIsPro(true);
-  }, []);
+  const { isPro, loading: proLoading } = useProStatus();
 
   const handleFilesAdded = useCallback(
     (newFiles: File[]) => {
       const currentCount = files.length;
-      const allowed = isPro ? Infinity : FREE_LIMIT;
+      const allowed = proLoading || isPro ? Infinity : FREE_LIMIT;
       if (currentCount >= allowed) { setShowPaywall(true); return; }
       const toAdd = newFiles.slice(0, allowed - currentCount);
       const overflow = newFiles.length - toAdd.length;
@@ -29,7 +25,7 @@ export default function UnlockPage() {
       setFiles((prev) => [...prev, ...entries]);
       if (overflow > 0) setTimeout(() => setShowPaywall(true), 300);
     },
-    [files.length, isPro]
+    [files.length, isPro, proLoading]
   );
 
   const handleRemove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), []);
@@ -46,7 +42,7 @@ export default function UnlockPage() {
     >
       <UploadZone onFilesAdded={handleFilesAdded} />
 
-      {!isPro && files.length > 0 && (
+      {!proLoading && !isPro && files.length > 0 && (
         <div className="mt-4 flex items-center justify-center gap-2">
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -81,7 +77,7 @@ export default function UnlockPage() {
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+          onPay={() => setShowPaywall(false)}
         />
       )}
     </ToolShell>

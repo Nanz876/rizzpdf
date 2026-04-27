@@ -8,6 +8,7 @@ import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import PaywallModal from "@/components/PaywallModal";
 import { renderThumbnails, watermarkPDF, downloadBlob } from "@/lib/pdf-tools";
+import { useProStatus } from "@/lib/useProStatus";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 type WmPosition = "center" | "diagonal";
@@ -23,14 +24,12 @@ export default function WatermarkPage() {
   const [fontSize, setFontSize] = useState(60);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const [isPro, setIsPro] = useState(false);
+  const { isPro, loading: proLoading } = useProStatus();
   const [showPaywall, setShowPaywall] = useState(false);
   const [freeCount, setFreeCount] = useState(0);
   const FREE_LIMIT = 3;
 
   useEffect(() => {
-    const until = localStorage.getItem("rizzpdf_bulk_until");
-    if (until && Date.now() < Number(until)) setIsPro(true);
     const count = parseInt(localStorage.getItem("rizzpdf_watermark_count") ?? "0", 10);
     setFreeCount(count);
   }, []);
@@ -49,7 +48,7 @@ export default function WatermarkPage() {
 
   const handleApply = async () => {
     if (!file) return;
-    if (!isPro && freeCount >= FREE_LIMIT) { setShowPaywall(true); return; }
+    if (!proLoading && !isPro && freeCount >= FREE_LIMIT) { setShowPaywall(true); return; }
     logTool("watermark"); setStatus("processing");
     const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
@@ -142,7 +141,7 @@ export default function WatermarkPage() {
               <div className="relative inline-block max-w-full">
                 <img src={previewUrl} alt="Preview" className="max-h-96 object-contain rounded-lg shadow-sm" />
                 <div style={overlayStyle} className="pointer-events-none select-none">
-                  <span style={{ color: colorMap[color], opacity, fontSize: Math.min(fontSize, 48), fontWeight: 700, whiteSpace: "nowrap" }}>
+                  <span style={{ color: colorMap[color], opacity, fontSize, fontWeight: 700, whiteSpace: "nowrap" }}>
                     {text}
                   </span>
                 </div>
@@ -156,7 +155,7 @@ export default function WatermarkPage() {
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onPay={() => { setIsPro(true); setShowPaywall(false); }}
+          onPay={() => setShowPaywall(false)}
         />
       )}
     </ToolShell>
