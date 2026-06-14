@@ -15,7 +15,7 @@ All PDF processing is client-side only. Files never leave the browser. Never add
 
 **Monetization tiers:**
 - Free: 3 operations (counter in localStorage `rizzpdf_free_count`)
-- Bulk $1/24hr: localStorage `rizzpdf_bulk_until` (timestamp) — no account needed
+- Bulk $1/24hr: localStorage `rizzpdf_bulk_session` (paid Stripe session id) — no account needed. `useProStatus` re-validates it against `/api/verify-session` server-side every load (checks payment_status/mode + derives the 24h window from Stripe's `created` timestamp), so a tampered localStorage value can't grant access. Legacy `rizzpdf_bulk_until` timestamp is no longer trusted.
 - Pro $7/mo: Clerk user + Supabase `subscriptions` table
 
 **Paywall:** `components/PaywallModal.tsx` handles the $1 upgrade. Reuse across all tools.
