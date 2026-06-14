@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { rateLimit, clientKey, tooMany } from "@/lib/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST() {
+export async function POST(req: Request) {
+  const rl = rateLimit(clientKey(req, "checkout"), 10, 60_000);
+  if (!rl.ok) return tooMany(rl.retryAfter);
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   const session = await stripe.checkout.sessions.create({

@@ -2,8 +2,12 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
-const PRO_CACHE_KEY = "rizzpdf_pro_verified";
-const PRO_CACHE_TTL = 8 * 60 * 60 * 1000; // 8 hours
+const DAY_PASS_KEY = "rizzpdf_bulk_session";
+
+// Module-level memo so repeated mounts within one tab session don't re-hit the
+// network. It lives in JS memory only (cleared on reload) and is therefore not
+// forgeable like a localStorage value would be.
+let dayPassMemo: { sessionId: string; expiresAt: number } | null = null;
 
 export function useProStatus(): { isPro: boolean; loading: boolean } {
   const { isSignedIn, isLoaded } = useUser();
@@ -12,48 +16,62 @@ export function useProStatus(): { isPro: boolean; loading: boolean } {
 
   useEffect(() => {
     if (!isLoaded) return;
+    let cancelled = false;
 
-    // Check bulk day pass first (no network needed)
-    const until = localStorage.getItem("rizzpdf_bulk_until");
-    if (until && Date.now() < Number(until)) {
-      setIsPro(true);
+    const finish = (pro: boolean) => {
+      if (cancelled) return;
+      setIsPro(pro);
       setLoading(false);
-      return;
-    }
+    };
 
-    // Not signed in — definitively free
-    if (!isSignedIn) {
-      localStorage.removeItem(PRO_CACHE_KEY);
-      setLoading(false);
-      return;
-    }
-
-    // Check cached pro status — avoids API round-trip on repeat visits within 8h
-    try {
-      const cached = localStorage.getItem(PRO_CACHE_KEY);
-      if (cached) {
-        const { until: cacheExpiry } = JSON.parse(cached);
-        if (Date.now() < cacheExpiry) {
-          setIsPro(true);
-          setLoading(false);
-          return;
+    (async () => {
+      // 1. Day pass — validated server-side against Stripe. The grant is bound to
+      // a real paid checkout session; a tampered localStorage value fails the
+      // server check, so the old "set a future timestamp" bypass no longer works.
+      const sessionId = localStorage.getItem(DAY_PASS_KEY);
+      if (sessionId) {
+        if (
+          dayPassMemo &&
+          dayPassMemo.sessionId === sessionId &&
+          Date.now() < dayPassMemo.expiresAt
+        ) {
+          return finish(true);
+        }
+        try {
+          const r = await fetch(
+            `/api/verify-session?session_id=${encodeURIComponent(sessionId)}`
+          );
+          const data = await r.json();
+          if (data?.valid) {
+            dayPassMemo = {
+              sessionId,
+              expiresAt: Number(data.expiresAt) || Date.now(),
+            };
+            return finish(true);
+          }
+          // Invalid or expired — drop the stale key.
+          localStorage.removeItem(DAY_PASS_KEY);
+          dayPassMemo = null;
+        } catch {
+          // Network error — fall through to the subscription check.
         }
       }
-    } catch (_) {}
 
-    fetch("/api/user/subscription")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.tier === "pro") {
-          setIsPro(true);
-          localStorage.setItem(
-            PRO_CACHE_KEY,
-            JSON.stringify({ until: Date.now() + PRO_CACHE_TTL })
-          );
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      // 2. Account subscription — the server is the sole authority (no client-side
+      // cache that could be edited to fake Pro).
+      if (!isSignedIn) return finish(false);
+      try {
+        const r = await fetch("/api/user/subscription");
+        const data = await r.json();
+        return finish(data?.tier === "pro");
+      } catch {
+        return finish(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isSignedIn, isLoaded]);
 
   return { isPro, loading };

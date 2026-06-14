@@ -20,7 +20,11 @@ export default function SuccessPage() {
       .then((r) => r.json())
       .then(({ valid }) => {
         if (valid) {
-          localStorage.setItem("rizzpdf_bulk_until", String(Date.now() + 24 * 60 * 60 * 1000));
+          // Store the paid session id (not a self-computed timestamp). Pro status
+          // is re-validated against Stripe server-side on every load, so this
+          // value can't be forged to fake a day pass.
+          localStorage.setItem("rizzpdf_bulk_session", sessionId);
+          localStorage.removeItem("rizzpdf_bulk_until"); // drop legacy forgeable key
           setVerifying(false);
         } else {
           router.replace("/");

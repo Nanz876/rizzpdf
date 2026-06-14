@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import PaywallModal from "@/components/PaywallModal";
@@ -43,7 +43,8 @@ export default function BatchPage() {
   const [running, setRunning] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const { isPro, loading: proLoading } = useProStatus();
-  const resultsRef = useRef<Array<{ blob: Blob; filename: string } | null>>([]);
+  const resultsRef = useRef<Array<{ blob: Blob; filename: string; warning?: string } | null>>([]);
+  const [warnings, setWarnings] = useState<(string | undefined)[]>([]);
 
   const handleFilesAdded = useCallback(
     (newFiles: File[]) => {
@@ -75,6 +76,7 @@ export default function BatchPage() {
     setRunning(true);
     setFiles((prev) => prev.map((f) => ({ ...f, status: "idle", error: undefined })));
     resultsRef.current = [];
+    setWarnings([]);
 
     const opts = buildOptions();
     const fileList = files.map((f) => f.file);
@@ -86,6 +88,7 @@ export default function BatchPage() {
     });
 
     resultsRef.current = results;
+    setWarnings(results.map((r) => r?.warning));
     setRunning(false);
   };
 
@@ -297,6 +300,12 @@ export default function BatchPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{entry.file.name}</p>
                   <p className="text-xs text-gray-400">{fmt(entry.file.size)}</p>
+                  {entry.status === "done" && warnings[i] && (
+                    <p className="text-xs text-amber-600 mt-0.5 flex items-start gap-1">
+                      <span className="leading-none">⚠️</span>
+                      <span className="leading-snug">{warnings[i]}</span>
+                    </p>
+                  )}
                 </div>
 
                 {entry.status === "idle" && (

@@ -4,6 +4,12 @@ import { createAdminClient } from "@/lib/supabase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+// Clerk user IDs always have this prefix. Validating the shape rejects forged or
+// malformed metadata before it can be written against a real account row.
+function isValidUserId(id: unknown): id is string {
+  return typeof id === "string" && /^user_[A-Za-z0-9]+$/.test(id);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function subToRow(sub: any) {
   return {
@@ -41,13 +47,13 @@ export async function POST(req: NextRequest) {
     event.type === "customer.subscription.updated"
   ) {
     const userId = obj.metadata?.userId;
-    if (!userId) return NextResponse.json({ received: true });
+    if (!isValidUserId(userId)) return NextResponse.json({ received: true });
     await supabase.from("subscriptions").upsert(subToRow(obj));
   }
 
   if (event.type === "customer.subscription.deleted") {
     const userId = obj.metadata?.userId;
-    if (!userId) return NextResponse.json({ received: true });
+    if (!isValidUserId(userId)) return NextResponse.json({ received: true });
     await supabase
       .from("subscriptions")
       .update({ status: "canceled", updated_at: new Date().toISOString() })
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
     const userId = (sub as unknown as Record<string, unknown>).metadata
       ? (sub.metadata as Record<string, string>).userId
       : undefined;
-    if (!userId) return NextResponse.json({ received: true });
+    if (!isValidUserId(userId)) return NextResponse.json({ received: true });
     await supabase.from("subscriptions").upsert(subToRow(sub));
   }
 
