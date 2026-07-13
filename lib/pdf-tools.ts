@@ -1,4 +1,6 @@
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
+import type { BirthChartResult, ChartPoint } from "./astrology";
+import { formatDegree, signBlurb, computeAspects } from "./astrology";
 
 export interface ToolResult {
   success: boolean;
@@ -924,4 +926,123 @@ export async function batchProcess(
   });
 
   return results;
+}
+
+// ─── Birth Chart Report ─────────────────────────────────────────────────────
+
+function monthName(m: number): string {
+  return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m - 1];
+}
+
+export async function generateBirthChartPdf(chart: BirthChartResult, wheelPngDataUrl: string): Promise<ToolResult> {
+  try {
+    const doc = await PDFDocument.create();
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const regular = await doc.embedFont(StandardFonts.Helvetica);
+    const red = rgb(0.863, 0.149, 0.149);
+    const dark = rgb(0.1, 0.11, 0.15);
+    const gray = rgb(0.45, 0.47, 0.52);
+
+    const pngBase64 = wheelPngDataUrl.split(",")[1];
+    const pngBytes = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
+    const wheelImage = await doc.embedPng(pngBytes);
+
+    const { input } = chart;
+    const dateStr = `${monthName(input.month)} ${input.day}, ${input.year}`;
+    const timeStr = input.timeUnknown
+      ? "Time unknown"
+      : `${String(((input.hour + 11) % 12) + 1)}:${String(input.minute).padStart(2, "0")} ${input.hour < 12 ? "AM" : "PM"}`;
+
+    // ── Page 1: wheel + big three ─────────────────────────────────────────
+    const page1 = doc.addPage([612, 792]);
+    let y = 740;
+
+    page1.drawText("RizzPDF", { x: 48, y, size: 11, font: bold, color: red });
+    page1.drawText("Birth Chart Report", { x: 48, y: y - 20, size: 24, font: bold, color: dark });
+    y -= 48;
+    page1.drawText(input.name || "Untitled Chart", { x: 48, y, size: 15, font: bold, color: dark });
+    y -= 18;
+    page1.drawText(`${dateStr} · ${timeStr} · ${input.locationLabel ?? ""}`, { x: 48, y, size: 10.5, font: regular, color: gray });
+
+    const wheelSize = 380;
+    const wheelX = (612 - wheelSize) / 2;
+    const wheelY = y - wheelSize - 30;
+    page1.drawImage(wheelImage, { x: wheelX, y: wheelY, width: wheelSize, height: wheelSize });
+
+    let by = wheelY - 30;
+    const bigThree: [string, string, string][] = [
+      ["Sun", chart.sunSign, signBlurb(chart.sunSign)],
+      ["Moon", chart.moonSign, signBlurb(chart.moonSign)],
+      ...(chart.risingSign ? [["Rising", chart.risingSign, signBlurb(chart.risingSign)] as [string, string, string]] : []),
+    ];
+    for (const [label, sign, blurb] of bigThree) {
+      page1.drawText(`${label} in ${sign}`, { x: 48, y: by, size: 12.5, font: bold, color: red });
+      page1.drawText(blurb, { x: 170, y: by, size: 10.5, font: regular, color: dark });
+      by -= 20;
+    }
+
+    if (input.timeUnknown) {
+      page1.drawText("Exact birth time unknown — Ascendant, Midheaven, and houses are omitted.", {
+        x: 48, y: by - 6, size: 9, font: regular, color: gray,
+      });
+    }
+
+    page1.drawText("Positions calculated with simplified orbital mechanics (~1 arc-minute precision). For reflection & entertainment.", {
+      x: 48, y: 36, size: 8, font: regular, color: gray,
+    });
+
+    // ── Page 2: placements table + aspects ──────────────────────────────────
+    const page2 = doc.addPage([612, 792]);
+    let ty = 740;
+    page2.drawText("Planetary Placements", { x: 48, y: ty, size: 16, font: bold, color: dark });
+    ty -= 28;
+
+    const cols = [
+      { label: "Point", x: 48 },
+      { label: "Sign & Degree", x: 180 },
+      { label: "House", x: 360 },
+      { label: "Retrograde", x: 440 },
+    ];
+    for (const c of cols) page2.drawText(c.label, { x: c.x, y: ty, size: 9.5, font: bold, color: gray });
+    ty -= 6;
+    page2.drawLine({ start: { x: 48, y: ty }, end: { x: 564, y: ty }, thickness: 0.75, color: rgb(0.85, 0.85, 0.87) });
+    ty -= 18;
+
+    const rows: ChartPoint[] = [
+      ...chart.points,
+      ...(chart.ascendant ? [chart.ascendant] : []),
+      ...(chart.midheaven ? [chart.midheaven] : []),
+    ];
+    for (const p of rows) {
+      if (ty < 60) break;
+      page2.drawText(p.name, { x: 48, y: ty, size: 10.5, font: regular, color: dark });
+      page2.drawText(formatDegree(p), { x: 180, y: ty, size: 10.5, font: regular, color: dark });
+      page2.drawText(p.house ? String(p.house) : "-", { x: 360, y: ty, size: 10.5, font: regular, color: dark });
+      page2.drawText(p.retrograde ? "Retrograde" : "-", { x: 440, y: ty, size: 10.5, font: regular, color: p.retrograde ? red : gray });
+      ty -= 19;
+    }
+
+    ty -= 14;
+    if (ty > 100) {
+      page2.drawText("Major Aspects", { x: 48, y: ty, size: 14, font: bold, color: dark });
+      ty -= 22;
+      const aspects = computeAspects(chart.points);
+      if (aspects.length === 0) {
+        page2.drawText("No major aspects within orb.", { x: 48, y: ty, size: 10, font: regular, color: gray });
+      }
+      for (const a of aspects) {
+        if (ty < 40) break;
+        page2.drawText(`${a.a} ${a.type} ${a.b}`, { x: 48, y: ty, size: 10, font: regular, color: dark });
+        page2.drawText(`orb ${a.orb.toFixed(1)}°`, { x: 320, y: ty, size: 10, font: regular, color: gray });
+        ty -= 16;
+      }
+    }
+
+    const saved = await doc.save();
+    const blob = new Blob([saved as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
+    const safeName = (input.name || "birth-chart").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return { success: true, blob, filename: `${safeName || "birth-chart"}.pdf` };
+  } catch {
+    return { success: false, error: "Failed to generate the birth chart PDF." };
+  }
 }

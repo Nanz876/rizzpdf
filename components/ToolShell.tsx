@@ -19,6 +19,7 @@ const MORE_TOOLS = [
   { name: "Protect PDF", href: "/tools/protect" },
   { name: "PDF to Word", href: "/tools/pdf-to-word" },
   { name: "Batch Processing", href: "/tools/batch" },
+  { name: "Birth Chart Calculator", href: "/tools/birth-chart" },
 ];
 
 interface ToolShellProps {

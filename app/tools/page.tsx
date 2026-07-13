@@ -99,9 +99,17 @@ const TOOLS = [
     badge: "NEW" as const,
     icon: <ToolIcon variant="double" bgColor="#fefce8" badgeColor="#eab308" badgeLabel="PDF" badgeColor2="#eab308" badgeLabel2="PDF" />,
   },
+
+  // ── Just for Fun ──────────────────────────────────────────────
+  {
+    name: "Birth Chart Calculator", route: "/tools/birth-chart", category: "Just for Fun",
+    desc: "Generate a natal chart & download it as a PDF",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#f5f3ff" badgeColor="#8b5cf6" badgeLabel="PDF" />,
+  },
 ];
 
-const CATEGORIES = ["All", "Organize PDF", "Convert PDF", "Edit & Security"];
+const CATEGORIES = ["All", "Organize PDF", "Convert PDF", "Edit & Security", "Just for Fun"];
 
 export default function ToolsPage() {
   const [activeCategory, setActiveCategory] = useState("All");

@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/tools/pdf-to-word`,       lastModified: "2025-01-01", changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/tools/repair`,            lastModified: "2025-01-01", changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/tools/batch`,             lastModified: "2025-04-01", changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/tools/birth-chart`,       lastModified: "2026-07-13", changeFrequency: "monthly", priority: 0.7 },
 
     // Blog
     { url: `${base}/blog`,                                                    lastModified: "2025-04-01", changeFrequency: "weekly",  priority: 0.8 },
