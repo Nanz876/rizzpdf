@@ -13,6 +13,10 @@ All PDF processing is client-side only. Files never leave the browser. Never add
 
 **PDF.js import:** Always dynamic (`await import("pdfjs-dist")`) — avoids SSR DOMMatrix errors.
 
+**Loading PDFs for editing:** Always use `loadPdf()` from `lib/pdf-load.ts`, never `PDFDocument.load(..., { ignoreEncryption: true })`. pdf-lib can't decrypt, so editing an encrypted file silently produces garbled pages. `loadPdf` decrypts restriction-only files losslessly (`@pdfsmaller/pdf-decrypt`) and throws a clear "unlock it first" error for password-protected ones. Place anything on a page (text, images) through `displayedPage()` so rotated and cropped pages work.
+
+**Tool audit tests:** `lib/__tests__/tools.audit.test.ts` checks each tool against what the site advertises, using fixtures from `node scripts/generate-audit-fixtures.mjs` (`test-fixtures/audit/`). If you change a tool's behaviour or its marketing copy, update these tests.
+
 **Monetization tiers:**
 - Free: every single-file tool is free and unlimited (no gate). Only batch processing is metered: 3 free runs via `lib/useFreeGate.ts` (localStorage `rizzpdf_free_batch_count`), called from `app/tools/batch/page.tsx`. Use the same hook for any future paid feature; never add per-tool counters.
 - Pro $5/mo or $48/yr (the only paid tier; the $1 day pass was retired 2026-09-16): Clerk user + Supabase `subscriptions` table (UNIQUE on `user_id`; webhook upserts with `onConflict: "user_id"` and returns 500 on DB errors so Stripe retries). Stripe API 2025-03+ moved `current_period_end` onto subscription items; always read it via `lib/stripe-rows.ts`.

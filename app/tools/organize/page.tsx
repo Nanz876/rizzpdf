@@ -61,6 +61,21 @@ export default function OrganizePage() {
     });
   }
 
+  // Button controls work on touch screens, where drag-and-drop isn't available.
+  function movePage(index: number, delta: -1 | 1) {
+    setPageOrder((prev) => {
+      const target = index + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function deletePageAt(index: number) {
+    setPageOrder((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  }
+
   async function handleSave() {
     if (!file) return;
     logTool("organize");
@@ -94,14 +109,17 @@ export default function OrganizePage() {
   return (
     <ToolShell
       name="Organize PDF"
-      description="Drag and drop pages to reorder them in your PDF."
+      description="Reorder or delete pages in your PDF."
       icon="🗂️"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.5)" stroke="white" strokeWidth="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.5)" stroke="white" strokeWidth="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.5"/></svg>}
-      steps={file ? undefined : ["Upload your PDF", "Drag pages to reorder", "Download reordered PDF"]}
+      steps={file ? undefined : ["Upload your PDF", "Reorder or delete pages", "Download the new PDF"]}
     >
       <div className="space-y-4">
         {status === "idle" && (
-          <UploadZone onFilesAdded={handleFilesAdded} />
+          <>
+            <UploadZone onFilesAdded={handleFilesAdded} />
+            {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
+          </>
         )}
 
         {status === "loading-thumbs" && (
@@ -116,9 +134,9 @@ export default function OrganizePage() {
             <WorkspaceBar
               icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1" fill="white" opacity=".5"/><rect x="13" y="3" width="8" height="8" rx="1" fill="white"/><rect x="3" y="13" width="8" height="8" rx="1" fill="white"/><rect x="13" y="13" width="8" height="8" rx="1" fill="white" opacity=".5"/></svg>}
               title="Organize PDF"
-              subtitle={`${file.name} · ${pageOrder.length} pages — drag to reorder`}
+              subtitle={`${file.name} · ${pageOrder.length} of ${thumbnails.length} pages — drag or use arrows`}
               onReset={handleReset}
-              primaryLabel={status === "saving" ? "Saving…" : "Save New Order →"}
+              primaryLabel={status === "saving" ? "Saving…" : "Save PDF →"}
               onPrimary={handleSave}
               primaryDisabled={status === "saving"}
             />
@@ -154,10 +172,36 @@ export default function OrganizePage() {
                         {displayIndex + 1}
                       </span>
                     </div>
-                    <div className="absolute top-1.5 right-1.5">
-                      <svg className="w-4 h-4 text-white drop-shadow" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
-                      </svg>
+                    <div className="absolute top-1.5 inset-x-1.5 flex justify-between">
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          aria-label={`Move page ${displayIndex + 1} earlier`}
+                          disabled={displayIndex === 0}
+                          onClick={() => movePage(displayIndex, -1)}
+                          className="w-7 h-7 rounded-full bg-black/60 text-white text-sm font-bold disabled:opacity-30 hover:bg-black/80"
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Move page ${displayIndex + 1} later`}
+                          disabled={displayIndex === pageOrder.length - 1}
+                          onClick={() => movePage(displayIndex, 1)}
+                          className="w-7 h-7 rounded-full bg-black/60 text-white text-sm font-bold disabled:opacity-30 hover:bg-black/80"
+                        >
+                          →
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`Delete page ${displayIndex + 1}`}
+                        disabled={pageOrder.length === 1}
+                        onClick={() => deletePageAt(displayIndex)}
+                        className="w-7 h-7 rounded-full bg-red-600 text-white text-xs font-bold disabled:opacity-30 hover:bg-red-700"
+                      >
+                        ✕
+                      </button>
                     </div>
                   </div>
                 ))}

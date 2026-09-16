@@ -20,7 +20,14 @@ export default function DeletePagesPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setSelected(new Set());
-    const t = await renderThumbnails(files[0], 0.5);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.5);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setThumbs(t); setStatus("ready");
   }, []);
 
@@ -46,6 +53,7 @@ export default function DeletePagesPage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Click pages to select", "Delete & download"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
       {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "PDF to PNG Converter Online Free | RizzPDF",
-  description: "Convert PDF pages to high-quality PNG images with transparency support. Free, browser-based — files never leave your device.",
-  keywords: ["pdf to png", "convert pdf to png online free", "pdf to png converter", "pdf page to image", "pdf to transparent png"],
+  description: "Convert PDF pages to sharp, lossless PNG images. Free, browser-based — files never leave your device.",
+  keywords: ["pdf to png", "convert pdf to png online free", "pdf to png converter", "pdf page to image", "pdf to png high quality"],
   alternates: { canonical: "https://www.rizzpdf.com/tools/pdf-to-png" },
   openGraph: {
     title: "PDF to PNG Converter Online Free | RizzPDF",

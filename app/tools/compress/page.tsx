@@ -36,6 +36,7 @@ export default function CompressPage() {
     if (result.success && result.blob) {
       setNewSize(result.blob.size);
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_compressed.pdf"));
+      setError(result.warning ?? "");
       setStatus("done");
     } else { setError(result.error ?? "Compression failed."); setStatus("error"); }
   };

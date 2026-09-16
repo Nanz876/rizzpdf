@@ -81,7 +81,7 @@ export default function HowToRemovePdfPassword() {
               <li>Download your unlocked PDF instantly</li>
             </ol>
             <div className="mt-6 bg-gray-900 border border-gray-800 rounded-xl p-4 text-sm text-gray-400">
-              <strong className="text-white">Free tier:</strong> Unlock up to 3 PDFs for free, no account needed. Need more? Pay $1 for unlimited unlocks for 24 hours.
+              <strong className="text-white">Free:</strong> Unlock as many PDFs as you like, no account needed.
             </div>
           </section>
 
@@ -168,7 +168,7 @@ export default function HowToRemovePdfPassword() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Ready to unlock your PDF?</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. Files stay in your browser.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/unlock"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"

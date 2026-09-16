@@ -120,7 +120,7 @@ export default function UnlockPdfOnlineFree() {
               Yes — completely free with no limit. No credit card, no email, no sign-up.
             </p>
             <p className="text-gray-300 leading-relaxed">
-              If you need to unlock more than 3 files, you can pay <strong className="text-white">$1 one-time</strong> for unlimited unlocks for 24 hours. That&apos;s it — no subscription, no recurring charges.
+              Unlocking one file at a time is always free. <strong className="text-white">RizzPDF Pro</strong> ($5/month) adds batch processing for when you have lots of files to unlock at once.
             </p>
           </section>
 
@@ -141,10 +141,10 @@ export default function UnlockPdfOnlineFree() {
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {[
-                    ["Free tier", "✅ 3 files", "✅ 2 tasks/day", "✅ Limited"],
+                    ["Free tier", "✅ Unlimited", "✅ 2 tasks/day", "✅ Limited"],
                     ["No sign-up needed", "✅ Yes", "❌ Required", "❌ Required"],
                     ["In-browser processing", "✅ Yes", "❌ Server upload", "❌ Server upload"],
-                    ["Price for more", "$1 one-time", "$9/month", "$7/month"],
+                    ["Price for more", "Free (Pro $5/mo for batch)", "$9/month", "$7/month"],
                   ].map(([feature, rizzpdf, smallpdf, ilovepdf]) => (
                     <tr key={feature}>
                       <td className="py-3 pr-4 text-gray-300">{feature}</td>
@@ -183,7 +183,7 @@ export default function UnlockPdfOnlineFree() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Try it now — no sign-up needed</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. Files never leave your browser.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/unlock"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"

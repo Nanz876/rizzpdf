@@ -20,12 +20,26 @@ export default function MergePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback(async (newFiles: File[]) => {
-    setLoading(true);
-    const newThumbs = await Promise.all(newFiles.map(f => renderThumbnails(f, 0.35)));
-    setFiles(prev => [...prev, ...newFiles]);
-    setAllThumbs(prev => [...prev, ...newThumbs]);
-    setLoading(false);
+    setLoading(true); setError("");
+    try {
+      const newThumbs = await Promise.all(newFiles.map(f => renderThumbnails(f, 0.35)));
+      setFiles(prev => [...prev, ...newFiles]);
+      setAllThumbs(prev => [...prev, ...newThumbs]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "One of the files couldn't be opened.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Arrow buttons: drag-and-drop doesn't work on touch screens.
+  const moveFile = (idx: number, delta: -1 | 1) => {
+    const to = idx + delta;
+    if (to < 0 || to >= files.length) return;
+    const swap = <T,>(arr: T[]) => { const next = [...arr]; [next[idx], next[to]] = [next[to], next[idx]]; return next; };
+    setFiles(swap);
+    setAllThumbs(swap);
+  };
 
   const removeFile = (idx: number) => {
     setFiles(prev => prev.filter((_, i) => i !== idx));
@@ -70,6 +84,7 @@ export default function MergePage() {
         svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="rgba(255,255,255,0.3)"/><path d="M13 6h7v12h-7V6z" fill="rgba(255,255,255,0.6)"/><path d="M10 12h4" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>}
         steps={["Upload your PDFs", "Arrange order", "Download merged file"]}>
         <UploadZone onFilesAdded={addFiles} />
+        {files.length === 0 && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       </ToolShell>
     );
   }
@@ -114,7 +129,13 @@ export default function MergePage() {
                   <span className="text-sm font-semibold text-gray-700">{f.name}</span>
                   <span className="text-xs text-gray-400">· {allThumbs[fi]?.length ?? 0} pages</span>
                 </div>
-                <button onClick={() => removeFile(fi)} className="text-xs text-gray-300 hover:text-red-500 transition-colors">✕ Remove</button>
+                <div className="flex items-center gap-1">
+                  <button type="button" aria-label={`Move ${f.name} up`} disabled={fi === 0} onClick={() => moveFile(fi, -1)}
+                    className="w-7 h-7 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label={`Move ${f.name} down`} disabled={fi === files.length - 1} onClick={() => moveFile(fi, 1)}
+                    className="w-7 h-7 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">↓</button>
+                  <button onClick={() => removeFile(fi)} className="text-xs text-gray-300 hover:text-red-500 transition-colors ml-1">✕ Remove</button>
+                </div>
               </div>
               {allThumbs[fi] && allThumbs[fi].length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">

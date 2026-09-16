@@ -106,7 +106,7 @@ export default function PdfToWordWithoutLosingFormatting() {
                 <p className="text-gray-400 text-sm leading-relaxed mb-2">
                   Runs entirely in your browser. Excellent for standard text documents — reports, contracts, articles. Formatting is preserved for body text, headings, and lists. Complex layouts, images, and intricate tables have limitations. Your file never leaves your device.
                 </p>
-                <p className="text-gray-400 text-sm">Free for 3 files. $1 for unlimited 24-hour access.</p>
+                <p className="text-gray-400 text-sm">Free with no limits. No account needed.</p>
               </div>
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -239,7 +239,7 @@ export default function PdfToWordWithoutLosingFormatting() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Try PDF to Word conversion now</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. Files stay in your browser.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/pdf-to-word"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
