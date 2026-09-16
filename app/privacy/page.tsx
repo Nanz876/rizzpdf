@@ -35,20 +35,22 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-gray-900">What we do collect</h2>
           <ul className="list-disc list-inside space-y-2">
-            <li><strong>Tool usage counts.</strong> When you run a tool we record the tool name (for example &quot;merge&quot;) and, if you are signed in, your account ID. No file names, contents or sizes are sent.</li>
+            <li><strong>Tool usage counts.</strong> When you run a tool we record the tool name (for example &quot;merge&quot;) and, if you are signed in, your account ID. File names, contents and sizes are not included.</li>
+            <li><strong>Pro unlock history.</strong> If you use Pro bulk unlock while signed in, we store the names of the files you unlocked so you can see your history. The files themselves are never uploaded.</li>
             <li><strong>Account data.</strong> If you create an account, our sign-in provider Clerk stores your email address and login details.</li>
             <li><strong>Payment data.</strong> Payments are handled by Stripe. We never see or store your card number. We store your Stripe customer and subscription IDs and your subscription status so we can tell whether you are a Pro member.</li>
             <li><strong>Day pass.</strong> If you buy a $1 day pass, your browser stores the Stripe checkout session ID so the pass can be verified for 24 hours. Clearing browser storage removes it.</li>
             <li><strong>Free-tier counter.</strong> Your browser stores how many free operations you have used. This value stays on your device.</li>
             <li><strong>Email signups.</strong> If you enter your email to be notified about new features, we store that email address.</li>
             <li><strong>Analytics.</strong> We use Vercel Web Analytics, which records page views without cookies and without identifying you personally.</li>
+            <li><strong>Server logs.</strong> Like any website, our hosting provider (Vercel) processes your IP address to serve pages and to rate-limit abuse. We do not use it to identify you.</li>
           </ul>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-gray-900">Where data is stored</h2>
           <p>
-            Account and subscription records live in Supabase (hosted database), authentication in
+            Account, subscription and Pro unlock-history records live in Supabase (hosted database), authentication in
             Clerk, and payments in Stripe. Each of these providers publishes its own privacy policy.
           </p>
         </section>
