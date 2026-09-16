@@ -5,7 +5,7 @@ import { logTool } from "@/lib/logTool";
 
 /**
  * Single-file tools are free and unlimited. Only batch processing is metered:
- * this many free batch runs, then the paywall ($1 day pass or Pro).
+ * this many free batch runs, then the paywall (Pro).
  */
 export const FREE_LIMIT = 3;
 // New key (was "rizzpdf_free_count" when every tool was metered) so everyone

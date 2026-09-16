@@ -327,7 +327,7 @@ export default function BatchPage() {
         </div>
       )}
 
-      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />}
+      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} />}
     </ToolShell>
   );
 }

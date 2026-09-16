@@ -84,7 +84,7 @@ export default async function DashboardPage({
             </div>
             {tier === "pro" ? (
               <p className="text-sm text-gray-500">
-                Unlimited batch · 200MB per file · All tools · Full history
+                Unlimited batch · Bulk CSV unlock · Full history
               </p>
             ) : (
               <p className="text-sm text-gray-500">

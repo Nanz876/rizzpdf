@@ -34,14 +34,12 @@ export default function TermsPage() {
           <h2 className="text-xl font-bold text-gray-900">Plans and payment</h2>
           <ul className="list-disc list-inside space-y-2">
             <li><strong>Free.</strong> All single-file tools are free with no usage limit. Batch processing includes three free runs, tracked in your browser.</li>
-            <li><strong>Day pass.</strong> A one-time $1 payment unlocks unlimited batch processing for 24 hours in the browser where you paid. It is not tied to an account and cannot be transferred.</li>
             <li><strong>Pro.</strong> A monthly or annual subscription billed through Stripe. You can cancel at any time from your dashboard; access continues until the end of the paid period.</li>
           </ul>
           <p>
             Refunds: if a tool fails to work for you, email{" "}
             <a href="mailto:support@rizzpdf.com" className="text-red-600 hover:underline">support@rizzpdf.com</a>{" "}
-            within 7 days of payment and we will refund the day pass or the most recent subscription
-            charge.
+            within 7 days of payment and we will refund the most recent subscription charge.
           </p>
         </section>
 

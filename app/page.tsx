@@ -148,14 +148,9 @@ export default function Home() {
                 <div className="text-gray-500 text-xs mt-0.5">Free forever</div>
               </div>
               <div className="text-gray-300 font-bold hidden sm:block">·</div>
-              <div className="bg-white border border-amber-300 rounded-xl px-5 py-3 text-sm text-center min-w-[140px]">
-                <div className="font-black text-xl text-gray-900">$1</div>
-                <div className="text-gray-500 text-xs mt-0.5">Day pass · 24 hrs</div>
-              </div>
-              <div className="text-gray-300 font-bold hidden sm:block">·</div>
               <div className="bg-white border-2 border-red-500 rounded-xl px-5 py-3 text-sm text-center min-w-[140px]">
                 <div className="font-black text-xl text-gray-900">$5<span className="text-xs text-gray-400 font-normal">/mo</span></div>
-                <div className="text-red-600 text-xs font-semibold mt-0.5">Pro · unlimited</div>
+                <div className="text-red-600 text-xs font-semibold mt-0.5">Pro · unlimited batch</div>
               </div>
             </div>
             <a href="/pricing" className="inline-flex items-center gap-1 text-sm font-bold text-red-600 hover:underline">

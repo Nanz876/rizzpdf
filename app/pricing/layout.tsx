@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pricing — RizzPDF | Free, Day Pass & Pro Plans",
+  title: "Pricing — RizzPDF | Free & Pro Plans",
   description:
-    "All 17 PDF tools free with no limits. Upgrade to a $1 day pass or $5/month Pro for unlimited batch processing, 200MB uploads, and file history. No subscriptions you'll forget about.",
+    "All 17 PDF tools free with no limits. Upgrade to Pro for $5/month for unlimited batch processing, bulk CSV unlock, and file history. Cancel any time.",
   keywords: [
     "PDF tools pricing",
     "free PDF tools",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://rizzpdf.com/pricing" },
   openGraph: {
-    title: "RizzPDF Pricing — Free, Day Pass & Pro",
+    title: "RizzPDF Pricing — Free & Pro",
     description: "All 17 PDF tools free. Upgrade only when you need more.",
     url: "https://rizzpdf.com/pricing",
   },
