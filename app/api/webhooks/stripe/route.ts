@@ -40,20 +40,31 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase
       .from("subscriptions")
       .upsert(subToRow(obj), { onConflict: "user_id" });
-    if (error) console.error("[stripe-webhook] upsert failed:", error);
+    if (error) {
+      // Non-2xx makes Stripe retry the event instead of silently losing the update.
+      console.error("[stripe-webhook] upsert failed:", error);
+      return NextResponse.json({ error: "db write failed" }, { status: 500 });
+    }
   }
 
   if (event.type === "customer.subscription.deleted") {
     const userId = obj.metadata?.userId;
     if (!isValidUserId(userId)) return NextResponse.json({ received: true });
-    await supabase
+    const { error } = await supabase
       .from("subscriptions")
       .update({ status: "canceled", updated_at: new Date().toISOString() })
       .eq("user_id", userId);
+    if (error) {
+      console.error("[stripe-webhook] cancel update failed:", error);
+      return NextResponse.json({ error: "db write failed" }, { status: 500 });
+    }
   }
 
   if (event.type === "invoice.payment_succeeded") {
-    const subId = obj.subscription as string;
+    // Stripe API 2025-03+ moved the subscription id under parent.subscription_details.
+    const subId = (obj.parent?.subscription_details?.subscription ?? obj.subscription) as
+      | string
+      | undefined;
     if (!subId) return NextResponse.json({ received: true });
     const sub = await stripe.subscriptions.retrieve(subId, { expand: ["items.data"] });
     const userId = (sub as unknown as Record<string, unknown>).metadata
@@ -63,7 +74,11 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase
       .from("subscriptions")
       .upsert(subToRow(sub), { onConflict: "user_id" });
-    if (error) console.error("[stripe-webhook] upsert failed:", error);
+    if (error) {
+      // Non-2xx makes Stripe retry the event instead of silently losing the update.
+      console.error("[stripe-webhook] upsert failed:", error);
+      return NextResponse.json({ error: "db write failed" }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ received: true });
