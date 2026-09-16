@@ -65,13 +65,19 @@ describe("useFreeGate", () => {
     expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("99");
   });
 
-  it("allows without counting while pro status is still loading", () => {
+  it("never blocks while pro status is loading, but still counts the operation", () => {
     proState.loading = true;
-    localStorage.setItem(FREE_COUNT_KEY, "3");
+    localStorage.setItem(FREE_COUNT_KEY, "1");
     const { result } = renderHook(() => useFreeGate());
     let ok = false;
     act(() => { ok = result.current.consume(); });
     expect(ok).toBe(true);
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("2");
+
+    localStorage.setItem(FREE_COUNT_KEY, "3");
+    act(() => { ok = result.current.consume(); });
+    expect(ok).toBe(true);
+    expect(result.current.showPaywall).toBe(false);
     expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("3");
   });
 

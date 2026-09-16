@@ -46,8 +46,8 @@ const serverSnapshot = () => 0;
  * Single source of truth for the free-tier gate. Call `consume()` in the tool's
  * primary handler; if it returns false, stop (the hook has already opened the
  * paywall). Pro and day-pass users always pass and are never counted. While pro
- * status is still loading, the run is allowed and not counted (never punish a
- * paying user for a slow network).
+ * status is still loading, the run is never blocked (don't punish a paying user
+ * for a slow network) but is still counted, so fast clicks can't skip the meter.
  */
 export function useFreeGate() {
   const { isPro, loading } = useProStatus();
@@ -58,8 +58,12 @@ export function useFreeGate() {
   const canRun = loading || isPro || count < FREE_LIMIT;
 
   const consume = useCallback((): boolean => {
-    if (loading || isPro) return true;
+    if (isPro) return true;
     const current = readFreeCount();
+    if (loading) {
+      if (current < FREE_LIMIT) writeFreeCount(current + 1);
+      return true;
+    }
     if (current >= FREE_LIMIT) {
       setShowPaywall(true);
       logTool("event:paywall_shown");
