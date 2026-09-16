@@ -7,6 +7,8 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, pdfToJpg, downloadBlob } from "@/lib/pdf-tools";
+import PaywallModal from "@/components/PaywallModal";
+import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -16,6 +18,7 @@ export default function PdfToJpgPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -32,6 +35,7 @@ export default function PdfToJpgPage() {
 
   const handleConvert = async () => {
     if (!file) return;
+    if (!gate.consume()) return;
     logTool("pdf-to-jpg"); setStatus("processing");
     const result = await pdfToJpg(file);
     if (result.success && result.blobs) {
@@ -75,6 +79,10 @@ export default function PdfToJpgPage() {
             <ThumbnailGrid pages={pages} selectedPages={selected} onToggleSelect={togglePage} showCheckboxes columns={3} />
           </div>
         </div>
+      )}
+
+      {gate.showPaywall && (
+        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
       )}
     </ToolShell>
   );

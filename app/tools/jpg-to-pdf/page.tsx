@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, jpgToPdf } from "@/lib/pdf-tools";
+import PaywallModal from "@/components/PaywallModal";
+import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -15,6 +17,7 @@ export default function JpgToPdfPage() {
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIdx = useRef<number | null>(null);
+  const gate = useFreeGate();
 
   const addImages = (files: File[]) => {
     const valid = files.filter(f => f.type.startsWith("image/"));
@@ -46,6 +49,7 @@ export default function JpgToPdfPage() {
 
   const handleConvert = async () => {
     if (images.length === 0) return;
+    if (!gate.consume()) return;
     logTool("jpg-to-pdf"); setStatus("processing");
     const result = await jpgToPdf(images);
     if (result.success && result.blob) {
@@ -109,6 +113,10 @@ export default function JpgToPdfPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {gate.showPaywall && (
+        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
       )}
     </ToolShell>
   );

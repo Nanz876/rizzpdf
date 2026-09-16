@@ -8,6 +8,8 @@ import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, addPageNumbers, downloadBlob } from "@/lib/pdf-tools";
 import type { PageNumberOptions } from "@/lib/pdf-tools";
+import PaywallModal from "@/components/PaywallModal";
+import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -37,6 +39,7 @@ export default function PageNumbersPage() {
   const [startFrom, setStartFrom] = useState(1);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -46,6 +49,7 @@ export default function PageNumbersPage() {
 
   const handleApply = async () => {
     if (!file) return;
+    if (!gate.consume()) return;
     logTool("page-numbers"); setStatus("processing");
     const result = await addPageNumbers(file, { position, format, fontSize, startFrom });
     if (result.success && result.blob) {
@@ -134,6 +138,10 @@ export default function PageNumbersPage() {
             )}
           </SidebarWorkspace>
         </div>
+      )}
+
+      {gate.showPaywall && (
+        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
       )}
     </ToolShell>
   );
