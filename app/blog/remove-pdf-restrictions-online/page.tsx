@@ -183,9 +183,9 @@ export default function RemovePdfRestrictionsOnline() {
                   {[
                     ["File uploaded to server", "Never", "Yes"],
                     ["Sign-up required", "No", "Often"],
-                    ["Free tier", "3 files", "1–2 tasks/day"],
+                    ["Free tier", "Unlimited", "1–2 tasks/day"],
                     ["Works on mobile", "✅ Yes", "Varies"],
-                    ["Paid option", "$1 one-time", "$5/month"],
+                    ["Paid option", "Pro $5/month (batch)", "$5/month"],
                   ].map(([feature, rizzpdf, others]) => (
                     <tr key={feature}>
                       <td className="py-3 pr-4 text-gray-300">{feature}</td>
@@ -223,7 +223,7 @@ export default function RemovePdfRestrictionsOnline() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Remove PDF restrictions right now</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. Files never leave your browser.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/unlock"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"

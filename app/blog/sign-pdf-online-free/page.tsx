@@ -106,7 +106,7 @@ export default function SignPDFBlog() {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Can I add initials too?</h2>
             <p>
-              Yes — you can place multiple signature instances on a document. Upload or draw your signature once, then click multiple locations to place it anywhere on the page.
+              Yes. Place one signature or set of initials per pass: position it, download the signed PDF, then open that file again in the Sign tool to add the next one.
             </p>
           </div>
 

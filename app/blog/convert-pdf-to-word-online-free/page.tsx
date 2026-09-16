@@ -142,7 +142,7 @@ export default function ConvertPdfToWordOnlineFree() {
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {[
-                    ["Free to use", "✅ Yes (3 files)", "✅ Yes", "❌ ~$25/month"],
+                    ["Free to use", "✅ Yes, unlimited", "✅ Yes", "❌ ~$25/month"],
                     ["No sign-up needed", "✅ Yes", "❌ Google account", "❌ Adobe account"],
                     ["File uploaded to server", "❌ Never", "✅ Uploaded to Google", "✅ Uploaded to Adobe"],
                     ["Formatting preservation", "Basic text + paragraphs", "Good for simple docs", "Best (server-side)"],
@@ -247,7 +247,7 @@ export default function ConvertPdfToWordOnlineFree() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Convert your PDF to Word now</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. Files never leave your browser.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/pdf-to-word"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"

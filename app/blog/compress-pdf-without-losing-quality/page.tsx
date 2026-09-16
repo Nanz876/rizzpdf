@@ -79,16 +79,16 @@ export default function CompressPDFBlog() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td className="px-4 py-2 font-medium">Screen</td><td className="px-4 py-2">Email, web viewing</td><td className="text-center px-4 py-2">Up to 80%</td></tr>
-                  <tr className="bg-gray-50"><td className="px-4 py-2 font-medium">eBook</td><td className="px-4 py-2">Digital distribution</td><td className="text-center px-4 py-2">40–60%</td></tr>
-                  <tr><td className="px-4 py-2 font-medium">Printer</td><td className="px-4 py-2">High-quality printing</td><td className="text-center px-4 py-2">10–30%</td></tr>
+                  <tr><td className="px-4 py-2 font-medium">Extreme</td><td className="px-4 py-2">Email attachments, uploads with size limits</td><td className="text-center px-4 py-2">Largest</td></tr>
+                  <tr className="bg-gray-50"><td className="px-4 py-2 font-medium">Recommended</td><td className="px-4 py-2">Everyday sharing and on-screen reading</td><td className="text-center px-4 py-2">Large</td></tr>
+                  <tr><td className="px-4 py-2 font-medium">Less</td><td className="px-4 py-2">Printing, detailed photos</td><td className="text-center px-4 py-2">Moderate</td></tr>
                 </tbody>
               </table>
             </div>
 
             <p>
               For most use cases — emailing a scanned document, uploading to a portal — <strong>Recommended</strong> quality is fine.
-              RizzPDF recompresses only the embedded raster images (photos, scans) inside your PDF.
+              RizzPDF recompresses and, where they are larger than needed, downsizes only the embedded images (photos, scans) inside your PDF. Savings depend on how image-heavy the file is: photo-heavy PDFs often shrink by more than half, while text-only PDFs barely change.
               Text, fonts, and vector graphics are never touched, so <strong>text stays fully selectable and searchable</strong> in the output.
             </p>
 
@@ -96,10 +96,10 @@ export default function CompressPDFBlog() {
             <ol className="list-decimal list-inside space-y-3">
               <li>Open <Link href="/tools/compress" className="text-red-600 font-semibold hover:underline">RizzPDF Compress PDF</Link></li>
               <li>Drop your PDF onto the page</li>
-              <li>Choose a compression level (Screen, eBook, or Printer)</li>
+              <li>Choose a compression level (Extreme, Recommended, or Less)</li>
               <li>Click <strong>Compress</strong> and download</li>
             </ol>
-            <p>Your file is processed securely and never stored.</p>
+            <p>Your file is processed in your browser and never uploaded.</p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Why is my PDF still large after compressing?</h2>
             <p>
@@ -115,7 +115,7 @@ export default function CompressPDFBlog() {
               <li>Yahoo Mail: 25MB attachment limit</li>
             </ul>
             <p>
-              If your PDF exceeds these limits, compressing to Screen quality usually brings it well under 10MB.
+              If your PDF exceeds these limits, the Extreme level is the best place to start.
             </p>
           </div>
 

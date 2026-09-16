@@ -265,8 +265,8 @@ export default function DeletePagesBlog() {
             </div>
             <p>
               When a tool removes pages by manipulating PDF objects directly (as pdf-lib does in RizzPDF), the remaining
-              pages are byte-for-byte identical to the original. No re-rendering, no quality loss, no change to fonts
-              or images.
+              pages keep their original content: nothing is re-rendered, so there is no quality loss and no change to
+              fonts or images. Form fields and document details like the title are kept too.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Can I Delete Pages from a Password-Protected PDF?</h2>

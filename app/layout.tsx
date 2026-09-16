@@ -95,6 +95,11 @@ const siteJsonLd = {
     "Sign PDF",
     "Watermark PDF",
     "Organize PDF",
+    "Add Page Numbers",
+    "Protect PDF",
+    "Repair PDF",
+    "PDF to PNG",
+    "Batch Processing",
   ],
   publisher: {
     "@type": "Organization",

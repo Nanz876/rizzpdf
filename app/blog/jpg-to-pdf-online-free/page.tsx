@@ -73,7 +73,7 @@ export default function JpgToPdfBlog() {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Will image quality be reduced?</h2>
             <p>
-              No. Images are embedded at their original resolution. The conversion doesn&apos;t compress or resize your photos. If your original image is sharp, the PDF will be too.
+              No. JPG and PNG images are embedded at their original resolution without recompression. Each one is placed on an A4 page that matches its orientation, and phone photos are turned the right way up automatically.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Common use cases</h2>

@@ -76,13 +76,13 @@ export default function BestPdfPasswordRemover() {
               1. RizzPDF — Best for Privacy &amp; Simplicity
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> stands out because it processes everything inside your browser. Your PDF never gets sent to any server, which is a huge deal if you&apos;re handling sensitive documents. There&apos;s no sign-up, no email required, and the free tier covers 3 files.
+              <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> stands out because it processes everything inside your browser. Your PDF never gets sent to any server, which is a huge deal if you&apos;re handling sensitive documents. There&apos;s no sign-up, no email required, and it&apos;s free with no usage limit.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">3 files</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">Unlimited</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Sign-up required</span><span className="text-green-400">No</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Files uploaded to server</span><span className="text-green-400">Never</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Paid option</span><span className="text-white">$1 one-time for 24hrs</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Paid option</span><span className="text-white">Pro $5/mo for batch processing</span></div>
             </div>
             <p className="mt-4 text-gray-400 text-sm">
               <strong className="text-gray-300">Best for:</strong> Anyone who values privacy and wants something dead simple. Especially good for sensitive or confidential documents.
@@ -160,7 +160,7 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Which Should You Use?</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              For most people, <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> is the clear winner. It&apos;s free for up to 3 files, requires no sign-up, and — crucially — never uploads your files anywhere. If you just need to unlock a PDF quickly and privately, it&apos;s the best tool for the job.
+              For most people, <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> is the clear winner. It&apos;s free with no usage limit, requires no sign-up, and — crucially — never uploads your files anywhere. If you just need to unlock a PDF quickly and privately, it&apos;s the best tool for the job.
             </p>
             <p className="text-gray-300 leading-relaxed">
               If you unlock PDFs regularly as part of a broader PDF workflow, Smallpdf or ILovePDF offer more tools for a monthly fee. And if you&apos;re a power user who needs full editing capabilities, Adobe Acrobat Pro is worth the investment.
@@ -192,7 +192,7 @@ export default function BestPdfPasswordRemover() {
           {/* CTA */}
           <section className="bg-purple-900/30 border border-purple-700/40 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Unlock your PDF right now</h2>
-            <p className="text-gray-300 mb-6">Free for 3 files. No sign-up. No uploads. Just results.</p>
+            <p className="text-gray-300 mb-6">Free with no limits. No sign-up. Files never leave your browser.</p>
             <Link
               href="/tools/unlock"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
