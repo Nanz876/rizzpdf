@@ -5,7 +5,9 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { downloadBlob } from "@/lib/pdf-tools";
+import { pdfToWord, downloadBlob } from "@/lib/pdf-tools";
+import PaywallModal from "@/components/PaywallModal";
+import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -13,6 +15,7 @@ export default function PdfToWordPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const gate = useFreeGate();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready"); setError("");
@@ -20,23 +23,14 @@ export default function PdfToWordPage() {
 
   const handleConvert = async () => {
     if (!file) return;
+    if (!gate.consume()) return;
     logTool("pdf-to-word"); setStatus("processing"); setError("");
-    try {
-      const form = new FormData();
-      form.append("file", file);
-
-      const res = await fetch("/api/pdf-to-word", { method: "POST", body: form });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `Server error ${res.status}`);
-      }
-
-      const blob = await res.blob();
-      downloadBlob(blob, file.name.replace(/\.pdf$/i, ".docx"));
+    const result = await pdfToWord(file);
+    if (result.success && result.blob) {
+      downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, ".docx"));
       setStatus("done");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Conversion failed.");
+    } else {
+      setError(result.error ?? "Conversion failed.");
       setStatus("error");
     }
   };
@@ -47,7 +41,7 @@ export default function PdfToWordPage() {
   return (
     <ToolShell
       name="PDF to Word"
-      description="Convert your PDF to an editable Word document. Processed on our secure server and deleted immediately."
+      description="Convert your PDF to an editable Word document. Runs entirely in your browser — the file never leaves your device."
       icon="📝"
       steps={file ? undefined : ["Upload your PDF", "Click Convert", "Download .docx file"]}
     >
@@ -76,13 +70,17 @@ export default function PdfToWordPage() {
                 <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
                 <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <p>Your file is sent to our secure server for conversion and permanently deleted within 60 seconds. Never stored.</p>
+              <p>Conversion happens in your browser. Text, headings and paragraphs are preserved; complex layouts, tables and images may need tidying in Word.</p>
             </div>
             {status === "done" && (
               <p className="text-sm text-green-600 font-semibold">✓ Word document downloaded</p>
             )}
           </div>
         </div>
+      )}
+
+      {gate.showPaywall && (
+        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
       )}
     </ToolShell>
   );
