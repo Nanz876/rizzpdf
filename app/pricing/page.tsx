@@ -120,7 +120,7 @@ export default function PricingPage() {
         </h1>
         <p className="text-[16px] text-gray-500 max-w-md mx-auto leading-relaxed mb-7">
           Start free — no card needed. Pay only when you need more. Every plan
-          includes all 16 PDF tools.
+          includes all 17 PDF tools.
         </p>
 
         {/* Billing toggle */}
@@ -190,8 +190,8 @@ export default function PricingPage() {
                 What&apos;s included
               </div>
               <ul className="flex flex-col gap-2.5">
-                <FeatureItem icon="green">3 files per tool per session</FeatureItem>
-                <FeatureItem icon="green">All 16 PDF tools</FeatureItem>
+                <FeatureItem icon="green">3 free operations</FeatureItem>
+                <FeatureItem icon="green">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="green">No account required</FeatureItem>
                 <FeatureItem icon="green">Files never leave your browser</FeatureItem>
                 <FeatureItem icon="gray" muted>Up to 50MB per file</FeatureItem>
@@ -240,7 +240,7 @@ export default function PricingPage() {
                 <FeatureItem icon="amber">
                   <strong>Unlimited files</strong> for 24 hrs
                 </FeatureItem>
-                <FeatureItem icon="amber">All 16 PDF tools</FeatureItem>
+                <FeatureItem icon="amber">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="amber">No account required</FeatureItem>
                 <FeatureItem icon="amber">Files stay in your browser</FeatureItem>
                 <FeatureItem icon="gray" muted>Up to 50MB per file</FeatureItem>
@@ -289,7 +289,7 @@ export default function PricingPage() {
                 <FeatureItem icon="red">
                   <strong>Unlimited files</strong>, always
                 </FeatureItem>
-                <FeatureItem icon="red">All 16 PDF tools</FeatureItem>
+                <FeatureItem icon="red">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="red">
                   <strong>200MB</strong> per file
                 </FeatureItem>
@@ -340,8 +340,8 @@ export default function PricingPage() {
             <tbody>
               {[
                 {
-                  label: "Files per session",
-                  free: "3 per tool",
+                  label: "Free operations",
+                  free: "3 total",
                   day: <span className="text-amber-600 font-semibold">Unlimited</span>,
                   pro: <span className="text-red-600 font-bold">Unlimited</span>,
                 },
@@ -352,7 +352,7 @@ export default function PricingPage() {
                   pro: <span className="text-red-600 font-bold">200MB</span>,
                 },
                 {
-                  label: "All 16 PDF tools",
+                  label: "All 17 PDF tools",
                   free: "✓",
                   day: "✓",
                   pro: "✓",
@@ -445,8 +445,8 @@ export default function PricingPage() {
             a: "Yes — cancel any time from your dashboard. No questions asked, no cancellation fees, no gotchas.",
           },
           {
-            q: "What counts as a 'file' on the free tier?",
-            a: "3 files per tool per browser session. So you can merge 3 PDFs, compress 3 PDFs, and convert 3 PDFs — all free in the same session across different tools.",
+            q: "What counts as an operation on the free tier?",
+            a: "Each click of a tool's main action (merge, compress, convert and so on) is one operation. You get 3 free across all tools in your browser. After that, a $1 day pass gives you unlimited operations for 24 hours.",
           },
           {
             q: "Is annual billing worth it?",
@@ -479,7 +479,7 @@ export default function PricingPage() {
           Start free — no card needed
         </h2>
         <p className="text-white/80 text-[15px] mb-7">
-          All 16 PDF tools, right in your browser. Upgrade only when you need
+          All 17 PDF tools, right in your browser. Upgrade only when you need
           more.
         </p>
         <Link

@@ -88,7 +88,7 @@ export default async function DashboardPage({
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                3 files per tool · No history
+                3 free operations · No history
               </p>
             )}
           </div>

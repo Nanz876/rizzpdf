@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { logTool } from "@/lib/logTool";
 
 interface PaywallModalProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
   const [loading, setLoading] = useState(false);
 
   async function handlePay() {
+    logTool("event:checkout_started:daypass");
     setLoading(true);
     try {
       const res = await fetch("/api/checkout", { method: "POST" });
@@ -37,16 +39,16 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
           Free limit reached
         </h2>
         <p className="text-gray-500 text-[13px] mb-6 leading-relaxed">
-          The free tier allows 3 files per tool. Get a{" "}
+          You&apos;ve used your 3 free operations. Get a{" "}
           <span className="font-bold text-red-600">$1 day pass</span> for
-          unlimited files for 24 hours — no account needed.
+          unlimited operations for 24 hours — no account needed.
         </p>
 
         {/* Features */}
         <ul className="text-left space-y-2 mb-6">
           {[
-            "Unlimited files for 24 hours",
-            "All 16 PDF tools included",
+            "Unlimited operations for 24 hours",
+            "All 17 PDF tools included",
             "Up to 50MB per file",
             "No subscription, no account",
             "Files never leave your browser",
@@ -77,7 +79,7 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
           onClick={onClose}
           className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors"
         >
-          No thanks, I&apos;ll stick to 3 files
+          No thanks
         </button>
 
         <p className="text-[11px] text-gray-400 mt-4">
