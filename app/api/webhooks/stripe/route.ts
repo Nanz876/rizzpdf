@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase";
+import { subToRow } from "@/lib/stripe-rows";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -8,18 +9,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // malformed metadata before it can be written against a real account row.
 function isValidUserId(id: unknown): id is string {
   return typeof id === "string" && /^user_[A-Za-z0-9]+$/.test(id);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function subToRow(sub: any) {
-  return {
-    user_id: sub.metadata?.userId as string,
-    stripe_subscription_id: sub.id as string,
-    stripe_customer_id: sub.customer as string,
-    status: sub.status as string,
-    current_period_end: new Date((sub.current_period_end ?? 0) * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  };
 }
 
 export async function POST(req: NextRequest) {
@@ -48,7 +37,10 @@ export async function POST(req: NextRequest) {
   ) {
     const userId = obj.metadata?.userId;
     if (!isValidUserId(userId)) return NextResponse.json({ received: true });
-    await supabase.from("subscriptions").upsert(subToRow(obj));
+    const { error } = await supabase
+      .from("subscriptions")
+      .upsert(subToRow(obj), { onConflict: "user_id" });
+    if (error) console.error("[stripe-webhook] upsert failed:", error);
   }
 
   if (event.type === "customer.subscription.deleted") {
@@ -63,12 +55,15 @@ export async function POST(req: NextRequest) {
   if (event.type === "invoice.payment_succeeded") {
     const subId = obj.subscription as string;
     if (!subId) return NextResponse.json({ received: true });
-    const sub = await stripe.subscriptions.retrieve(subId);
+    const sub = await stripe.subscriptions.retrieve(subId, { expand: ["items.data"] });
     const userId = (sub as unknown as Record<string, unknown>).metadata
       ? (sub.metadata as Record<string, string>).userId
       : undefined;
     if (!isValidUserId(userId)) return NextResponse.json({ received: true });
-    await supabase.from("subscriptions").upsert(subToRow(sub));
+    const { error } = await supabase
+      .from("subscriptions")
+      .upsert(subToRow(sub), { onConflict: "user_id" });
+    if (error) console.error("[stripe-webhook] upsert failed:", error);
   }
 
   return NextResponse.json({ received: true });
