@@ -39,19 +39,23 @@ export function useProStatus(): { isPro: boolean; loading: boolean } {
         }
         try {
           const r = await fetch(
-            `/api/verify-session?session_id=${encodeURIComponent(sessionId)}`
+            `/api/verify-session?session_id=${encodeURIComponent(sessionId)}`,
+            { signal: AbortSignal.timeout(8000) }
           );
-          const data = await r.json();
-          if (data?.valid) {
+          const data = await r.json().catch(() => null);
+          if (r.ok && data?.valid) {
             dayPassMemo = {
               sessionId,
               expiresAt: Number(data.expiresAt) || Date.now(),
             };
             return finish(true);
           }
-          // Invalid or expired — drop the stale key.
-          localStorage.removeItem(DAY_PASS_KEY);
-          dayPassMemo = null;
+          // Only a definitive answer from the server removes the key. A 429/5xx
+          // or unparsable reply keeps it, so a paid pass survives transient errors.
+          if (r.ok && data?.valid === false) {
+            localStorage.removeItem(DAY_PASS_KEY);
+            dayPassMemo = null;
+          }
         } catch {
           // Network error — fall through to the subscription check.
         }
@@ -61,7 +65,9 @@ export function useProStatus(): { isPro: boolean; loading: boolean } {
       // cache that could be edited to fake Pro).
       if (!isSignedIn) return finish(false);
       try {
-        const r = await fetch("/api/user/subscription");
+        const r = await fetch("/api/user/subscription", {
+          signal: AbortSignal.timeout(8000),
+        });
         const data = await r.json();
         return finish(data?.tier === "pro");
       } catch {

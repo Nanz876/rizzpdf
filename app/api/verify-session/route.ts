@@ -26,7 +26,14 @@ export async function GET(req: NextRequest) {
     const valid = paid && Date.now() < expiresAt;
 
     return NextResponse.json({ valid, expiresAt });
-  } catch {
-    return NextResponse.json({ valid: false });
+  } catch (err) {
+    // Only a session Stripe says doesn't exist is definitively invalid. Anything
+    // else (network, rate limit, outage) is transient: return 502 so the client
+    // keeps the stored pass and tries again later instead of deleting a paid pass.
+    if ((err as { code?: string })?.code === "resource_missing") {
+      return NextResponse.json({ valid: false });
+    }
+    console.error("[verify-session] stripe retrieve failed:", err);
+    return NextResponse.json({ error: "verification unavailable" }, { status: 502 });
   }
 }
