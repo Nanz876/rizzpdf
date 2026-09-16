@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { logTool } from "@/lib/logTool";
 
 export default function SubscribeButton() {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
+    logTool("event:checkout_started:pro");
     setLoading(true);
     try {
       const res = await fetch("/api/subscribe", {

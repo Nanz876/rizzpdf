@@ -21,9 +21,17 @@ export async function POST(req: Request) {
   }
 
   // Cancel at period end — user keeps Pro until billing cycle ends
-  await stripe.subscriptions.update(sub.stripe_subscription_id, {
-    cancel_at_period_end: true,
-  });
+  try {
+    await stripe.subscriptions.update(sub.stripe_subscription_id, {
+      cancel_at_period_end: true,
+    });
+  } catch (err) {
+    console.error("[cancel] stripe update failed:", err);
+    return NextResponse.json(
+      { error: "Could not cancel with Stripe. Please try again." },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
