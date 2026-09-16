@@ -29,3 +29,33 @@ export function subToRow(sub: AnySub) {
     updated_at: new Date().toISOString(),
   };
 }
+
+type StoredRow = {
+  stripe_subscription_id: string | null;
+  status: string | null;
+  current_period_end: string | null;
+};
+
+/**
+ * The table holds one row per user, but a user can have more than one Stripe
+ * subscription over time (e.g. re-subscribing after a failed card). Decide
+ * whether an event for `incoming` may overwrite the stored row:
+ * - same subscription: always (that's a real status change)
+ * - manual lifetime grants are never overwritten by Stripe events
+ * - an old subscription's events must not clobber a different, still-live one
+ */
+export function shouldReplaceSubscriptionRow(
+  existing: StoredRow | null,
+  incoming: StoredRow,
+  now: number = Date.now()
+): boolean {
+  if (!existing) return true;
+  if (existing.stripe_subscription_id === incoming.stripe_subscription_id) return true;
+  if (existing.stripe_subscription_id?.startsWith("lifetime")) return false;
+  if (incoming.status === "active") return true;
+  const existingLive =
+    existing.status === "active" &&
+    !!existing.current_period_end &&
+    Date.parse(existing.current_period_end) > now;
+  return !existingLive;
+}
