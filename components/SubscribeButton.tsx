@@ -17,7 +17,12 @@ export default function SubscribeButton() {
         body: JSON.stringify({ billing }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error ?? "Something went wrong. Please try again.");
+        setLoading(false);
+      }
     } catch {
       alert("Something went wrong. Please try again.");
       setLoading(false);

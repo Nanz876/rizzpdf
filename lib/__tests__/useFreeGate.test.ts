@@ -124,4 +124,15 @@ describe("useFreeGate", () => {
     act(() => { result.current.refund(); });
     expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("2");
   });
+
+  it("refund() after a run that wasn't counted does not give back an earlier operation", () => {
+    localStorage.setItem(FREE_COUNT_KEY, "2");
+    const { result, rerender } = renderHook(() => useFreeGate());
+    act(() => { result.current.consume(); }); // counted: 3
+    proState.loading = true;
+    rerender();
+    act(() => { result.current.consume(); }); // at limit while loading: allowed, not counted
+    act(() => { result.current.refund(); });
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("3");
+  });
 });

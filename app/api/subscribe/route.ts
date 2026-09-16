@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 import { rateLimit, clientKey, tooMany } from "@/lib/rate-limit";
+import { getUserTier } from "@/lib/tier";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -12,6 +13,11 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Prevent double billing: an active Pro subscriber (or lifetime grant) can't start another subscription.
+  if ((await getUserTier(userId)) === "pro") {
+    return NextResponse.json({ error: "You already have Pro." }, { status: 409 });
   }
 
   const body = await req.json().catch(() => ({}));

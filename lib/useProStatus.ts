@@ -4,6 +4,14 @@ import { useUser } from "@clerk/nextjs";
 
 const DAY_PASS_KEY = "rizzpdf_bulk_session";
 
+// AbortSignal.timeout is missing before Safari 16 / Chrome 103; calling it there
+// would throw and make paying users look free. Fall back to no timeout.
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+    ? AbortSignal.timeout(ms)
+    : undefined;
+}
+
 // Module-level memo so repeated mounts within one tab session don't re-hit the
 // network. It lives in JS memory only (cleared on reload) and is therefore not
 // forgeable like a localStorage value would be.
@@ -40,7 +48,7 @@ export function useProStatus(): { isPro: boolean; loading: boolean } {
         try {
           const r = await fetch(
             `/api/verify-session?session_id=${encodeURIComponent(sessionId)}`,
-            { signal: AbortSignal.timeout(8000) }
+            { signal: timeoutSignal(8000) }
           );
           const data = await r.json().catch(() => null);
           if (r.ok && data?.valid) {
@@ -66,7 +74,7 @@ export function useProStatus(): { isPro: boolean; loading: boolean } {
       if (!isSignedIn) return finish(false);
       try {
         const r = await fetch("/api/user/subscription", {
-          signal: AbortSignal.timeout(8000),
+          signal: timeoutSignal(8000),
         });
         const data = await r.json();
         return finish(data?.tier === "pro");

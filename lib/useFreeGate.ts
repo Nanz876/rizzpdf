@@ -63,8 +63,9 @@ export function useFreeGate() {
   const count = useSyncExternalStore(subscribe, readFreeCount, serverSnapshot);
   const [showPaywall, setShowPaywall] = useState(false);
   const [graceExpired, setGraceExpired] = useState(false);
-  // Operations this hook instance actually counted and could still refund.
-  const refundable = useRef(0);
+  // Whether the most recent consume() actually counted an operation, i.e. whether
+  // a failure of that run may be refunded. Never lets a refund exceed what was counted.
+  const lastConsumeCounted = useRef(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -77,11 +78,12 @@ export function useFreeGate() {
   const canRun = stillLoading || isPro || count < FREE_LIMIT;
 
   const consume = useCallback((): boolean => {
+    lastConsumeCounted.current = false;
     if (isPro) return true;
     const current = readFreeCount();
     if (current < FREE_LIMIT) {
       writeFreeCount(current + 1);
-      refundable.current += 1;
+      lastConsumeCounted.current = true;
       return true;
     }
     if (stillLoading) return true;
@@ -91,8 +93,8 @@ export function useFreeGate() {
   }, [isPro, stillLoading]);
 
   const refund = useCallback(() => {
-    if (refundable.current <= 0) return;
-    refundable.current -= 1;
+    if (!lastConsumeCounted.current) return;
+    lastConsumeCounted.current = false;
     writeFreeCount(Math.max(0, readFreeCount() - 1));
   }, []);
 
