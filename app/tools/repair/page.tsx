@@ -32,7 +32,7 @@ export default function RepairPage() {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_repaired.pdf"));
       if (result.warning) setWarning(result.warning);
       setStatus("done");
-    } else { setError(result.error ?? "Repair failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Repair failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setStatus("idle"); setError(""); setWarning(null); };

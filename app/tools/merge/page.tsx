@@ -61,7 +61,7 @@ export default function MergePage() {
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "merged.pdf");
       setStatus("done");
-    } else { setError(result.error ?? "Merge failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Merge failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => { setFiles([]); setAllThumbs([]); setStatus("idle"); setError(""); };

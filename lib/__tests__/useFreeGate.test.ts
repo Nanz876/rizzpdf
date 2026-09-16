@@ -8,9 +8,10 @@ vi.mock("@/lib/useProStatus", () => ({
 const logTool = vi.fn();
 vi.mock("@/lib/logTool", () => ({ logTool: (t: string) => logTool(t) }));
 
-import { useFreeGate, FREE_LIMIT, FREE_COUNT_KEY } from "@/lib/useFreeGate";
+import { useFreeGate, FREE_LIMIT, FREE_COUNT_KEY, LOADING_GRACE_MS } from "@/lib/useFreeGate";
 
 beforeEach(() => {
+  vi.useRealTimers();
   localStorage.clear();
   logTool.mockClear();
   proState.isPro = false;
@@ -87,5 +88,40 @@ describe("useFreeGate", () => {
     expect(result.current.showPaywall).toBe(true);
     act(() => result.current.closePaywall());
     expect(result.current.showPaywall).toBe(false);
+  });
+
+  it("stops honouring a pro-status load that never finishes (blocked Clerk)", () => {
+    vi.useFakeTimers();
+    proState.loading = true;
+    localStorage.setItem(FREE_COUNT_KEY, "3");
+    const { result } = renderHook(() => useFreeGate());
+    let ok = false;
+    act(() => { ok = result.current.consume(); });
+    expect(ok).toBe(true);
+
+    act(() => { vi.advanceTimersByTime(LOADING_GRACE_MS + 1); });
+    act(() => { ok = result.current.consume(); });
+    expect(ok).toBe(false);
+    expect(result.current.showPaywall).toBe(true);
+  });
+
+  it("refund() returns a consumed operation after a failed run", () => {
+    localStorage.setItem(FREE_COUNT_KEY, "2");
+    const { result } = renderHook(() => useFreeGate());
+    act(() => { result.current.consume(); });
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("3");
+    act(() => { result.current.refund(); });
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("2");
+  });
+
+  it("refund() cannot mint extra operations beyond what was consumed", () => {
+    localStorage.setItem(FREE_COUNT_KEY, "2");
+    const { result } = renderHook(() => useFreeGate());
+    act(() => { result.current.refund(); });
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("2");
+    act(() => { result.current.consume(); });
+    act(() => { result.current.refund(); });
+    act(() => { result.current.refund(); });
+    expect(localStorage.getItem(FREE_COUNT_KEY)).toBe("2");
   });
 });

@@ -16,9 +16,11 @@ interface FileCardProps {
   onStatusChange: (id: string, status: FileEntry["status"], error?: string) => void;
   sharedPassword?: string;
   onBeforeUnlock?: () => boolean;
+  /** Called when an unlock attempt fails (e.g. wrong password), to refund the free operation. */
+  onUnlockFailed?: () => void;
 }
 
-export default function FileCard({ entry, onRemove, onStatusChange, sharedPassword, onBeforeUnlock }: FileCardProps) {
+export default function FileCard({ entry, onRemove, onStatusChange, sharedPassword, onBeforeUnlock, onUnlockFailed }: FileCardProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [warning, setWarning] = useState("");
@@ -35,6 +37,7 @@ export default function FileCard({ entry, onRemove, onStatusChange, sharedPasswo
       if (result.warning) setWarning(result.warning);
       onStatusChange(entry.id, "done");
     } else {
+      onUnlockFailed?.();
       onStatusChange(entry.id, "error", result.error);
     }
   }

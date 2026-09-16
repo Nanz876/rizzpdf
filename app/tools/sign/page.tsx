@@ -424,7 +424,7 @@ export default function SignPage() {
       setStatus("done");
     } catch {
       setErr("Failed to sign PDF. Please try again.");
-      setStatus("error");
+      gate.refund(); setStatus("error");
     }
   };
 

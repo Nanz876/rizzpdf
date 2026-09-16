@@ -45,7 +45,7 @@ export default function PdfToJpgPage() {
         }
       });
       setStatus("done");
-    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Conversion failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setThumbs([]); setSelected(new Set()); setStatus("idle"); setError(""); };

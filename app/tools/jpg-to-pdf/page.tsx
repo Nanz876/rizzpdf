@@ -55,7 +55,7 @@ export default function JpgToPdfPage() {
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "images.pdf");
       setStatus("done");
-    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Conversion failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => {

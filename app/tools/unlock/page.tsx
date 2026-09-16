@@ -31,16 +31,19 @@ export default function UnlockPage() {
     if (pending.length === 0 || unlockingAll) return;
     if (!gate.consume()) return;
     setUnlockingAll(true);
+    let succeeded = 0;
     for (const entry of pending) {
       handleStatusChange(entry.id, "processing");
       const result = await unlockPDF(entry.file, sharedPassword);
       if (result.success && result.blob && result.filename) {
         downloadBlob(result.blob, result.filename);
+        succeeded += 1;
         handleStatusChange(entry.id, "done");
       } else {
         handleStatusChange(entry.id, "error", result.error);
       }
     }
+    if (succeeded === 0) gate.refund();
     setUnlockingAll(false);
   }, [files, sharedPassword, handleStatusChange, unlockingAll, gate]);
 
@@ -130,6 +133,7 @@ export default function UnlockPage() {
                 onStatusChange={handleStatusChange}
                 sharedPassword={useSamePassword ? sharedPassword : undefined}
                 onBeforeUnlock={gate.consume}
+                onUnlockFailed={gate.refund}
               />
             ))}
           </div>

@@ -31,7 +31,7 @@ export default function PdfToWordPage() {
       setStatus("done");
     } else {
       setError(result.error ?? "Conversion failed.");
-      setStatus("error");
+      gate.refund(); setStatus("error");
     }
   };
 

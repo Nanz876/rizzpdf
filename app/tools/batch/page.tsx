@@ -78,6 +78,7 @@ export default function BatchPage() {
 
     resultsRef.current = results;
     setWarnings(results.map((r) => r?.warning));
+    if (!results.some(Boolean)) gate.refund(); // nothing produced: don't charge a free operation
     setRunning(false);
   };
 
@@ -99,7 +100,7 @@ export default function BatchPage() {
   return (
     <ToolShell
       name="Batch Processing"
-      description="Apply the same operation to multiple PDFs at once. Free for up to 3 files."
+      description="Apply the same operation to multiple PDFs at once. Free for your first 3 operations."
       icon="⚡"
       steps={files.length > 0 ? undefined : ["Upload your PDFs", "Choose an operation", "Download all results"]}
     >

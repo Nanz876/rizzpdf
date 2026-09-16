@@ -34,7 +34,7 @@ export default function ProtectPage() {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_protected.pdf"));
       setStatus("done");
     } else {
-      setError(result.error ?? "Protection failed."); setStatus("error");
+      setError(result.error ?? "Protection failed."); gate.refund(); setStatus("error");
     }
   };
 

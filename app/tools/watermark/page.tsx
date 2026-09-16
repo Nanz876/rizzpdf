@@ -46,7 +46,7 @@ export default function WatermarkPage() {
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_watermarked.pdf"));
       setStatus("done");
-    } else { setError(result.error ?? "Failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setPreviewUrl(null); setStatus("idle"); setError(""); };

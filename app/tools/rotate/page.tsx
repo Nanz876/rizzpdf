@@ -57,7 +57,7 @@ export default function RotatePage() {
       downloadBlob(new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }), file.name.replace(/\.pdf$/i, "_rotated.pdf"));
       setStatus("done");
     } catch {
-      setError("Rotation failed."); setStatus("error");
+      setError("Rotation failed."); gate.refund(); setStatus("error");
     }
   };
 

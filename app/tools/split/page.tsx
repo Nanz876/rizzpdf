@@ -71,7 +71,7 @@ export default function SplitPage() {
     if (result.success && result.blobs) {
       result.blobs.forEach((blob, i) => downloadBlob(blob, result.filenames![i]));
       setSplitCount(result.blobs.length); setStatus("done");
-    } else { setError(result.error ?? "Split failed."); setStatus("error"); }
+    } else { setError(result.error ?? "Split failed."); gate.refund(); setStatus("error"); }
   };
 
   const reset = () => {

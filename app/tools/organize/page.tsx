@@ -74,6 +74,7 @@ export default function OrganizePage() {
     try {
       const result = await organizePDF(file, pageOrder);
       if (!result.success || !result.blob) {
+        gate.refund();
         setError(result.error ?? "Failed to organize PDF.");
         setStatus("ready");
       } else {
@@ -81,6 +82,7 @@ export default function OrganizePage() {
         setStatus("done");
       }
     } catch (e: unknown) {
+      gate.refund();
       setError(e instanceof Error ? e.message : "Unexpected error.");
       setStatus("ready");
     }
