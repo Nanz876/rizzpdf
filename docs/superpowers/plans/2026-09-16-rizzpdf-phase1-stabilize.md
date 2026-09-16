@@ -632,7 +632,7 @@ These pages share one shape: a `handleX` async function that calls `logTool("x")
 | `app/tools/protect/page.tsx` | `handleProtect` |
 | `app/tools/repair/page.tsx` | `handleRepair` |
 | `app/tools/sign/page.tsx` | `handleSign` |
-| `app/tools/organize/page.tsx` | `handleSave` (declared as `async function handleSave()`) |
+| `app/tools/organize/page.tsx` | `handleSave` (declared as `async function handleSave()`; has NO `logTool` line, so insert the gate check right after its `if (!file) return;` guard and also add `logTool("organize");` after it for consistency) |
 
 **Files:** Modify each of the 12 pages above.
 
@@ -749,7 +749,7 @@ Unlock currently caps free users at 3 files added; it moves to the operation rul
 - Same import swap; delete `const FREE_LIMIT = 3;` (line 9); replace the `showPaywall` state and `useProStatus()` lines with `const gate = useFreeGate();`.
 - Replace `handleFilesAdded` with the ungated version (same shape as unlock's above but building `BatchFile` entries: `{ id: crypto.randomUUID(), file: f, status: "idle" }`).
 - In `handleRun`, after `if (files.length === 0 || running) return;` add `if (!gate.consume()) return;` (one batch run = one operation).
-- Replace the "free files used" banner block (lines 120-134) with the same `remaining` paragraph used for unlock.
+- Replace the "free files used" banner block (lines 120-136, the `{!proLoading && !isPro && files.length > 0 && (...)}` JSX) with the same `remaining` paragraph used for unlock.
 - Replace the paywall block as in Step 1.
 
 - [ ] **Step 5: Confirm nothing else references the old pieces**
