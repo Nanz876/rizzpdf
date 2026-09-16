@@ -8,89 +8,103 @@ export interface UnlockResult {
   warning?: string;
 }
 
+const unlockedName = (file: File) => file.name.replace(/\.pdf$/i, "_unlocked.pdf");
+
+/**
+ * Remove a PDF's open password and/or permission restrictions.
+ *
+ * RC4 and AES-256 files are decrypted losslessly: text, links, forms and image
+ * quality are untouched. Other encryption types (e.g. AES-128) fall back to
+ * rendering each page, which loses selectable text.
+ */
 export async function unlockPDF(file: File, password: string): Promise<UnlockResult> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  let encrypted: boolean;
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    encrypted = (await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false })).isEncrypted;
+  } catch {
+    return { success: false, error: "This file couldn't be opened. Make sure it's a valid PDF." };
+  }
 
-    // When no password is provided, try pdf-lib's ignoreEncryption first.
-    // This handles permission-locked PDFs (restricted features but no open password)
-    // and preserves text, links, form fields, and all vector content.
-    // Skip this path when a password is given — ignoreEncryption doesn't decrypt
-    // user-password PDFs; it silently produces a garbled output instead of throwing.
-    if (!password) {
-      try {
-        const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-        // ignoreEncryption only bypasses the *check* — it does not decrypt. If the
-        // document is genuinely encrypted, re-saving produces garbled output. Bail
-        // to the PDF.js path below (which actually decrypts) rather than returning a
-        // broken file as a false success.
-        if (doc.isEncrypted) {
-          throw new Error("encrypted — needs real decryption");
-        }
-        const saved = await doc.save();
-        const blob = new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" });
-        return { success: true, blob, filename: file.name.replace(/\.pdf$/i, "_unlocked.pdf") };
-      } catch {
-        // Falls through to rasterizing approach
-      }
+  if (!encrypted) {
+    return {
+      success: true,
+      blob: new Blob([bytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+      filename: unlockedName(file),
+      warning: "This PDF wasn't locked, so it was saved unchanged.",
+    };
+  }
+
+  try {
+    const { decryptPDF } = await import("@pdfsmaller/pdf-decrypt");
+    const decrypted = await decryptPDF(bytes, password);
+    return {
+      success: true,
+      blob: new Blob([decrypted as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+      filename: unlockedName(file),
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/password/i.test(msg)) {
+      return {
+        success: false,
+        error: password
+          ? "Wrong password — double-check and try again."
+          : "This PDF needs its open password. Enter it and try again.",
+      };
     }
+    if (!/unsupported encryption/i.test(msg)) {
+      return { success: false, error: "This file couldn't be unlocked. It may be damaged." };
+    }
+  }
 
-    // Use PDF.js to decrypt with the password, then re-render each page.
-    // This is lossy (rasterizes to images) but correctly handles open-password
-    // encryption that pdf-lib cannot strip.
+  return renderUnlock(file, bytes, password);
+}
+
+/** Fallback for encryption types the lossless decrypter doesn't support. */
+async function renderUnlock(file: File, bytes: Uint8Array, password: string): Promise<UnlockResult> {
+  try {
     const pdfjsLib = await import("pdfjs-dist");
     pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
     let pdfJsDoc: import("pdfjs-dist").PDFDocumentProxy;
     try {
-      const loadingTask = pdfjsLib.getDocument({ data: bytes, password: password || "" });
-      pdfJsDoc = await loadingTask.promise;
+      pdfJsDoc = await pdfjsLib.getDocument({ data: bytes.slice(), password }).promise;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes("password")) {
-        return { success: false, error: "Wrong password — double-check and try again." };
+      const name = (err as { name?: string })?.name;
+      if (name === "PasswordException") {
+        return {
+          success: false,
+          error: password ? "Wrong password — double-check and try again." : "This PDF needs its open password. Enter it and try again.",
+        };
       }
-      return { success: false, error: `Unable to unlock: ${msg}` };
+      return { success: false, error: "This file couldn't be unlocked. It may be damaged." };
     }
 
-    const numPages = pdfJsDoc.numPages;
     const newPdf = await PDFDocument.create();
-
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    for (let pageNum = 1; pageNum <= pdfJsDoc.numPages; pageNum++) {
       const page = await pdfJsDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 });
-
+      const { width, height } = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: 2 });
       const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d")!;
-
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await page.render({ canvasContext: ctx as any, viewport, canvas }).promise;
-
-      const pngDataUrl = canvas.toDataURL("image/png");
-      const base64 = pngDataUrl.split(",")[1];
-      const pngBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-
-      const pngImage = await newPdf.embedPng(pngBytes);
-      // Use full viewport dimensions — do not halve, which would shrink the output
-      const newPage = newPdf.addPage([viewport.width, viewport.height]);
-      newPage.drawImage(pngImage, {
-        x: 0,
-        y: 0,
-        width: viewport.width,
-        height: viewport.height,
-      });
+      await page.render({ canvasContext: canvas.getContext("2d")! as any, viewport, canvas }).promise;
+      const png = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("encode"))), "image/png"));
+      canvas.width = 0;
+      canvas.height = 0;
+      const image = await newPdf.embedPng(new Uint8Array(await png.arrayBuffer()));
+      newPdf.addPage([width, height]).drawImage(image, { x: 0, y: 0, width, height });
     }
 
-    const unlockedBytes = await newPdf.save();
-    const blob = new Blob([unlockedBytes as unknown as BlobPart], { type: "application/pdf" });
+    const out = await newPdf.save();
     return {
       success: true,
-      blob,
-      filename: file.name.replace(/\.pdf$/i, "_unlocked.pdf"),
-      warning: "This PDF required full rendering to unlock — text is no longer selectable in the output.",
+      blob: new Blob([out as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+      filename: unlockedName(file),
+      warning: "This PDF uses an encryption type that required full rendering to unlock — text is no longer selectable in the output.",
     };
   } catch {
     return { success: false, error: "Failed to process this file. Make sure it's a valid PDF." };
@@ -103,5 +117,5 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
