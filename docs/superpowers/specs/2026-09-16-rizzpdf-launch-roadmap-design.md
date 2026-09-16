@@ -1,7 +1,7 @@
 # RizzPDF Launch Roadmap — Design Spec
 
 **Date:** 2026-09-16
-**Status:** Approved by owner (verbal, this session); pending spec review
+**Status:** Approved by owner and spec reviewer (2026-09-16)
 **Scope:** Three sequential phases to take RizzPDF from "deployed but unmonetized" to "stable, measured, growing, and on Android". Phase 1 is the only phase that produces an implementation plan from this spec; Phases 2 and 3 are roadmap commitments that get their own spec/plan when reached.
 
 ## Context (as of 2026-09-16)
@@ -31,6 +31,7 @@
 |---|---------|----------|
 | C1 | PDF-to-Word POSTs the file to a Python/Flask function; violates client-side-only rule; no paywall; no rate limit | `app/tools/pdf-to-word/page.tsx:28`, `api/pdf-to-word.py`, `vercel.json` |
 | C2 | Stripe webhook `upsert` has no `onConflict`; duplicate rows make `.single()` fail and demote paying users to free | `app/api/webhooks/stripe/route.ts:51,71`, `lib/tier.ts` |
+| C3 | `subToRow` reads `sub.current_period_end`, which Stripe API versions from 2025-03 moved onto `sub.items.data[0]`; the installed SDK (stripe 20) has no top-level field, so the `invoice.payment_succeeded` path writes `1970-01-01` and `getUserTier` treats the paying user as expired | `app/api/webhooks/stripe/route.ts:20,66-71` |
 | H1 | Only batch, compress, unlock, watermark enforce the free limit; unlock counts files not operations | `app/tools/*/page.tsx` |
 | H2 | `/privacy` and `/terms` are linked from the footer but do not exist (404) | `components/Footer.tsx:31-32` |
 | M1 | Unrelated files committed and publicly served: `public/ICC-Elite-cBot.cs`, `public/icc-elite-visual.txt`, `public/test.pdf`, `public/test.jpg`; unreferenced `public/pdfjs-script.js`; `scripts/alphax-prism*.pine` | `public/`, `scripts/` |
@@ -44,6 +45,7 @@
 **Webhook upsert (C2).**
 - Before changing code: query the Supabase `subscriptions` table definition (via the admin client in a one-off script under `scripts/`) and confirm a UNIQUE constraint on `user_id`. If absent, add one via a migration SQL file committed to `supabase/migrations/YYYYMMDD_subscriptions_user_id_unique.sql` and applied by the owner in the Supabase SQL editor (the repo has no migration tooling).
 - Change both `upsert(...)` calls to `upsert(row, { onConflict: "user_id" })`.
+- Move `subToRow` into `lib/stripe-rows.ts` and read the period end from `items.data[0].current_period_end` first, falling back to the legacy top-level field, and writing `null` (never 1970) when neither exists (C3). Unit-tested.
 - Make `getUserTier` and `getSubscription` in `lib/tier.ts` resilient: use `.maybeSingle()` and, if multiple rows exist, prefer the row with the latest `current_period_end`.
 
 **PDF-to-Word (C1).**
