@@ -101,7 +101,7 @@ export default async function DashboardPage({
               >
                 CSV Bulk Unlock →
               </Link>
-              <CancelButton periodEnd={subscription?.current_period_end} />
+              <CancelButton periodEnd={subscription?.current_period_end ?? undefined} />
             </div>
           )}
         </div>
