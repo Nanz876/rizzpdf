@@ -259,6 +259,7 @@ export async function compressPDF(
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, nw, nh);
       ctx.drawImage(source, 0, 0, nw, nh);
+      if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) source.close(); // free full-size pixels now
       const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", settings.quality)).arrayBuffer());
       canvas.width = 0;
       canvas.height = 0;
@@ -752,6 +753,11 @@ export async function protectPDF(
 type TextItem = { str: string; x: number; y: number; w: number; size: number; bold: boolean; italic: boolean };
 type Line = { text: string; x: number; y: number; size: number; bold: boolean; italic: boolean };
 
+// Bullet glyphs always start a list item. A plain hyphen or en dash only counts when
+// at least two lines on the page start with it at the same indent (a real list),
+// so prose that happens to open with a dash stays a normal paragraph.
+const BULLET_GLYPH_RE = /^[•●▪◦‣∙·]\s+/;
+const DASH_RE = /^[-–]\s+/;
 const BULLET_RE = /^[•●▪◦‣∙·\-–]\s+/;
 
 export const NO_TEXT_MESSAGE =
@@ -849,12 +855,16 @@ export async function pdfToWord(file: File): Promise<ToolResult> {
       const leftMargin = Math.min(...lines.map((l) => l.x));
 
       // 4. Merge wrapped lines into paragraphs.
+      const dashIndents = lines.filter((l) => DASH_RE.test(l.text)).map((l) => l.x);
+      const isListLine = (l: Line) =>
+        BULLET_GLYPH_RE.test(l.text) ||
+        (DASH_RE.test(l.text) && dashIndents.filter((x) => Math.abs(x - l.x) <= 2).length >= 2);
       type Para = { lines: Line[]; bullet: boolean };
       const paras: Para[] = [];
       for (const line of lines) {
         const prev = paras[paras.length - 1];
         const last = prev?.lines[prev.lines.length - 1];
-        const isBullet = BULLET_RE.test(line.text);
+        const isBullet = isListLine(line);
         const heading = line.size >= body * 1.2;
         const continues =
           !!last &&
@@ -877,7 +887,7 @@ export async function pdfToWord(file: File): Promise<ToolResult> {
         const text = p.lines
           .map((l) => l.text)
           .reduce((acc, t) => (acc.endsWith("-") && !acc.endsWith(" -") ? acc.slice(0, -1) + t : acc ? `${acc} ${t}` : t), "")
-          .replace(BULLET_RE, "");
+          .replace(p.bullet ? BULLET_RE : /^$/, "");
         const size = first.size;
         const heading = size >= body * 1.5 ? HeadingLevel.HEADING_1 : size >= body * 1.2 ? HeadingLevel.HEADING_2 : undefined;
         const indentPt = Math.max(0, first.x - leftMargin);

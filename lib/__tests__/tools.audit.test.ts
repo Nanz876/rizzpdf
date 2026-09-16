@@ -50,6 +50,20 @@ async function pageTexts(bytes: Uint8Array, password?: string): Promise<string[]
   return out;
 }
 
+/** Transform matrices (in order) emitted on a page, plus the index of each image paint. */
+async function drawOps(bytes: Uint8Array, pageNum = 1) {
+  const real = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const doc = await openPdfjs(bytes);
+  const list = await (await doc.getPage(pageNum)).getOperatorList();
+  const transforms: number[][] = [];
+  let imagesPainted = 0;
+  list.fnArray.forEach((fn, i) => {
+    if (fn === real.OPS.transform) transforms.push((list.argsArray[i] as number[]).map((n) => Math.round(n * 1000) / 1000));
+    if (fn === real.OPS.paintImageXObject) imagesPainted++;
+  });
+  return { transforms, imagesPainted };
+}
+
 describe("merge", () => {
   it("combines pages in the given order", async () => {
     const r = await tools.mergePDFs([await fixture("audit/structured-doc.pdf"), await fixture("smoke/plain-text.pdf")]);
@@ -253,6 +267,19 @@ describe("pdf to word", () => {
     expect(xml).toMatch(/w:pStyle w:val="Heading2"/);
   });
 
+  it("does not turn a sentence that starts with a dash into a bullet", async () => {
+    const { PDFDocument: Doc, StandardFonts } = await import("pdf-lib");
+    const d = await Doc.create();
+    const font = await d.embedFont(StandardFonts.Helvetica);
+    const p = d.addPage([612, 792]);
+    p.drawText("Results were mixed this quarter overall.", { x: 54, y: 700, size: 11, font });
+    p.drawText("- 5 percent below forecast, driven by delays.", { x: 54, y: 685, size: 11, font });
+    const r = await tools.pdfToWord(new File([(await d.save()) as Uint8Array<ArrayBuffer>], "dash.pdf", { type: "application/pdf" }));
+    const xml = await docXml(r);
+    expect(xml).not.toMatch(/w:numPr/);
+    expect(paragraphs(xml).some((t) => t.includes("- 5 percent below forecast"))).toBe(true);
+  });
+
   it("turns bullet characters into real Word bullets", async () => {
     const xml = await docXml(await tools.pdfToWord(await fixture("audit/structured-doc.pdf")));
     const paras = paragraphs(xml);
@@ -293,6 +320,12 @@ describe("jpg to pdf", () => {
     const rot = page.getRotation().angle % 180 === 90;
     const displayedPortrait = rot ? width > height : height > width;
     expect(displayedPortrait).toBe(true);
+    // Orientation 6 means "rotate 90° clockwise": pdf-lib must draw with a clockwise
+    // rotation matrix [0 -1 1 0], not counter-clockwise [0 1 -1 0].
+    const { transforms, imagesPainted } = await drawOps(await bytesOf(r.blob!));
+    expect(imagesPainted).toBe(1);
+    expect(transforms.some((t) => t[0] === 0 && t[1] === -1 && t[2] === 1 && t[3] === 0)).toBe(true);
+    expect(transforms.some((t) => t[0] === 0 && t[1] === 1 && t[2] === -1 && t[3] === 0)).toBe(false);
   });
 
   it("accepts PNG", async () => {
@@ -312,6 +345,34 @@ describe("sign", () => {
     const res = doc.getPage(1).node.Resources();
     const xobj = res?.lookup(PDFName.of("XObject"));
     expect(xobj).toBeTruthy();
+  });
+
+  it("places the signature inside the visible area of a rotated, cropped page", async () => {
+    const png = await fs.readFile(path.join(FIX, "audit/graphic.png"));
+    const r = await tools.signPDF(await fixture("audit/rotated-cropped.pdf"), {
+      signatureDataUrl: `data:image/png;base64,${png.toString("base64")}`,
+      page: 1,
+      x: 0.5,
+      yFromTop: 0.5,
+      widthRatio: 0.2,
+    });
+    const bytes = await bytesOf(r.blob!);
+    const crop = (await PDFDocument.load(bytes)).getPage(0).getCropBox();
+    const { transforms, imagesPainted } = await drawOps(bytes);
+    expect(imagesPainted).toBe(1);
+    // pdf-lib draws the image as: translate(x, y), rotate, skew (identity), scale.
+    // The position is the translation immediately before the rotation.
+    const rotIdx = transforms.findIndex((t) => t[0] === 0 && t[1] === 1 && t[2] === -1 && t[3] === 0);
+    expect(rotIdx).toBeGreaterThan(0);
+    const translate = transforms[rotIdx - 1];
+    expect(translate).toBeTruthy();
+    const [x, y] = [translate![4], translate![5]];
+    expect(x).toBeGreaterThanOrEqual(crop.x);
+    expect(x).toBeLessThanOrEqual(crop.x + crop.width);
+    expect(y).toBeGreaterThanOrEqual(crop.y);
+    expect(y).toBeLessThanOrEqual(crop.y + crop.height);
+    // Page is displayed at 90° clockwise, so the image is drawn rotated 90° counter-clockwise to appear upright.
+    expect(transforms.some((t) => t[0] === 0 && t[1] === 1 && t[2] === -1 && t[3] === 0)).toBe(true);
   });
 });
 
