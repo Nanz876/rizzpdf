@@ -6,32 +6,20 @@ import UploadZone from "@/components/UploadZone";
 import FileCard, { FileEntry } from "@/components/FileCard";
 import PaywallModal from "@/components/PaywallModal";
 import { unlockPDF, downloadBlob } from "@/lib/pdf-unlock";
-import { useProStatus } from "@/lib/useProStatus";
-
-const FREE_LIMIT = 3;
+import { useFreeGate } from "@/lib/useFreeGate";
 
 export default function UnlockPage() {
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [showPaywall, setShowPaywall] = useState(false);
   const [useSamePassword, setUseSamePassword] = useState(false);
   const [sharedPassword, setSharedPassword] = useState("");
   const [showSharedPassword, setShowSharedPassword] = useState(false);
   const [unlockingAll, setUnlockingAll] = useState(false);
-  const { isPro, loading: proLoading } = useProStatus();
+  const gate = useFreeGate();
 
-  const handleFilesAdded = useCallback(
-    (newFiles: File[]) => {
-      const currentCount = files.length;
-      const allowed = proLoading || isPro ? Infinity : FREE_LIMIT;
-      if (currentCount >= allowed) { setShowPaywall(true); return; }
-      const toAdd = newFiles.slice(0, allowed - currentCount);
-      const overflow = newFiles.length - toAdd.length;
-      const entries: FileEntry[] = toAdd.map((f) => ({ id: crypto.randomUUID(), file: f, status: "idle" }));
-      setFiles((prev) => [...prev, ...entries]);
-      if (overflow > 0) setTimeout(() => setShowPaywall(true), 300);
-    },
-    [files.length, isPro, proLoading]
-  );
+  const handleFilesAdded = useCallback((newFiles: File[]) => {
+    const entries: FileEntry[] = newFiles.map((f) => ({ id: crypto.randomUUID(), file: f, status: "idle" }));
+    setFiles((prev) => [...prev, ...entries]);
+  }, []);
 
   const handleRemove = useCallback((id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)), []);
   const handleStatusChange = useCallback((id: string, status: FileEntry["status"], error?: string) => {
@@ -41,6 +29,7 @@ export default function UnlockPage() {
   const handleUnlockAll = useCallback(async () => {
     const pending = files.filter((f) => f.status === "idle" || f.status === "error");
     if (pending.length === 0 || unlockingAll) return;
+    if (!gate.consume()) return;
     setUnlockingAll(true);
     for (const entry of pending) {
       handleStatusChange(entry.id, "processing");
@@ -53,33 +42,26 @@ export default function UnlockPage() {
       }
     }
     setUnlockingAll(false);
-  }, [files, sharedPassword, handleStatusChange, unlockingAll]);
+  }, [files, sharedPassword, handleStatusChange, unlockingAll, gate]);
 
   return (
     <ToolShell
       name="Unlock PDF"
-      description="Remove PDF password protection instantly. Free for up to 3 files."
+      description="Remove PDF password protection instantly. Free for your first 3 operations."
       icon="🔓"
       steps={files.length > 0 ? undefined : ["Upload your PDF", "Enter the password", "Download unlocked file"]}
     >
       <UploadZone onFilesAdded={handleFilesAdded} />
 
-      {!proLoading && !isPro && files.length > 0 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <div className="flex gap-1">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className={`w-8 h-1.5 rounded-full ${i < files.length ? "bg-red-500" : "bg-gray-200"}`} />
-            ))}
-          </div>
-          <span className="text-xs text-gray-400">
-            {files.length}/3 free files used
-            {files.length >= FREE_LIMIT && (
-              <button onClick={() => setShowPaywall(true)} className="ml-2 text-red-600 font-semibold hover:underline">
-                Go bulk for $1 →
-              </button>
-            )}
-          </span>
-        </div>
+      {!gate.loading && !gate.isPro && files.length > 0 && (
+        <p className="mt-4 text-center text-xs text-gray-400">
+          {gate.remaining} of 3 free operations left
+          {gate.remaining === 0 && (
+            <button onClick={gate.openPaywall} className="ml-2 text-red-600 font-semibold hover:underline">
+              Go unlimited for $1 →
+            </button>
+          )}
+        </p>
       )}
 
       {files.length > 0 && (
@@ -147,18 +129,14 @@ export default function UnlockPage() {
                 onRemove={handleRemove}
                 onStatusChange={handleStatusChange}
                 sharedPassword={useSamePassword ? sharedPassword : undefined}
+                onBeforeUnlock={gate.consume}
               />
             ))}
           </div>
         </div>
       )}
 
-      {showPaywall && (
-        <PaywallModal
-          onClose={() => setShowPaywall(false)}
-          onPay={() => setShowPaywall(false)}
-        />
-      )}
+      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />}
     </ToolShell>
   );
 }
