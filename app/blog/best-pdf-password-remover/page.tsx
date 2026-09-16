@@ -76,7 +76,7 @@ export default function BestPdfPasswordRemover() {
               1. RizzPDF — Best for Privacy &amp; Simplicity
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> stands out because it processes everything inside your browser. Your PDF never gets sent to any server, which is a huge deal if you're handling sensitive documents. There's no sign-up, no email required, and the free tier covers 3 files.
+              <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> stands out because it processes everything inside your browser. Your PDF never gets sent to any server, which is a huge deal if you&apos;re handling sensitive documents. There&apos;s no sign-up, no email required, and the free tier covers 3 files.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">3 files</span></div>
@@ -93,7 +93,7 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-3 text-white">2. Smallpdf — Best-Known Option</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Smallpdf is the most widely known PDF tool online. It has a clean interface and handles password removal well. The downside: it requires an account to use more than two tasks per day, and your files are uploaded to Smallpdf's servers.
+              Smallpdf is the most widely known PDF tool online. It has a clean interface and handles password removal well. The downside: it requires an account to use more than two tasks per day, and your files are uploaded to Smallpdf&apos;s servers.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">2 tasks/day</span></div>
@@ -102,7 +102,7 @@ export default function BestPdfPasswordRemover() {
               <div className="flex justify-between"><span className="text-gray-400">Paid option</span><span className="text-white">From $9/month</span></div>
             </div>
             <p className="mt-4 text-gray-400 text-sm">
-              <strong className="text-gray-300">Best for:</strong> Users who need a full suite of PDF tools and don't mind paying a subscription.
+              <strong className="text-gray-300">Best for:</strong> Users who need a full suite of PDF tools and don&apos;t mind paying a subscription.
             </p>
           </section>
 
@@ -110,7 +110,7 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-3 text-white">3. ILovePDF — Feature-Rich but Server-Based</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              ILovePDF offers a wide range of PDF tools including unlock, compress, merge, and split. It's popular and reliable, but like Smallpdf, it uploads your files to its servers. The free tier is fairly limited without an account.
+              ILovePDF offers a wide range of PDF tools including unlock, compress, merge, and split. It&apos;s popular and reliable, but like Smallpdf, it uploads your files to its servers. The free tier is fairly limited without an account.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">Limited (with ads)</span></div>
@@ -127,7 +127,7 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-3 text-white">4. Google Chrome Print Method — Completely Free</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              If you already know the PDF password, Chrome's built-in print-to-PDF feature effectively creates a password-free copy. Open the PDF in Chrome, enter the password, then print it as a PDF to save a clean version.
+              If you already know the PDF password, Chrome&apos;s built-in print-to-PDF feature effectively creates a password-free copy. Open the PDF in Chrome, enter the password, then print it as a PDF to save a clean version.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-white">Fully free</span></div>
@@ -144,7 +144,7 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-3 text-white">5. Adobe Acrobat Pro — Most Powerful (but Expensive)</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Adobe Acrobat Pro is the gold standard for PDF work. It can remove passwords, edit content, add signatures, and more. However, at ~$25/month, it's hard to justify for the sole purpose of unlocking PDFs.
+              Adobe Acrobat Pro is the gold standard for PDF work. It can remove passwords, edit content, add signatures, and more. However, at ~$25/month, it&apos;s hard to justify for the sole purpose of unlocking PDFs.
             </p>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Free tier</span><span className="text-yellow-400">7-day trial only</span></div>
@@ -160,10 +160,10 @@ export default function BestPdfPasswordRemover() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Which Should You Use?</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              For most people, <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> is the clear winner. It's free for up to 3 files, requires no sign-up, and — crucially — never uploads your files anywhere. If you just need to unlock a PDF quickly and privately, it's the best tool for the job.
+              For most people, <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> is the clear winner. It&apos;s free for up to 3 files, requires no sign-up, and — crucially — never uploads your files anywhere. If you just need to unlock a PDF quickly and privately, it&apos;s the best tool for the job.
             </p>
             <p className="text-gray-300 leading-relaxed">
-              If you unlock PDFs regularly as part of a broader PDF workflow, Smallpdf or ILovePDF offer more tools for a monthly fee. And if you're a power user who needs full editing capabilities, Adobe Acrobat Pro is worth the investment.
+              If you unlock PDFs regularly as part of a broader PDF workflow, Smallpdf or ILovePDF offer more tools for a monthly fee. And if you&apos;re a power user who needs full editing capabilities, Adobe Acrobat Pro is worth the investment.
             </p>
           </section>
 

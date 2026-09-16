@@ -22,11 +22,13 @@ function fmtSize(b: number) {
 }
 
 export default function PdfPreviewArea({ files, onAddMore }: PdfPreviewAreaProps) {
-  const [thumbs, setThumbs] = useState<FileThumb[]>([]);
+  // Thumbnails are tagged with the file list they were rendered for, so a new
+  // `files` prop shows placeholders immediately instead of the previous thumbs.
+  const [rendered, setRendered] = useState<{ files: File[]; thumbs: FileThumb[] }>({ files: [], thumbs: [] });
+  const thumbs = rendered.files === files ? rendered.thumbs : [];
 
   useEffect(() => {
     let cancelled = false;
-    setThumbs([]);
 
     (async () => {
       const results = await Promise.all(
@@ -49,7 +51,7 @@ export default function PdfPreviewArea({ files, onAddMore }: PdfPreviewAreaProps
           }
         })
       );
-      if (!cancelled) setThumbs(results);
+      if (!cancelled) setRendered({ files, thumbs: results });
     })();
 
     return () => { cancelled = true; };

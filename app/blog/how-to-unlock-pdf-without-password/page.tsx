@@ -62,7 +62,7 @@ export default function HowToUnlockPdfWithoutPassword() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          You forgot the password to a PDF — or you were sent a locked file with restrictions you can't work around. It's a frustrating situation, but there are real solutions. Here's an honest breakdown of three methods, starting with what actually works and what doesn't.
+          You forgot the password to a PDF — or you were sent a locked file with restrictions you can&apos;t work around. It&apos;s a frustrating situation, but there are real solutions. Here&apos;s an honest breakdown of three methods, starting with what actually works and what doesn&apos;t.
         </p>
 
         <div className="bg-amber-900/30 border border-amber-700/40 rounded-xl p-5 mb-10">
@@ -78,13 +78,13 @@ export default function HowToUnlockPdfWithoutPassword() {
               Method 1 — Remove Owner/Permissions Restrictions (Works Without the Password)
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              If your PDF opens fine but you can't edit, print, or copy text from it, it has an <em>owner password</em> restricting permissions. <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> can strip these restrictions entirely — no password required on your end.
+              If your PDF opens fine but you can&apos;t edit, print, or copy text from it, it has an <em>owner password</em> restricting permissions. <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">RizzPDF</Link> can strip these restrictions entirely — no password required on your end.
             </p>
             <ol className="list-decimal list-inside space-y-3 text-gray-300 mb-4">
               <li>Go to <Link href="https://www.rizzpdf.com" className="text-purple-400 hover:text-purple-300 underline">rizzpdf.com</Link></li>
               <li>Drop the restricted PDF onto the upload zone</li>
               <li>When asked for a password, leave it blank and click <strong className="text-white">Unlock</strong></li>
-              <li>If it's only permissions-restricted, RizzPDF removes the restrictions and lets you download a clean copy</li>
+              <li>If it&apos;s only permissions-restricted, RizzPDF removes the restrictions and lets you download a clean copy</li>
             </ol>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-sm text-gray-400">
               <strong className="text-white">Why this works:</strong> Owner passwords in PDFs are enforced by reader software, not by encryption. The file contents are readable — the restriction is just a flag that RizzPDF can clear using PDF.js, entirely in your browser.
@@ -97,7 +97,7 @@ export default function HowToUnlockPdfWithoutPassword() {
               Method 2 — Use a Password Recovery Tool (For Forgotten Open Passwords)
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              If you've truly forgotten an <em>open password</em> (the one you need just to view the PDF), no browser tool can magically recover it. The file is AES or RC4 encrypted and the only way in is to guess or brute-force the password.
+              If you&apos;ve truly forgotten an <em>open password</em> (the one you need just to view the PDF), no browser tool can magically recover it. The file is AES or RC4 encrypted and the only way in is to guess or brute-force the password.
             </p>
             <p className="text-gray-300 leading-relaxed mb-4">
               Tools like <strong className="text-white">Passware Kit</strong> or <strong className="text-white">PDF Password Remover</strong> (desktop software) can attempt dictionary attacks or brute-force recovery. Success depends entirely on how complex the password was:
@@ -115,7 +115,7 @@ export default function HowToUnlockPdfWithoutPassword() {
               ))}
             </div>
             <p className="mt-4 text-gray-400 text-sm">
-              These tools are paid and desktop-only. If you just need the PDF you set a password on years ago with a simple word, it's worth trying. If the password was complex, recovery is effectively impossible.
+              These tools are paid and desktop-only. If you just need the PDF you set a password on years ago with a simple word, it&apos;s worth trying. If the password was complex, recovery is effectively impossible.
             </p>
           </section>
 
@@ -125,10 +125,10 @@ export default function HowToUnlockPdfWithoutPassword() {
               Method 3 — Contact the Document Sender
             </h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              If someone sent you a password-protected PDF and didn't include the password, just ask them. Banks, accountants, insurance companies, and government agencies routinely send password-protected statements and documents — and they're usually willing to share the password by phone or email.
+              If someone sent you a password-protected PDF and didn&apos;t include the password, just ask them. Banks, accountants, insurance companies, and government agencies routinely send password-protected statements and documents — and they&apos;re usually willing to share the password by phone or email.
             </p>
             <p className="text-gray-300 leading-relaxed">
-              This sounds obvious, but it's often the fastest path. Many password-protected PDFs from institutions use standard passwords like your date of birth, policy number, or account number — worth trying before reaching out.
+              This sounds obvious, but it&apos;s often the fastest path. Many password-protected PDFs from institutions use standard passwords like your date of birth, policy number, or account number — worth trying before reaching out.
             </p>
           </section>
 
@@ -149,9 +149,9 @@ export default function HowToUnlockPdfWithoutPassword() {
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2 text-white">Why can't I edit my PDF even after unlocking it?</h3>
+                <h3 className="text-lg font-semibold mb-2 text-white">Why can&apos;t I edit my PDF even after unlocking it?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Unlocking removes the password, but PDFs aren't inherently editable like Word documents. To edit PDF text you need a PDF editor — either Adobe Acrobat, or free alternatives like LibreOffice Draw or Smallpdf.
+                  Unlocking removes the password, but PDFs aren&apos;t inherently editable like Word documents. To edit PDF text you need a PDF editor — either Adobe Acrobat, or free alternatives like LibreOffice Draw or Smallpdf.
                 </p>
               </div>
             </div>

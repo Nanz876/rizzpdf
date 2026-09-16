@@ -61,7 +61,7 @@ export default function HowToEditPdfInWord() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          You need to make changes to a PDF — update a date, fix a name, revise a clause — but you don't have Adobe Acrobat and don't want to pay $25/month for one edit. There are two practical approaches: convert the PDF to Word and edit it there, or use a browser-based PDF tool to annotate and mark up the file directly. Here's how to do both, for free.
+          You need to make changes to a PDF — update a date, fix a name, revise a clause — but you don&apos;t have Adobe Acrobat and don&apos;t want to pay $25/month for one edit. There are two practical approaches: convert the PDF to Word and edit it there, or use a browser-based PDF tool to annotate and mark up the file directly. Here&apos;s how to do both, for free.
         </p>
 
         <div className="space-y-12">
@@ -151,7 +151,7 @@ export default function HowToEditPdfInWord() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Method 2 — Edit the PDF Directly in Your Browser</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Sometimes you don't need to change the text at all. You just need to sign the document, add a watermark, annotate a page, or remove a page before sending. In these cases, there's no need to convert to Word — you can edit the PDF directly.
+              Sometimes you don&apos;t need to change the text at all. You just need to sign the document, add a watermark, annotate a page, or remove a page before sending. In these cases, there&apos;s no need to convert to Word — you can edit the PDF directly.
             </p>
             <p className="text-gray-300 leading-relaxed mb-4">
               RizzPDF offers a suite of tools for direct PDF editing without conversion:
@@ -224,7 +224,7 @@ export default function HowToEditPdfInWord() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Does this work on Mac?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Yes. RizzPDF works in any modern browser — Chrome, Safari, Firefox, Edge — on Mac, Windows, or Linux. There's nothing to download. Microsoft Word is available for Mac as well, or you can use Google Docs or LibreOffice as free alternatives.
+                  Yes. RizzPDF works in any modern browser — Chrome, Safari, Firefox, Edge — on Mac, Windows, or Linux. There&apos;s nothing to download. Microsoft Word is available for Mac as well, or you can use Google Docs or LibreOffice as free alternatives.
                 </p>
               </div>
               <div>

@@ -62,7 +62,7 @@ export default function UnlockPdfOnlineFree() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          Most free PDF tools make you sign up with an email, verify your account, and then upload your files to their servers. That's three unnecessary steps before you've even started. RizzPDF skips all of that — your file never leaves your browser, and you don't need an account.
+          Most free PDF tools make you sign up with an email, verify your account, and then upload your files to their servers. That&apos;s three unnecessary steps before you&apos;ve even started. RizzPDF skips all of that — your file never leaves your browser, and you don&apos;t need an account.
         </p>
 
         <div className="space-y-12">
@@ -70,10 +70,10 @@ export default function UnlockPdfOnlineFree() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">How RizzPDF Works</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              RizzPDF uses a JavaScript library called <strong className="text-white">PDF.js</strong> to process your PDF entirely inside your browser tab. When you drop a file onto the page, it never gets sent to any server — it's read directly from your device's memory, unlocked, and offered back to you as a download.
+              RizzPDF uses a JavaScript library called <strong className="text-white">PDF.js</strong> to process your PDF entirely inside your browser tab. When you drop a file onto the page, it never gets sent to any server — it&apos;s read directly from your device&apos;s memory, unlocked, and offered back to you as a download.
             </p>
             <p className="text-gray-300 leading-relaxed">
-              This matters for privacy. If you're unlocking a contract, a medical document, or anything confidential, you probably don't want it sitting on a stranger's server. With RizzPDF, there's nothing to sit anywhere — the file stays with you the entire time.
+              This matters for privacy. If you&apos;re unlocking a contract, a medical document, or anything confidential, you probably don&apos;t want it sitting on a stranger&apos;s server. With RizzPDF, there&apos;s nothing to sit anywhere — the file stays with you the entire time.
             </p>
           </section>
 
@@ -120,7 +120,7 @@ export default function UnlockPdfOnlineFree() {
               Yes — up to 3 files per session, completely free. No credit card, no email, no sign-up. For most people, 3 files is plenty.
             </p>
             <p className="text-gray-300 leading-relaxed">
-              If you need to unlock more than 3 files, you can pay <strong className="text-white">$1 one-time</strong> for unlimited unlocks for 24 hours. That's it — no subscription, no recurring charges.
+              If you need to unlock more than 3 files, you can pay <strong className="text-white">$1 one-time</strong> for unlimited unlocks for 24 hours. That&apos;s it — no subscription, no recurring charges.
             </p>
           </section>
 

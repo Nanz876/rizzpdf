@@ -61,7 +61,7 @@ export default function ConvertPdfToWordOnlineFree() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          PDFs are great for sharing — they look the same on every screen and can't be accidentally edited. But when you need to actually change the content, a PDF becomes a wall. Converting it to a Word document lets you edit the text, reformat sections, and update data without starting from scratch. With RizzPDF, you can do that in your browser for free, without uploading anything to a server.
+          PDFs are great for sharing — they look the same on every screen and can&apos;t be accidentally edited. But when you need to actually change the content, a PDF becomes a wall. Converting it to a Word document lets you edit the text, reformat sections, and update data without starting from scratch. With RizzPDF, you can do that in your browser for free, without uploading anything to a server.
         </p>
 
         <div className="space-y-12">
@@ -80,7 +80,7 @@ export default function ConvertPdfToWordOnlineFree() {
               <li>You want to copy and reformat content from a PDF into another document</li>
               <li>A client sent a PDF report you need to update with new numbers</li>
               <li>You lost the original Word file and only have the PDF</li>
-              <li>You want to translate a PDF document using Word's translation tools</li>
+              <li>You want to translate a PDF document using Word&apos;s translation tools</li>
             </ul>
             <p className="text-gray-300 leading-relaxed">
               In all of these cases, getting the text out of the PDF and into an editable format is step one. RizzPDF handles that step quickly and privately.
@@ -128,7 +128,7 @@ export default function ConvertPdfToWordOnlineFree() {
           <section>
             <h2 className="text-2xl font-bold mb-6 text-white">RizzPDF vs Google Docs vs Adobe Acrobat</h2>
             <p className="text-gray-300 leading-relaxed mb-6">
-              There are a few ways to convert a PDF to Word. Here's how the main options compare:
+              There are a few ways to convert a PDF to Word. Here&apos;s how the main options compare:
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
@@ -162,9 +162,9 @@ export default function ConvertPdfToWordOnlineFree() {
 
           {/* What gets converted */}
           <section>
-            <h2 className="text-2xl font-bold mb-4 text-white">What Gets Converted (and What Doesn't)</h2>
+            <h2 className="text-2xl font-bold mb-4 text-white">What Gets Converted (and What Doesn&apos;t)</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Because RizzPDF runs entirely in your browser, it uses a different approach than server-side tools like Adobe Acrobat. Here's an honest picture of what to expect:
+              Because RizzPDF runs entirely in your browser, it uses a different approach than server-side tools like Adobe Acrobat. Here&apos;s an honest picture of what to expect:
             </p>
             <div className="space-y-3">
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
@@ -182,7 +182,7 @@ export default function ConvertPdfToWordOnlineFree() {
                   <li>Complex multi-column layouts may lose their structure</li>
                   <li>Images embedded in the PDF are not included in the .docx</li>
                   <li>Tables with merged cells or complex borders may not render perfectly</li>
-                  <li>PDFs that were scanned (not digitally created) contain image data, not text — these require OCR software, which RizzPDF doesn't currently perform</li>
+                  <li>PDFs that were scanned (not digitally created) contain image data, not text — these require OCR software, which RizzPDF doesn&apos;t currently perform</li>
                 </ul>
               </div>
             </div>
@@ -216,7 +216,7 @@ export default function ConvertPdfToWordOnlineFree() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">What if my PDF is password-protected?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  If your PDF has a password, you'll need to unlock it first. RizzPDF has a separate <Link href="/tools/unlock" className="text-purple-400 hover:text-purple-300 underline">PDF unlock tool</Link> — remove the password, then convert to Word.
+                  If your PDF has a password, you&apos;ll need to unlock it first. RizzPDF has a separate <Link href="/tools/unlock" className="text-purple-400 hover:text-purple-300 underline">PDF unlock tool</Link> — remove the password, then convert to Word.
                 </p>
               </div>
             </div>
