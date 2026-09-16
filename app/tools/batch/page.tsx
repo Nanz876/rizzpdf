@@ -1,12 +1,10 @@
 "use client";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import PaywallModal from "@/components/PaywallModal";
 import { batchProcess, BatchOptions, downloadBlob } from "@/lib/pdf-tools";
-import { useProStatus } from "@/lib/useProStatus";
-
-const FREE_LIMIT = 3;
+import { useFreeGate } from "@/lib/useFreeGate";
 
 type FileStatus = "idle" | "processing" | "done" | "error";
 
@@ -41,25 +39,16 @@ export default function BatchPage() {
   const [pageNumPosition, setPageNumPosition] = useState<"bottom-center" | "bottom-right" | "bottom-left">("bottom-center");
   const [unlockPassword, setUnlockPassword] = useState("");
   const [running, setRunning] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const { isPro, loading: proLoading } = useProStatus();
-  const resultsRef = useRef<Array<{ blob: Blob; filename: string } | null>>([]);
+  const gate = useFreeGate();
+  const resultsRef = useRef<Array<{ blob: Blob; filename: string; warning?: string } | null>>([]);
+  const [warnings, setWarnings] = useState<(string | undefined)[]>([]);
 
-  const handleFilesAdded = useCallback(
-    (newFiles: File[]) => {
-      const currentCount = files.length;
-      const allowed = proLoading || isPro ? Infinity : FREE_LIMIT;
-      if (currentCount >= allowed) { setShowPaywall(true); return; }
-      const toAdd = newFiles.slice(0, allowed - currentCount);
-      const overflow = newFiles.length - toAdd.length;
-      const entries: BatchFile[] = toAdd.map((f) => ({
-        id: crypto.randomUUID(), file: f, status: "idle",
-      }));
-      setFiles((prev) => [...prev, ...entries]);
-      if (overflow > 0) setTimeout(() => setShowPaywall(true), 300);
-    },
-    [files.length, isPro, proLoading]
-  );
+  const handleFilesAdded = useCallback((newFiles: File[]) => {
+    const entries: BatchFile[] = newFiles.map((f) => ({
+      id: crypto.randomUUID(), file: f, status: "idle",
+    }));
+    setFiles((prev) => [...prev, ...entries]);
+  }, []);
 
   const buildOptions = (): BatchOptions => {
     if (tool === "compress") return { tool: "compress", quality };
@@ -72,9 +61,11 @@ export default function BatchPage() {
 
   const handleRun = async () => {
     if (files.length === 0 || running) return;
+    if (!gate.consume()) return;
     setRunning(true);
     setFiles((prev) => prev.map((f) => ({ ...f, status: "idle", error: undefined })));
     resultsRef.current = [];
+    setWarnings([]);
 
     const opts = buildOptions();
     const fileList = files.map((f) => f.file);
@@ -86,6 +77,8 @@ export default function BatchPage() {
     });
 
     resultsRef.current = results;
+    setWarnings(results.map((r) => r?.warning));
+    if (!results.some(Boolean)) gate.refund(); // nothing produced: don't charge a free run
     setRunning(false);
   };
 
@@ -107,29 +100,22 @@ export default function BatchPage() {
   return (
     <ToolShell
       name="Batch Processing"
-      description="Apply the same operation to multiple PDFs at once. Free for up to 3 files."
+      description="Apply the same operation to multiple PDFs at once. Your first 3 batch runs are free."
       icon="⚡"
       steps={files.length > 0 ? undefined : ["Upload your PDFs", "Choose an operation", "Download all results"]}
     >
       {/* Upload zone always visible */}
       <UploadZone onFilesAdded={handleFilesAdded} />
 
-      {!proLoading && !isPro && files.length > 0 && (
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <div className="flex gap-1">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className={`w-8 h-1.5 rounded-full ${i < files.length ? "bg-red-500" : "bg-gray-200"}`} />
-            ))}
-          </div>
-          <span className="text-xs text-gray-400">
-            {files.length}/3 free files used
-            {files.length >= FREE_LIMIT && (
-              <button onClick={() => setShowPaywall(true)} className="ml-2 text-red-600 font-semibold hover:underline">
-                Go bulk for $1 →
-              </button>
-            )}
-          </span>
-        </div>
+      {!gate.loading && !gate.isPro && files.length > 0 && (
+        <p className="mt-2 text-center text-xs text-gray-400">
+          {gate.remaining} of 3 free batch runs left
+          {gate.remaining === 0 && (
+            <button onClick={gate.openPaywall} className="ml-2 text-red-600 font-semibold hover:underline">
+              Go unlimited for $1 →
+            </button>
+          )}
+        </p>
       )}
 
       {files.length > 0 && (
@@ -297,6 +283,12 @@ export default function BatchPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{entry.file.name}</p>
                   <p className="text-xs text-gray-400">{fmt(entry.file.size)}</p>
+                  {entry.status === "done" && warnings[i] && (
+                    <p className="text-xs text-amber-600 mt-0.5 flex items-start gap-1">
+                      <span className="leading-none">⚠️</span>
+                      <span className="leading-snug">{warnings[i]}</span>
+                    </p>
+                  )}
                 </div>
 
                 {entry.status === "idle" && (
@@ -335,12 +327,7 @@ export default function BatchPage() {
         </div>
       )}
 
-      {showPaywall && (
-        <PaywallModal
-          onClose={() => setShowPaywall(false)}
-          onPay={() => setShowPaywall(false)}
-        />
-      )}
+      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} />}
     </ToolShell>
   );
 }

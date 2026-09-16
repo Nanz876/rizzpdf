@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -116,6 +117,7 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
           />
           {children}
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

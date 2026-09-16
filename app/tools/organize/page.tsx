@@ -5,6 +5,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, organizePDF, renderThumbnails } from "@/lib/pdf-tools";
+import { logTool } from "@/lib/logTool";
 
 type Status = "idle" | "loading-thumbs" | "ready" | "saving" | "done";
 
@@ -62,6 +63,7 @@ export default function OrganizePage() {
 
   async function handleSave() {
     if (!file) return;
+    logTool("organize");
     setStatus("saving");
     setError("");
 
@@ -176,6 +178,7 @@ export default function OrganizePage() {
           </div>
         )}
       </div>
+
     </ToolShell>
   );
 }

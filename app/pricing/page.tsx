@@ -64,19 +64,6 @@ export default function PricingPage() {
     }
   }
 
-  const [dayPassLoading, setDayPassLoading] = useState(false);
-
-  async function handleDayPass() {
-    setDayPassLoading(true);
-    try {
-      const res = await fetch("/api/checkout", { method: "POST" });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch {
-      setDayPassLoading(false);
-    }
-  }
-
   const proMonthlyDisplay = annual ? "$4" : "$5";
   const proButtonLabel = loading
     ? "Redirecting…"
@@ -119,8 +106,8 @@ export default function PricingPage() {
           Do more with <span className="text-red-600">RizzPDF</span>
         </h1>
         <p className="text-[16px] text-gray-500 max-w-md mx-auto leading-relaxed mb-7">
-          Start free — no card needed. Pay only when you need more. Every plan
-          includes all 16 PDF tools.
+          Every single-file tool is free with no limits. Pay only for batch
+          processing and power features.
         </p>
 
         {/* Billing toggle */}
@@ -164,8 +151,8 @@ export default function PricingPage() {
       </div>
 
       {/* Cards */}
-      <div className="max-w-[980px] mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+      <div className="max-w-[680px] mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
           {/* Free */}
           <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden">
@@ -190,60 +177,11 @@ export default function PricingPage() {
                 What&apos;s included
               </div>
               <ul className="flex flex-col gap-2.5">
-                <FeatureItem icon="green">3 files per tool per session</FeatureItem>
-                <FeatureItem icon="green">All 16 PDF tools</FeatureItem>
+                <FeatureItem icon="green"><strong>Unlimited</strong> single-file tools</FeatureItem>
+                <FeatureItem icon="green">3 free batch runs</FeatureItem>
+                <FeatureItem icon="green">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="green">No account required</FeatureItem>
                 <FeatureItem icon="green">Files never leave your browser</FeatureItem>
-                <FeatureItem icon="gray" muted>Up to 50MB per file</FeatureItem>
-                <FeatureItem icon="gray" muted>No file history</FeatureItem>
-              </ul>
-            </div>
-          </div>
-
-          {/* Day Pass */}
-          <div className="bg-white border-2 border-amber-400 rounded-2xl overflow-hidden">
-            <div className="p-7">
-              <div className="text-[11px] font-bold tracking-widest uppercase text-amber-600 mb-2.5">
-                Day Pass
-              </div>
-              <div className="flex items-baseline gap-0.5 mb-1.5">
-                <span className="text-[22px] font-bold text-gray-900">$</span>
-                <span className="text-[50px] font-black text-gray-900 leading-none tracking-tighter">
-                  1
-                </span>
-                <span className="text-[14px] text-gray-400 font-medium self-end pb-1.5">
-                  /day
-                </span>
-              </div>
-              <div className="text-[12px] text-gray-400 mb-5 h-4">
-                One-time · expires after 24 hours
-              </div>
-              <button
-                onClick={handleDayPass}
-                disabled={dayPassLoading}
-                className="w-full py-3 rounded-xl text-[14px] font-bold bg-amber-400 hover:bg-amber-500 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {dayPassLoading ? "Redirecting to Stripe…" : "Buy day pass →"}
-              </button>
-              {annual && (
-                <p className="text-[11px] text-amber-600 font-semibold text-center mt-2">
-                  Same price — no subscription needed
-                </p>
-              )}
-            </div>
-            <div className="h-px bg-gray-100" />
-            <div className="p-7">
-              <div className="text-[11px] font-bold tracking-widest uppercase text-gray-400 mb-3.5">
-                What&apos;s included
-              </div>
-              <ul className="flex flex-col gap-2.5">
-                <FeatureItem icon="amber">
-                  <strong>Unlimited files</strong> for 24 hrs
-                </FeatureItem>
-                <FeatureItem icon="amber">All 16 PDF tools</FeatureItem>
-                <FeatureItem icon="amber">No account required</FeatureItem>
-                <FeatureItem icon="amber">Files stay in your browser</FeatureItem>
-                <FeatureItem icon="gray" muted>Up to 50MB per file</FeatureItem>
                 <FeatureItem icon="gray" muted>No file history</FeatureItem>
               </ul>
             </div>
@@ -287,12 +225,10 @@ export default function PricingPage() {
               </div>
               <ul className="flex flex-col gap-2.5">
                 <FeatureItem icon="red">
-                  <strong>Unlimited files</strong>, always
+                  <strong>Unlimited batch</strong>, always
                 </FeatureItem>
-                <FeatureItem icon="red">All 16 PDF tools</FeatureItem>
-                <FeatureItem icon="red">
-                  <strong>200MB</strong> per file
-                </FeatureItem>
+                <FeatureItem icon="red">All 17 PDF tools</FeatureItem>
+                <FeatureItem icon="red">Bulk unlock from a CSV</FeatureItem>
                 <FeatureItem icon="red">Full file history</FeatureItem>
                 <FeatureItem icon="red">Files stay in your browser</FeatureItem>
                 <FeatureItem icon="red">Priority support</FeatureItem>
@@ -308,7 +244,7 @@ export default function PricingPage() {
         <span>🔒 Files never leave your browser</span>
         <span>✕ Cancel Pro any time</span>
         <span>💳 No card for free tier</span>
-        <span>⚡ Instant access after payment</span>
+        <span>⚡ Instant Pro access after payment</span>
       </div>
 
       {/* Comparison table */}
@@ -329,9 +265,6 @@ export default function PricingPage() {
                 <th className="py-3.5 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Free
                 </th>
-                <th className="py-3.5 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-amber-600">
-                  Day Pass
-                </th>
                 <th className="py-3.5 px-4 text-center text-[11px] font-bold uppercase tracking-wider text-red-600">
                   Pro
                 </th>
@@ -340,56 +273,47 @@ export default function PricingPage() {
             <tbody>
               {[
                 {
-                  label: "Files per session",
-                  free: "3 per tool",
-                  day: <span className="text-amber-600 font-semibold">Unlimited</span>,
+                  label: "Single-file tools",
+                  free: "Unlimited",
                   pro: <span className="text-red-600 font-bold">Unlimited</span>,
                 },
                 {
-                  label: "Max file size",
-                  free: "50MB",
-                  day: <span className="text-amber-600 font-semibold">50MB</span>,
-                  pro: <span className="text-red-600 font-bold">200MB</span>,
+                  label: "Batch processing",
+                  free: "3 runs",
+                  pro: <span className="text-red-600 font-bold">Unlimited</span>,
                 },
                 {
-                  label: "All 16 PDF tools",
+                  label: "All 17 PDF tools",
                   free: "✓",
-                  day: "✓",
                   pro: "✓",
                   greenAll: true,
                 },
                 {
                   label: "No account needed",
-                  free: "✓",
-                  day: "✓",
+                  free: <span className="text-green-600 text-[16px]">✓</span>,
                   pro: "Req.",
-                  greenFreeDay: true,
                 },
                 {
                   label: "Files stay in browser",
                   free: "✓",
-                  day: "✓",
                   pro: "✓",
                   greenAll: true,
                 },
                 {
                   label: "File history",
                   free: "—",
-                  day: "—",
                   pro: <span className="text-red-600 font-bold text-[16px]">✓</span>,
                   highlight: true,
                 },
                 {
                   label: "Priority support",
                   free: "—",
-                  day: "—",
                   pro: <span className="text-red-600 font-bold text-[16px]">✓</span>,
                   highlight: true,
                 },
                 {
                   label: "Price",
                   free: "Free forever",
-                  day: <span className="text-amber-600 font-semibold">$1 one-time</span>,
                   pro: (
                     <span className="text-red-600 font-bold">
                       {annual ? "$4/mo (billed $48/yr)" : "$5/month"}
@@ -406,9 +330,6 @@ export default function PricingPage() {
                   </td>
                   <td className={`py-3 px-4 text-center text-[13px] border-t border-gray-100 ${row.greenAll ? "text-green-600 text-[16px]" : "text-gray-500"}`}>
                     {row.free}
-                  </td>
-                  <td className={`py-3 px-4 text-center text-[13px] border-t border-gray-100 ${row.greenAll || row.greenFreeDay ? "text-green-600 text-[16px]" : "text-gray-500"}`}>
-                    {row.day}
                   </td>
                   <td className={`py-3 px-4 text-center text-[13px] border-t border-gray-100 ${row.greenAll ? "text-green-600 text-[16px]" : "text-gray-500"}`}>
                     {row.pro}
@@ -437,16 +358,16 @@ export default function PricingPage() {
             a: "Never. Every tool runs entirely in your browser using JavaScript. Your files don't touch our servers — not even temporarily.",
           },
           {
-            q: "What's the difference between Day Pass and Pro?",
-            a: "Day Pass is a $1 one-time unlock for 24 hours — perfect if you have a batch to process today and don't need an account. Pro is $5/month (or $4/month billed annually) and adds 200MB files, full history, and priority support.",
+            q: "What does Pro add?",
+            a: "Pro is $5/month (or $4/month billed annually) and adds unlimited batch processing, bulk unlock from a CSV, file history, and priority support. Every single-file tool stays free either way.",
           },
           {
             q: "Can I cancel Pro any time?",
             a: "Yes — cancel any time from your dashboard. No questions asked, no cancellation fees, no gotchas.",
           },
           {
-            q: "What counts as a 'file' on the free tier?",
-            a: "3 files per tool per browser session. So you can merge 3 PDFs, compress 3 PDFs, and convert 3 PDFs — all free in the same session across different tools.",
+            q: "What is free, exactly?",
+            a: "Every single-file tool (merge, split, compress, convert, sign, unlock and the rest) is free with no usage limit. Batch processing, which applies one action to many PDFs at once, includes 3 free runs; Pro gives you unlimited batch runs.",
           },
           {
             q: "Is annual billing worth it?",
@@ -479,8 +400,8 @@ export default function PricingPage() {
           Start free — no card needed
         </h2>
         <p className="text-white/80 text-[15px] mb-7">
-          All 16 PDF tools, right in your browser. Upgrade only when you need
-          more.
+          All 17 PDF tools free with no limits, right in your browser. Upgrade
+          only for batch processing and power features.
         </p>
         <Link
           href="/tools"

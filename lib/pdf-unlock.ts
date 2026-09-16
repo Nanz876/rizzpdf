@@ -21,6 +21,13 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
     if (!password) {
       try {
         const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        // ignoreEncryption only bypasses the *check* — it does not decrypt. If the
+        // document is genuinely encrypted, re-saving produces garbled output. Bail
+        // to the PDF.js path below (which actually decrypts) rather than returning a
+        // broken file as a false success.
+        if (doc.isEncrypted) {
+          throw new Error("encrypted — needs real decryption");
+        }
         const saved = await doc.save();
         const blob = new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" });
         return { success: true, blob, filename: file.name.replace(/\.pdf$/i, "_unlocked.pdf") };

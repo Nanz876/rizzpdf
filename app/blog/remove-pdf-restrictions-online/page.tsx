@@ -83,7 +83,7 @@ export default function RemovePdfRestrictionsOnline() {
               </div>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              If you can open a PDF but see greyed-out print buttons, can't select text, or get an error when trying to edit — you're dealing with an owner/permissions restriction, and it can be removed.
+              If you can open a PDF but see greyed-out print buttons, can&apos;t select text, or get an error when trying to edit — you&apos;re dealing with an owner/permissions restriction, and it can be removed.
             </p>
           </section>
 

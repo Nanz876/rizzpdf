@@ -62,7 +62,7 @@ export default function SplitPDFBlog() {
               <li>Open <Link href="/tools/split" className="text-red-600 font-semibold hover:underline">RizzPDF Split PDF</Link></li>
               <li>Upload your PDF and choose a split mode:
                 <ul className="list-disc list-inside ml-5 mt-2 space-y-1 text-sm text-gray-600">
-                  <li><strong>By range</strong> — enter page numbers like "1-3, 5, 8-10"</li>
+                  <li><strong>By range</strong> — enter page numbers like &quot;1-3, 5, 8-10&quot;</li>
                   <li><strong>Every page</strong> — split into individual single-page PDFs</li>
                 </ul>
               </li>
@@ -81,11 +81,11 @@ export default function SplitPDFBlog() {
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">What&apos;s the page range syntax?</h2>
             <p>Enter page numbers separated by commas. Use a dash for ranges:</p>
             <div className="bg-gray-100 rounded-xl p-4 font-mono text-sm space-y-1">
-              <p><span className="text-gray-500">// Single pages</span></p>
+              <p><span className="text-gray-500">{"// Single pages"}</span></p>
               <p>1, 3, 7</p>
-              <p><span className="text-gray-500">// Page ranges</span></p>
+              <p><span className="text-gray-500">{"// Page ranges"}</span></p>
               <p>1-5, 10-15</p>
-              <p><span className="text-gray-500">// Mixed</span></p>
+              <p><span className="text-gray-500">{"// Mixed"}</span></p>
               <p>1, 3-6, 9, 12-20</p>
             </div>
             <p>Each comma-separated segment becomes a separate output PDF.</p>

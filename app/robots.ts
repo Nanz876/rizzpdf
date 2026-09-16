@@ -6,9 +6,16 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/dashboard/", "/api/"],
+        disallow: [
+          "/dashboard",
+          "/dashboard/",
+          "/api/",
+          "/sign-in/",
+          "/sign-up/",
+        ],
       },
     ],
     sitemap: "https://www.rizzpdf.com/sitemap.xml",
+    host: "https://www.rizzpdf.com",
   };
 }

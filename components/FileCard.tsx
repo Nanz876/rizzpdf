@@ -25,6 +25,7 @@ export default function FileCard({ entry, onRemove, onStatusChange, sharedPasswo
   const fileSizeMB = (entry.file.size / 1024 / 1024).toFixed(2);
 
   async function handleUnlock() {
+    setWarning(""); // clear any warning from a previous attempt on this file
     onStatusChange(entry.id, "processing");
     const result = await unlockPDF(entry.file, sharedPassword ?? password);
     if (result.success && result.blob && result.filename) {

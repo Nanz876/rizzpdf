@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/pdf-to-word.py": {
-      "maxDuration": 60
-    }
-  }
-}

@@ -847,9 +847,9 @@ export async function batchProcess(
   files: File[],
   options: BatchOptions,
   onProgress: (fileIndex: number, status: "processing" | "done" | "error", error?: string) => void
-): Promise<Array<{ blob: Blob; filename: string } | null>> {
+): Promise<Array<{ blob: Blob; filename: string; warning?: string } | null>> {
   const CONCURRENCY = 3;
-  const results: Array<{ blob: Blob; filename: string } | null> = new Array(files.length).fill(null);
+  const results: Array<{ blob: Blob; filename: string; warning?: string } | null> = new Array(files.length).fill(null);
   let activeCount = 0;
   let nextIndex = 0;
 
@@ -897,7 +897,7 @@ export async function batchProcess(
       }
 
       if (result.success && result.blob) {
-        results[i] = { blob: result.blob, filename: result.filename ?? f.name };
+        results[i] = { blob: result.blob, filename: result.filename ?? f.name, warning: result.warning };
         onProgress(i, "done");
       } else {
         onProgress(i, "error", result.error);

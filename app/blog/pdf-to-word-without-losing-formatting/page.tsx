@@ -61,7 +61,7 @@ export default function PdfToWordWithoutLosingFormatting() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          The most frustrating part of converting a PDF to Word isn't the conversion itself — it's opening the .docx afterward and finding that your carefully structured document has become a mess of random spacing, broken columns, and missing images. Here's an honest breakdown of why this happens, which tools handle it best, and how to get the cleanest result possible.
+          The most frustrating part of converting a PDF to Word isn&apos;t the conversion itself — it&apos;s opening the .docx afterward and finding that your carefully structured document has become a mess of random spacing, broken columns, and missing images. Here&apos;s an honest breakdown of why this happens, which tools handle it best, and how to get the cleanest result possible.
         </p>
 
         <div className="space-y-12">
@@ -70,10 +70,10 @@ export default function PdfToWordWithoutLosingFormatting() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Why PDF Formatting Gets Lost During Conversion</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              PDFs don't store documents the way Word does. A Word file stores text with attached styles — paragraph formatting, font properties, heading levels. A PDF, by contrast, stores text as positioned objects on a page. Each character has an X/Y coordinate, a font, and a size, but there's no concept of "this is a paragraph" or "this is a heading."
+              PDFs don&apos;t store documents the way Word does. A Word file stores text with attached styles — paragraph formatting, font properties, heading levels. A PDF, by contrast, stores text as positioned objects on a page. Each character has an X/Y coordinate, a font, and a size, but there&apos;s no concept of &quot;this is a paragraph&quot; or &quot;this is a heading.&quot;
             </p>
             <p className="text-gray-300 leading-relaxed mb-4">
-              When a converter reads a PDF, it has to reverse-engineer the structure. It looks at text positions and tries to infer: are these lines a paragraph? Is this larger text a heading? Are these columns a table? This inference is imperfect, and that's where formatting breaks down.
+              When a converter reads a PDF, it has to reverse-engineer the structure. It looks at text positions and tries to infer: are these lines a paragraph? Is this larger text a heading? Are these columns a table? This inference is imperfect, and that&apos;s where formatting breaks down.
             </p>
             <div className="space-y-3">
               {[
@@ -95,7 +95,7 @@ export default function PdfToWordWithoutLosingFormatting() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Which Tool Preserves Formatting Best?</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              The honest answer: server-side tools with dedicated OCR and layout-analysis engines do the best job. Browser-based tools do less well, but they offer something server-side tools can't — privacy.
+              The honest answer: server-side tools with dedicated OCR and layout-analysis engines do the best job. Browser-based tools do less well, but they offer something server-side tools can&apos;t — privacy.
             </p>
             <div className="space-y-4">
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
@@ -114,7 +114,7 @@ export default function PdfToWordWithoutLosingFormatting() {
                 </div>
                 <h3 className="font-semibold text-white mb-2">Adobe Acrobat Pro</h3>
                 <p className="text-gray-400 text-sm leading-relaxed mb-2">
-                  Adobe uses sophisticated server-side analysis to reconstruct layout, tables, and images. It produces the most accurate .docx output. However, it costs ~$25/month and your file is processed on Adobe's servers.
+                  Adobe uses sophisticated server-side analysis to reconstruct layout, tables, and images. It produces the most accurate .docx output. However, it costs ~$25/month and your file is processed on Adobe&apos;s servers.
                 </p>
                 <p className="text-gray-400 text-sm">7-day free trial available, then ~$25/month.</p>
               </div>
@@ -167,7 +167,7 @@ export default function PdfToWordWithoutLosingFormatting() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">When to Use Google Docs as a Fallback</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Google Docs has a built-in PDF-to-editable-document feature that's surprisingly capable for simple files. Here's how:
+              Google Docs has a built-in PDF-to-editable-document feature that&apos;s surprisingly capable for simple files. Here&apos;s how:
             </p>
             <ol className="list-decimal list-inside space-y-3 text-gray-300 mb-4">
               <li>Open Google Drive and upload your PDF</li>
@@ -176,7 +176,7 @@ export default function PdfToWordWithoutLosingFormatting() {
               <li>Download as .docx via <strong className="text-white">File → Download → Microsoft Word</strong></li>
             </ol>
             <p className="text-gray-300 leading-relaxed mb-4">
-              The trade-off: Google Docs uploads your file to Google's servers and requires a Google account. If privacy matters — for a confidential contract, a client document, or sensitive personal files — RizzPDF's in-browser approach is safer.
+              The trade-off: Google Docs uploads your file to Google&apos;s servers and requires a Google account. If privacy matters — for a confidential contract, a client document, or sensitive personal files — RizzPDF&apos;s in-browser approach is safer.
             </p>
             <p className="text-gray-300 leading-relaxed">
               For non-sensitive documents where formatting quality is the priority, Google Docs is a solid free alternative. For sensitive documents, RizzPDF is the better choice.
@@ -190,7 +190,7 @@ export default function PdfToWordWithoutLosingFormatting() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Why does my converted Word document look so different from the PDF?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  PDFs store text as positioned objects, not as structured paragraphs. When a converter reads the PDF, it has to infer the structure — and this inference isn't perfect. The more complex the layout, the more likely some formatting will be lost or misplaced.
+                  PDFs store text as positioned objects, not as structured paragraphs. When a converter reads the PDF, it has to infer the structure — and this inference isn&apos;t perfect. The more complex the layout, the more likely some formatting will be lost or misplaced.
                 </p>
               </div>
               <div>
@@ -208,7 +208,7 @@ export default function PdfToWordWithoutLosingFormatting() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Is RizzPDF really free?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Yes, for up to 3 files per session with no account required. For more conversions, $1 gives you unlimited access for 24 hours — no subscription.
+                  Yes, with no limit and no account required.
                 </p>
               </div>
             </div>

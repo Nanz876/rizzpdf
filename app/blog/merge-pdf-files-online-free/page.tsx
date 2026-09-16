@@ -72,9 +72,9 @@ export default function MergePDFBlog() {
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">How many files can I merge for free?</h2>
             <p>
-              The free tier allows up to <strong>3 files per session</strong>. If you need to merge more, a{" "}
-              <Link href="/pricing" className="text-red-600 hover:underline font-semibold">$1 day pass</Link>{" "}
-              gives you unlimited merges for 24 hours. Pro subscribers ($5/month) get unlimited everything, always.
+              As many as you like. Merging is <strong>free with no limit</strong>. If you need to process lots of PDFs in one go,{" "}
+              <Link href="/pricing" className="text-red-600 hover:underline font-semibold">RizzPDF Pro</Link>{" "}
+              unlocks unlimited batch processing.
             </p>
 
             <h2 className="text-xl font-bold text-gray-900 mt-8 mb-3">Can I reorder pages before merging?</h2>

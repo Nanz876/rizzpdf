@@ -7,14 +7,31 @@ interface UploadZoneProps {
   disabled?: boolean;
 }
 
+const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200MB — matches the copy below
+
 export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [rejected, setRejected] = useState("");
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
       if (!files) return;
-      const pdfs = Array.from(files).filter((f) => f.type === "application/pdf");
-      if (pdfs.length) onFilesAdded(pdfs);
+      const all = Array.from(files);
+      const pdfs = all.filter((f) => f.type === "application/pdf");
+      const sized = pdfs.filter((f) => f.size <= MAX_FILE_BYTES);
+
+      const notPdf = all.length - pdfs.length;
+      const tooBig = pdfs.length - sized.length;
+      if (notPdf || tooBig) {
+        const parts: string[] = [];
+        if (notPdf) parts.push(`${notPdf} non-PDF file${notPdf > 1 ? "s" : ""} skipped`);
+        if (tooBig) parts.push(`${tooBig} file${tooBig > 1 ? "s" : ""} over 200MB skipped`);
+        setRejected(parts.join(" · "));
+      } else {
+        setRejected("");
+      }
+
+      if (sized.length) onFilesAdded(sized);
     },
     [onFilesAdded]
   );
@@ -92,6 +109,10 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
         <p className="text-xs text-gray-400">
           🔒 Files never leave your browser · No account needed
         </p>
+
+        {rejected && (
+          <p className="text-xs text-amber-600 font-medium mt-1">⚠️ {rejected}</p>
+        )}
       </div>
     </div>
   );

@@ -84,11 +84,11 @@ export default async function DashboardPage({
             </div>
             {tier === "pro" ? (
               <p className="text-sm text-gray-500">
-                Unlimited files · 200MB per file · All tools · Full history
+                Unlimited batch · Bulk CSV unlock · Full history
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                3 files per tool · No history
+                Unlimited single-file tools · 3 free batch runs · No history
               </p>
             )}
           </div>
@@ -101,7 +101,7 @@ export default async function DashboardPage({
               >
                 CSV Bulk Unlock →
               </Link>
-              <CancelButton periodEnd={subscription?.current_period_end} />
+              <CancelButton periodEnd={subscription?.current_period_end ?? undefined} />
             </div>
           )}
         </div>

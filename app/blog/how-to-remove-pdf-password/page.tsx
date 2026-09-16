@@ -62,7 +62,7 @@ export default function HowToRemovePdfPassword() {
         </h1>
 
         <p className="text-gray-300 text-lg leading-relaxed mb-10">
-          You've got a PDF locked behind a password. Maybe you set it years ago and forgot it, or a client sent you a locked file you can't easily open. Whatever the reason, removing a PDF password should be simple — and it doesn't require expensive software. Here are three free methods, from easiest to most manual.
+          You&apos;ve got a PDF locked behind a password. Maybe you set it years ago and forgot it, or a client sent you a locked file you can&apos;t easily open. Whatever the reason, removing a PDF password should be simple — and it doesn&apos;t require expensive software. Here are three free methods, from easiest to most manual.
         </p>
 
         <div className="space-y-12">
@@ -101,7 +101,7 @@ export default function HowToRemovePdfPassword() {
               <li>Click <strong className="text-white">Save</strong> — the new file will have no password</li>
             </ol>
             <p className="mt-4 text-gray-400 text-sm">
-              <strong className="text-gray-300">Limitation:</strong> This only works if you already know the password. It won't help if you've forgotten it.
+              <strong className="text-gray-300">Limitation:</strong> This only works if you already know the password. It won&apos;t help if you&apos;ve forgotten it.
             </p>
           </section>
 
@@ -137,7 +137,7 @@ export default function HowToRemovePdfPassword() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">What if I forgot the password?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  If you've set and forgotten the owner password (the one that restricts editing/printing), RizzPDF can often remove those restrictions. However, if you've forgotten the <em>open password</em> (the one required to view the file), no free tool can recover it — that requires password cracking software.
+                  If you&apos;ve set and forgotten the owner password (the one that restricts editing/printing), RizzPDF can often remove those restrictions. However, if you&apos;ve forgotten the <em>open password</em> (the one required to view the file), no free tool can recover it — that requires password cracking software.
                 </p>
               </div>
             </div>

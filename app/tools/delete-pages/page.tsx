@@ -66,6 +66,7 @@ export default function DeletePagesPage() {
         </div>
       )}
 
+
       {/* SEO copy block */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">
         <h2 className="text-base font-bold text-gray-900">How to delete a page from a PDF without Adobe Acrobat</h2>
