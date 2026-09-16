@@ -7,8 +7,6 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -18,7 +16,6 @@ export default function RotatePage() {
   const [rotations, setRotations] = useState<Record<number, number>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setRotations({});
@@ -42,7 +39,6 @@ export default function RotatePage() {
 
   const handleApply = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("rotate"); setStatus("processing");
     try {
       const { PDFDocument, degrees } = await import("pdf-lib");
@@ -57,7 +53,7 @@ export default function RotatePage() {
       downloadBlob(new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }), file.name.replace(/\.pdf$/i, "_rotated.pdf"));
       setStatus("done");
     } catch {
-      setError("Rotation failed."); gate.refund(); setStatus("error");
+      setError("Rotation failed."); setStatus("error");
     }
   };
 
@@ -93,9 +89,6 @@ export default function RotatePage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

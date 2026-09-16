@@ -84,11 +84,11 @@ export default async function DashboardPage({
             </div>
             {tier === "pro" ? (
               <p className="text-sm text-gray-500">
-                Unlimited files · 200MB per file · All tools · Full history
+                Unlimited batch · 200MB per file · All tools · Full history
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                3 free operations · No history
+                Unlimited single-file tools · 3 free batch runs · No history
               </p>
             )}
           </div>

@@ -6,8 +6,6 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { repairPDF, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 type Warning = string | null;
@@ -17,7 +15,6 @@ export default function RepairPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [warning, setWarning] = useState<Warning>(null);
-  const gate = useFreeGate();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready");
@@ -25,14 +22,13 @@ export default function RepairPage() {
 
   const handleRepair = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("repair"); setStatus("processing");
     const result = await repairPDF(file);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_repaired.pdf"));
       if (result.warning) setWarning(result.warning);
       setStatus("done");
-    } else { setError(result.error ?? "Repair failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Repair failed."); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setStatus("idle"); setError(""); setWarning(null); };
@@ -76,9 +72,6 @@ export default function RepairPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

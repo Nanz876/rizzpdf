@@ -6,8 +6,6 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, organizePDF, renderThumbnails } from "@/lib/pdf-tools";
 import { logTool } from "@/lib/logTool";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading-thumbs" | "ready" | "saving" | "done";
 
@@ -18,7 +16,6 @@ export default function OrganizePage() {
   const [pageOrder, setPageOrder] = useState<number[]>([]);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFilesAdded = useCallback(async (files: File[]) => {
     const pdf = files[0];
@@ -66,7 +63,6 @@ export default function OrganizePage() {
 
   async function handleSave() {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("organize");
     setStatus("saving");
     setError("");
@@ -74,7 +70,6 @@ export default function OrganizePage() {
     try {
       const result = await organizePDF(file, pageOrder);
       if (!result.success || !result.blob) {
-        gate.refund();
         setError(result.error ?? "Failed to organize PDF.");
         setStatus("ready");
       } else {
@@ -82,7 +77,6 @@ export default function OrganizePage() {
         setStatus("done");
       }
     } catch (e: unknown) {
-      gate.refund();
       setError(e instanceof Error ? e.message : "Unexpected error.");
       setStatus("ready");
     }
@@ -185,9 +179,6 @@ export default function OrganizePage() {
         )}
       </div>
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

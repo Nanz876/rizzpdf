@@ -117,7 +117,7 @@ export default function UnlockPdfOnlineFree() {
           <section>
             <h2 className="text-2xl font-bold mb-4 text-white">Is It Really Free?</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              Yes — up to 3 files per session, completely free. No credit card, no email, no sign-up. For most people, 3 files is plenty.
+              Yes — completely free with no limit. No credit card, no email, no sign-up.
             </p>
             <p className="text-gray-300 leading-relaxed">
               If you need to unlock more than 3 files, you can pay <strong className="text-white">$1 one-time</strong> for unlimited unlocks for 24 hours. That&apos;s it — no subscription, no recurring charges.

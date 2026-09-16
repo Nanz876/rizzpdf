@@ -8,8 +8,6 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, deletePages, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -19,7 +17,6 @@ export default function DeletePagesPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setSelected(new Set());
@@ -34,13 +31,12 @@ export default function DeletePagesPage() {
 
   const handleDelete = async () => {
     if (!file || selected.size === 0) return;
-    if (!gate.consume()) return;
     logTool("delete-pages"); setStatus("processing");
     const result = await deletePages(file, [...selected]);
     if (result.success && result.blob) {
       downloadBlob(result.blob, file.name.replace(/\.pdf$/i, "_deleted.pdf"));
       setStatus("done");
-    } else { setError(result.error ?? "Failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Failed."); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setThumbs([]); setSelected(new Set()); setStatus("idle"); setError(""); };
@@ -70,9 +66,6 @@ export default function DeletePagesPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
 
       {/* SEO copy block */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">

@@ -198,7 +198,7 @@ export default function ConvertPdfToWordOnlineFree() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Is it really free?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Yes — converting up to 3 files per session is completely free. No credit card, no email, no account. If you need to convert more than 3 files, you can pay $1 one-time for unlimited conversions for 24 hours.
+                  Yes — converting PDFs to Word is completely free with no limit. No credit card, no email, no account.
                 </p>
               </div>
               <div>

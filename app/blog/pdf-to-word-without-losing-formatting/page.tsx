@@ -208,7 +208,7 @@ export default function PdfToWordWithoutLosingFormatting() {
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Is RizzPDF really free?</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Yes, for up to 3 files per session with no account required. For more conversions, $1 gives you unlimited access for 24 hours — no subscription.
+                  Yes, with no limit and no account required.
                 </p>
               </div>
             </div>

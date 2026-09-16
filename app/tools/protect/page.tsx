@@ -6,8 +6,6 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { protectPDF, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -19,7 +17,6 @@ export default function ProtectPage() {
   const [showOwner, setShowOwner] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready"); setError("");
@@ -27,14 +24,13 @@ export default function ProtectPage() {
 
   const handleProtect = async () => {
     if (!file || !password.trim()) return;
-    if (!gate.consume()) return;
     logTool("protect"); setStatus("processing"); setError("");
     const result = await protectPDF(file, password.trim(), ownerPassword.trim() || undefined);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_protected.pdf"));
       setStatus("done");
     } else {
-      setError(result.error ?? "Protection failed."); gate.refund(); setStatus("error");
+      setError(result.error ?? "Protection failed."); setStatus("error");
     }
   };
 
@@ -106,9 +102,6 @@ export default function ProtectPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

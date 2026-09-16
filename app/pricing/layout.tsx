@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pricing — RizzPDF | Free, Day Pass & Pro Plans",
   description:
-    "Start free with all 17 PDF tools. Upgrade to a $1 day pass or $5/month Pro for unlimited files, 200MB uploads, and file history. No subscriptions you'll forget about.",
+    "All 17 PDF tools free with no limits. Upgrade to a $1 day pass or $5/month Pro for unlimited batch processing, 200MB uploads, and file history. No subscriptions you'll forget about.",
   keywords: [
     "PDF tools pricing",
     "free PDF tools",

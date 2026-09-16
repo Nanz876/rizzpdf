@@ -33,8 +33,8 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-gray-900">Plans and payment</h2>
           <ul className="list-disc list-inside space-y-2">
-            <li><strong>Free.</strong> Three operations at no cost, tracked in your browser.</li>
-            <li><strong>Day pass.</strong> A one-time $1 payment unlocks unlimited operations for 24 hours in the browser where you paid. It is not tied to an account and cannot be transferred.</li>
+            <li><strong>Free.</strong> All single-file tools are free with no usage limit. Batch processing includes three free runs, tracked in your browser.</li>
+            <li><strong>Day pass.</strong> A one-time $1 payment unlocks unlimited batch processing for 24 hours in the browser where you paid. It is not tied to an account and cannot be transferred.</li>
             <li><strong>Pro.</strong> A monthly or annual subscription billed through Stripe. You can cancel at any time from your dashboard; access continues until the end of the paid period.</li>
           </ul>
           <p>

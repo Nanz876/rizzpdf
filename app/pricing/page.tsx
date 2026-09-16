@@ -119,8 +119,8 @@ export default function PricingPage() {
           Do more with <span className="text-red-600">RizzPDF</span>
         </h1>
         <p className="text-[16px] text-gray-500 max-w-md mx-auto leading-relaxed mb-7">
-          Start free — no card needed. Pay only when you need more. Every plan
-          includes all 17 PDF tools.
+          Every single-file tool is free with no limits. Pay only for batch
+          processing and power features.
         </p>
 
         {/* Billing toggle */}
@@ -190,7 +190,8 @@ export default function PricingPage() {
                 What&apos;s included
               </div>
               <ul className="flex flex-col gap-2.5">
-                <FeatureItem icon="green">3 free operations</FeatureItem>
+                <FeatureItem icon="green"><strong>Unlimited</strong> single-file tools</FeatureItem>
+                <FeatureItem icon="green">3 free batch runs</FeatureItem>
                 <FeatureItem icon="green">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="green">No account required</FeatureItem>
                 <FeatureItem icon="green">Files never leave your browser</FeatureItem>
@@ -238,7 +239,7 @@ export default function PricingPage() {
               </div>
               <ul className="flex flex-col gap-2.5">
                 <FeatureItem icon="amber">
-                  <strong>Unlimited files</strong> for 24 hrs
+                  <strong>Unlimited batch</strong> for 24 hrs
                 </FeatureItem>
                 <FeatureItem icon="amber">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="amber">No account required</FeatureItem>
@@ -287,7 +288,7 @@ export default function PricingPage() {
               </div>
               <ul className="flex flex-col gap-2.5">
                 <FeatureItem icon="red">
-                  <strong>Unlimited files</strong>, always
+                  <strong>Unlimited batch</strong>, always
                 </FeatureItem>
                 <FeatureItem icon="red">All 17 PDF tools</FeatureItem>
                 <FeatureItem icon="red">
@@ -340,8 +341,14 @@ export default function PricingPage() {
             <tbody>
               {[
                 {
-                  label: "Free operations",
-                  free: "3 total",
+                  label: "Single-file tools",
+                  free: "Unlimited",
+                  day: <span className="text-amber-600 font-semibold">Unlimited</span>,
+                  pro: <span className="text-red-600 font-bold">Unlimited</span>,
+                },
+                {
+                  label: "Batch processing",
+                  free: "3 runs",
                   day: <span className="text-amber-600 font-semibold">Unlimited</span>,
                   pro: <span className="text-red-600 font-bold">Unlimited</span>,
                 },
@@ -438,15 +445,15 @@ export default function PricingPage() {
           },
           {
             q: "What's the difference between Day Pass and Pro?",
-            a: "Day Pass is a $1 one-time unlock for 24 hours — perfect if you have a batch to process today and don't need an account. Pro is $5/month (or $4/month billed annually) and adds 200MB files, full history, and priority support.",
+            a: "Day Pass is a $1 one-time unlock of unlimited batch processing for 24 hours — perfect if you have a pile of files to process today and don't need an account. Pro is $5/month (or $4/month billed annually) and adds 200MB files, full history, and priority support.",
           },
           {
             q: "Can I cancel Pro any time?",
             a: "Yes — cancel any time from your dashboard. No questions asked, no cancellation fees, no gotchas.",
           },
           {
-            q: "What counts as an operation on the free tier?",
-            a: "Each click of a tool's main action (merge, compress, convert and so on) is one operation. You get 3 free across all tools in your browser. After that, a $1 day pass gives you unlimited operations for 24 hours.",
+            q: "What is free, exactly?",
+            a: "Every single-file tool (merge, split, compress, convert, sign, unlock and the rest) is free with no usage limit. Batch processing, which applies one action to many PDFs at once, includes 3 free runs; after that a $1 day pass gives you unlimited batch runs for 24 hours.",
           },
           {
             q: "Is annual billing worth it?",
@@ -479,8 +486,8 @@ export default function PricingPage() {
           Start free — no card needed
         </h2>
         <p className="text-white/80 text-[15px] mb-7">
-          All 17 PDF tools, right in your browser. Upgrade only when you need
-          more.
+          All 17 PDF tools free with no limits, right in your browser. Upgrade
+          only for batch processing and power features.
         </p>
         <Link
           href="/tools"

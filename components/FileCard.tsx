@@ -15,12 +15,9 @@ interface FileCardProps {
   onRemove: (id: string) => void;
   onStatusChange: (id: string, status: FileEntry["status"], error?: string) => void;
   sharedPassword?: string;
-  onBeforeUnlock?: () => boolean;
-  /** Called when an unlock attempt fails (e.g. wrong password), to refund the free operation. */
-  onUnlockFailed?: () => void;
 }
 
-export default function FileCard({ entry, onRemove, onStatusChange, sharedPassword, onBeforeUnlock, onUnlockFailed }: FileCardProps) {
+export default function FileCard({ entry, onRemove, onStatusChange, sharedPassword }: FileCardProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [warning, setWarning] = useState("");
@@ -28,7 +25,6 @@ export default function FileCard({ entry, onRemove, onStatusChange, sharedPasswo
   const fileSizeMB = (entry.file.size / 1024 / 1024).toFixed(2);
 
   async function handleUnlock() {
-    if (onBeforeUnlock && !onBeforeUnlock()) return;
     setWarning(""); // clear any warning from a previous attempt on this file
     onStatusChange(entry.id, "processing");
     const result = await unlockPDF(entry.file, sharedPassword ?? password);
@@ -37,7 +33,6 @@ export default function FileCard({ entry, onRemove, onStatusChange, sharedPasswo
       if (result.warning) setWarning(result.warning);
       onStatusChange(entry.id, "done");
     } else {
-      onUnlockFailed?.();
       onStatusChange(entry.id, "error", result.error);
     }
   }

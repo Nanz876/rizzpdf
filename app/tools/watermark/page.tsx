@@ -6,9 +6,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import PaywallModal from "@/components/PaywallModal";
 import { renderThumbnails, watermarkPDF, downloadBlob } from "@/lib/pdf-tools";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 type WmPosition = "center" | "diagonal";
@@ -24,7 +22,6 @@ export default function WatermarkPage() {
   const [fontSize, setFontSize] = useState(60);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -40,13 +37,12 @@ export default function WatermarkPage() {
 
   const handleApply = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("watermark"); setStatus("processing");
     const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_watermarked.pdf"));
       setStatus("done");
-    } else { setError(result.error ?? "Failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Failed."); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setPreviewUrl(null); setStatus("idle"); setError(""); };
@@ -116,7 +112,7 @@ export default function WatermarkPage() {
           <WorkspaceBar
             icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2"/><path d="M7 12l3-4 3 4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>}
             title="Watermark PDF"
-            subtitle={`${file.name}${gate.isPro ? "" : ` · ${gate.remaining} free use${gate.remaining !== 1 ? "s" : ""} remaining`}`}
+            subtitle={`${file.name}`}
             onReset={reset}
             primaryLabel={status === "processing" ? "Applying…" : status === "done" ? "✓ Downloaded!" : "Apply Watermark →"}
             onPrimary={status === "done" ? reset : handleApply}
@@ -139,7 +135,6 @@ export default function WatermarkPage() {
           </SidebarWorkspace>
         </div>
       )}
-      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />}
     </ToolShell>
   );
 }

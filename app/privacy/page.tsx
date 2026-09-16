@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             <li><strong>Account data.</strong> If you create an account, our sign-in provider Clerk stores your email address and login details.</li>
             <li><strong>Payment data.</strong> Payments are handled by Stripe. We never see or store your card number. We store your Stripe customer and subscription IDs and your subscription status so we can tell whether you are a Pro member.</li>
             <li><strong>Day pass.</strong> If you buy a $1 day pass, your browser stores the Stripe checkout session ID so the pass can be verified for 24 hours. Clearing browser storage removes it.</li>
-            <li><strong>Free-tier counter.</strong> Your browser stores how many free operations you have used. This value stays on your device.</li>
+            <li><strong>Free batch counter.</strong> Your browser stores how many free batch runs you have used. This value stays on your device.</li>
             <li><strong>Email signups.</strong> If you enter your email to be notified about new features, we store that email address.</li>
             <li><strong>Analytics.</strong> We use Vercel Web Analytics, which records page views without cookies and without identifying you personally.</li>
             <li><strong>Server logs.</strong> Like any website, our hosting provider (Vercel) processes your IP address to serve pages and to rate-limit abuse. We do not use it to identify you.</li>

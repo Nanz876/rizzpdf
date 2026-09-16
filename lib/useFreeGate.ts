@@ -3,9 +3,14 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { useProStatus } from "@/lib/useProStatus";
 import { logTool } from "@/lib/logTool";
 
-/** Free tier: this many operations across ALL tools, then the paywall. */
+/**
+ * Single-file tools are free and unlimited. Only batch processing is metered:
+ * this many free batch runs, then the paywall ($1 day pass or Pro).
+ */
 export const FREE_LIMIT = 3;
-export const FREE_COUNT_KEY = "rizzpdf_free_count";
+// New key (was "rizzpdf_free_count" when every tool was metered) so everyone
+// starts with fresh free batch runs.
+export const FREE_COUNT_KEY = "rizzpdf_free_batch_count";
 /** How long a still-loading pro status is trusted before we enforce the limit. */
 export const LOADING_GRACE_MS = 5000;
 
@@ -47,12 +52,12 @@ function subscribe(onChange: () => void) {
 const serverSnapshot = () => 0;
 
 /**
- * Single source of truth for the free-tier gate.
+ * Single source of truth for the free-tier gate on paid features (batch processing).
  *
  * - Call `consume()` when the user clicks a tool's primary action. If it returns
  *   false, stop: the hook has already opened the paywall.
  * - Call `refund()` if that run then fails (wrong password, corrupt file), so a
- *   failure doesn't cost the user one of their free operations.
+ *   failure doesn't cost the user one of their free runs.
  *
  * Pro and day-pass users always pass and are never counted. While pro status is
  * loading the run is never blocked but is still counted; after LOADING_GRACE_MS

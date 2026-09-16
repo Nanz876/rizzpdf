@@ -6,8 +6,6 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, splitPDF, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -37,7 +35,6 @@ export default function SplitPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [splitCount, setSplitCount] = useState(0);
-  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -56,7 +53,6 @@ export default function SplitPage() {
 
   const handleSplit = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("split"); setStatus("processing");
     let mode: "every-page" | "range" = "range";
     let ranges: string | undefined;
@@ -71,7 +67,7 @@ export default function SplitPage() {
     if (result.success && result.blobs) {
       result.blobs.forEach((blob, i) => downloadBlob(blob, result.filenames![i]));
       setSplitCount(result.blobs.length); setStatus("done");
-    } else { setError(result.error ?? "Split failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Split failed."); setStatus("error"); }
   };
 
   const reset = () => {
@@ -163,9 +159,6 @@ export default function SplitPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

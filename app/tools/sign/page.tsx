@@ -6,8 +6,6 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import { PDFDocument } from "pdf-lib";
 import { downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -123,7 +121,6 @@ export default function SignPage() {
 
   const [status, setStatus] = useState<Status>("idle");
   const [err, setErr] = useState("");
-  const gate = useFreeGate();
 
   // Init draw canvas
   useEffect(() => {
@@ -400,7 +397,6 @@ export default function SignPage() {
   // Sign
   const handleSign = async () => {
     if (!pdfFile || !sigDataUrl || !placement || placement.pageIndex >= pdfSizes.length) return;
-    if (!gate.consume()) return;
     logTool("sign"); setStatus("processing"); setErr("");
     try {
       const bytes = await pdfFile.arrayBuffer();
@@ -424,7 +420,7 @@ export default function SignPage() {
       setStatus("done");
     } catch {
       setErr("Failed to sign PDF. Please try again.");
-      gate.refund(); setStatus("error");
+      setStatus("error");
     }
   };
 
@@ -700,9 +696,6 @@ export default function SignPage() {
         )}
       </div>
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

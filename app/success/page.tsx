@@ -52,7 +52,7 @@ export default function SuccessPage() {
           You&apos;re unlocked!
         </h1>
         <p className="text-gray-500 mb-8">
-          Bulk mode is active for the next 24 hours. Unlimited files, no cap.
+          Your day pass is active for the next 24 hours: unlimited batch processing, no cap.
         </p>
 
         <button

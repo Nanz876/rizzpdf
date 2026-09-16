@@ -39,7 +39,7 @@ describe("useFreeGate", () => {
     expect(localStorage.getItem(FREE_COUNT_KEY)).toBe(String(FREE_LIMIT));
   });
 
-  it("persists the count in localStorage under rizzpdf_free_count", () => {
+  it("persists the count in localStorage under rizzpdf_free_batch_count", () => {
     localStorage.setItem(FREE_COUNT_KEY, "2");
     const { result } = renderHook(() => useFreeGate());
     expect(result.current.remaining).toBe(1);

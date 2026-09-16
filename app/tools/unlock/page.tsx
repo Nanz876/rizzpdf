@@ -4,9 +4,7 @@ import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import FileCard, { FileEntry } from "@/components/FileCard";
-import PaywallModal from "@/components/PaywallModal";
 import { unlockPDF, downloadBlob } from "@/lib/pdf-unlock";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 export default function UnlockPage() {
   const [files, setFiles] = useState<FileEntry[]>([]);
@@ -14,7 +12,6 @@ export default function UnlockPage() {
   const [sharedPassword, setSharedPassword] = useState("");
   const [showSharedPassword, setShowSharedPassword] = useState(false);
   const [unlockingAll, setUnlockingAll] = useState(false);
-  const gate = useFreeGate();
 
   const handleFilesAdded = useCallback((newFiles: File[]) => {
     const entries: FileEntry[] = newFiles.map((f) => ({ id: crypto.randomUUID(), file: f, status: "idle" }));
@@ -29,43 +26,28 @@ export default function UnlockPage() {
   const handleUnlockAll = useCallback(async () => {
     const pending = files.filter((f) => f.status === "idle" || f.status === "error");
     if (pending.length === 0 || unlockingAll) return;
-    if (!gate.consume()) return;
     setUnlockingAll(true);
-    let succeeded = 0;
     for (const entry of pending) {
       handleStatusChange(entry.id, "processing");
       const result = await unlockPDF(entry.file, sharedPassword);
       if (result.success && result.blob && result.filename) {
         downloadBlob(result.blob, result.filename);
-        succeeded += 1;
         handleStatusChange(entry.id, "done");
       } else {
         handleStatusChange(entry.id, "error", result.error);
       }
     }
-    if (succeeded === 0) gate.refund();
     setUnlockingAll(false);
-  }, [files, sharedPassword, handleStatusChange, unlockingAll, gate]);
+  }, [files, sharedPassword, handleStatusChange, unlockingAll]);
 
   return (
     <ToolShell
       name="Unlock PDF"
-      description="Remove PDF password protection instantly. Free for your first 3 operations."
+      description="Remove PDF password protection instantly. Free and unlimited."
       icon="🔓"
       steps={files.length > 0 ? undefined : ["Upload your PDF", "Enter the password", "Download unlocked file"]}
     >
       <UploadZone onFilesAdded={handleFilesAdded} />
-
-      {!gate.loading && !gate.isPro && files.length > 0 && (
-        <p className="mt-4 text-center text-xs text-gray-400">
-          {gate.remaining} of 3 free operations left
-          {gate.remaining === 0 && (
-            <button onClick={gate.openPaywall} className="ml-2 text-red-600 font-semibold hover:underline">
-              Go unlimited for $1 →
-            </button>
-          )}
-        </p>
-      )}
 
       {files.length > 0 && (
         <div className="mt-4 border border-gray-200 rounded-2xl p-4 bg-white">
@@ -132,15 +114,12 @@ export default function UnlockPage() {
                 onRemove={handleRemove}
                 onStatusChange={handleStatusChange}
                 sharedPassword={useSamePassword ? sharedPassword : undefined}
-                onBeforeUnlock={gate.consume}
-                onUnlockFailed={gate.refund}
               />
             ))}
           </div>
         </div>
       )}
 
-      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />}
     </ToolShell>
   );
 }

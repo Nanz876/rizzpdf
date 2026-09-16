@@ -125,7 +125,7 @@ export default function Home() {
               Every PDF tool you need
             </h1>
             <p className="text-gray-500 text-base">
-              100% private · runs in your browser · free for 3 operations
+              100% private · runs in your browser · free, no limits
             </p>
           </div>
         </section>

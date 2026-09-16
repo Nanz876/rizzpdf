@@ -7,8 +7,6 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, pdfToJpg, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -18,7 +16,6 @@ export default function PdfToJpgPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -35,7 +32,6 @@ export default function PdfToJpgPage() {
 
   const handleConvert = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("pdf-to-jpg"); setStatus("processing");
     const result = await pdfToJpg(file);
     if (result.success && result.blobs) {
@@ -45,7 +41,7 @@ export default function PdfToJpgPage() {
         }
       });
       setStatus("done");
-    } else { setError(result.error ?? "Conversion failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setThumbs([]); setSelected(new Set()); setStatus("idle"); setError(""); };
@@ -81,9 +77,6 @@ export default function PdfToJpgPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

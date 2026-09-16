@@ -6,9 +6,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import PaywallModal from "@/components/PaywallModal";
 import { compressPDF, downloadBlob } from "@/lib/pdf-tools";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Quality = "low" | "medium" | "high";
 type Status = "idle" | "ready" | "processing" | "done" | "error";
@@ -26,7 +24,6 @@ export default function CompressPage() {
   const [error, setError] = useState("");
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
-  const gate = useFreeGate();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setOrigSize(files[0].size); setStatus("ready");
@@ -34,14 +31,13 @@ export default function CompressPage() {
 
   const handleCompress = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("compress"); setStatus("processing");
     const result = await compressPDF(file, quality);
     if (result.success && result.blob) {
       setNewSize(result.blob.size);
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_compressed.pdf"));
       setStatus("done");
-    } else { setError(result.error ?? "Compression failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Compression failed."); setStatus("error"); }
   };
 
   const reset = () => { setFile(null); setStatus("idle"); setError(""); setOrigSize(0); setNewSize(0); };
@@ -85,7 +81,6 @@ export default function CompressPage() {
           </div>
         </div>
       )}
-      {gate.showPaywall && <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />}
 
       {/* SEO copy block */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">

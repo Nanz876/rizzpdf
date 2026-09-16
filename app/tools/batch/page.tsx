@@ -78,7 +78,7 @@ export default function BatchPage() {
 
     resultsRef.current = results;
     setWarnings(results.map((r) => r?.warning));
-    if (!results.some(Boolean)) gate.refund(); // nothing produced: don't charge a free operation
+    if (!results.some(Boolean)) gate.refund(); // nothing produced: don't charge a free run
     setRunning(false);
   };
 
@@ -100,7 +100,7 @@ export default function BatchPage() {
   return (
     <ToolShell
       name="Batch Processing"
-      description="Apply the same operation to multiple PDFs at once. Free for your first 3 operations."
+      description="Apply the same operation to multiple PDFs at once. Your first 3 batch runs are free."
       icon="⚡"
       steps={files.length > 0 ? undefined : ["Upload your PDFs", "Choose an operation", "Download all results"]}
     >
@@ -109,7 +109,7 @@ export default function BatchPage() {
 
       {!gate.loading && !gate.isPro && files.length > 0 && (
         <p className="mt-2 text-center text-xs text-gray-400">
-          {gate.remaining} of 3 free operations left
+          {gate.remaining} of 3 free batch runs left
           {gate.remaining === 0 && (
             <button onClick={gate.openPaywall} className="ml-2 text-red-600 font-semibold hover:underline">
               Go unlimited for $1 →

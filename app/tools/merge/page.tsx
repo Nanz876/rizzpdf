@@ -6,8 +6,6 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { renderThumbnails, mergePDFs, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -20,7 +18,6 @@ export default function MergePage() {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const gate = useFreeGate();
 
   const addFiles = useCallback(async (newFiles: File[]) => {
     setLoading(true);
@@ -55,13 +52,12 @@ export default function MergePage() {
 
   const handleMerge = async () => {
     if (files.length < 2) return;
-    if (!gate.consume()) return;
     logTool("merge"); setStatus("processing");
     const result = await mergePDFs(files);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "merged.pdf");
       setStatus("done");
-    } else { setError(result.error ?? "Merge failed."); gate.refund(); setStatus("error"); }
+    } else { setError(result.error ?? "Merge failed."); setStatus("error"); }
   };
 
   const reset = () => { setFiles([]); setAllThumbs([]); setStatus("idle"); setError(""); };
@@ -137,9 +133,6 @@ export default function MergePage() {
         </div>
       </div>
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
 
       {/* SEO copy block */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-2 space-y-4 text-sm text-gray-600 leading-relaxed">

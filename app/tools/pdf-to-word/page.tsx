@@ -6,8 +6,6 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { pdfToWord, downloadBlob } from "@/lib/pdf-tools";
-import PaywallModal from "@/components/PaywallModal";
-import { useFreeGate } from "@/lib/useFreeGate";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -15,7 +13,6 @@ export default function PdfToWordPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const gate = useFreeGate();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready"); setError("");
@@ -23,7 +20,6 @@ export default function PdfToWordPage() {
 
   const handleConvert = async () => {
     if (!file) return;
-    if (!gate.consume()) return;
     logTool("pdf-to-word"); setStatus("processing"); setError("");
     const result = await pdfToWord(file);
     if (result.success && result.blob) {
@@ -31,7 +27,7 @@ export default function PdfToWordPage() {
       setStatus("done");
     } else {
       setError(result.error ?? "Conversion failed.");
-      gate.refund(); setStatus("error");
+      setStatus("error");
     }
   };
 
@@ -79,9 +75,6 @@ export default function PdfToWordPage() {
         </div>
       )}
 
-      {gate.showPaywall && (
-        <PaywallModal onClose={gate.closePaywall} onPay={gate.closePaywall} />
-      )}
     </ToolShell>
   );
 }

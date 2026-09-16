@@ -39,16 +39,16 @@ export default function PaywallModal({ onClose, onPay }: PaywallModalProps) {
           Free limit reached
         </h2>
         <p className="text-gray-500 text-[13px] mb-6 leading-relaxed">
-          You&apos;ve used your 3 free operations. Get a{" "}
+          You&apos;ve used your 3 free batch runs. Get a{" "}
           <span className="font-bold text-red-600">$1 day pass</span> for
-          unlimited operations for 24 hours — no account needed.
+          unlimited batch processing for 24 hours — no account needed.
         </p>
 
         {/* Features */}
         <ul className="text-left space-y-2 mb-6">
           {[
-            "Unlimited operations for 24 hours",
-            "All 17 PDF tools included",
+            "Unlimited batch processing for 24 hours",
+            "Every single-file tool stays free, always",
             "Up to 50MB per file",
             "No subscription, no account",
             "Files never leave your browser",
