@@ -5,7 +5,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, splitPDF, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, splitPDF, downloadResults } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -38,7 +38,14 @@ export default function SplitPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
-    const t = await renderThumbnails(files[0], 0.45);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.45);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setThumbs(t); setStatus("ready");
     setSplitAfter(new Set());
   }, []);
@@ -65,7 +72,7 @@ export default function SplitPage() {
     }
     const result = await splitPDF(file, mode, ranges);
     if (result.success && result.blobs) {
-      result.blobs.forEach((blob, i) => downloadBlob(blob, result.filenames![i]));
+      await downloadResults(result.blobs, result.filenames!, file.name.replace(/\.pdf$/i, "_split.zip"));
       setSplitCount(result.blobs.length); setStatus("done");
     } else { setError(result.error ?? "Split failed."); setStatus("error"); }
   };
@@ -82,6 +89,7 @@ export default function SplitPage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5" stroke="white" strokeWidth="1.8"/><circle cx="6" cy="18" r="2.5" stroke="white" strokeWidth="1.8"/><path d="M8.5 7.5L20 12M8.5 16.5L20 12" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Click between pages to split", "Download files"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
       {(["ready", "processing", "done", "error"] as Status[]).includes(status) && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

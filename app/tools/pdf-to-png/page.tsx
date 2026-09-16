@@ -5,7 +5,7 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
-import { renderThumbnails, pdfToPng, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, pdfToPng, downloadResults } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -18,7 +18,14 @@ export default function PdfToPngPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
-    const t = await renderThumbnails(files[0], 0.4);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.4);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setThumbs(t);
     setSelected(new Set(t.map((_, i) => i + 1)));
     setStatus("ready");
@@ -30,15 +37,11 @@ export default function PdfToPngPage() {
   const pages: ThumbnailPage[] = thumbs.map((url, i) => ({ dataUrl: url, pageNumber: i + 1 }));
 
   const handleConvert = async () => {
-    if (!file) return;
+    if (!file || selected.size === 0) return;
     logTool("pdf-to-png"); setStatus("processing");
-    const result = await pdfToPng(file);
+    const result = await pdfToPng(file, 150, [...selected]);
     if (result.success && result.blobs) {
-      result.blobs.forEach((blob, i) => {
-        if (selected.has(i + 1)) {
-          downloadBlob(blob, result.filenames?.[i] ?? `page_${i + 1}.png`);
-        }
-      });
+      await downloadResults(result.blobs, result.filenames ?? [], file.name.replace(/\.pdf$/i, "_png.zip"));
       setStatus("done");
     } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
   };
@@ -50,6 +53,7 @@ export default function PdfToPngPage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Select pages to export", "Download PNG images"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
       {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

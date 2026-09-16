@@ -6,7 +6,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, rotatePages, downloadBlob } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -19,7 +19,14 @@ export default function RotatePage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setRotations({});
-    const t = await renderThumbnails(files[0], 0.5);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.5);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setThumbs(t); setStatus("ready");
   }, []);
 
@@ -40,20 +47,12 @@ export default function RotatePage() {
   const handleApply = async () => {
     if (!file) return;
     logTool("rotate"); setStatus("processing");
-    try {
-      const { PDFDocument, degrees } = await import("pdf-lib");
-      const bytes = await file.arrayBuffer();
-      const doc = await PDFDocument.load(bytes);
-      const pgList = doc.getPages();
-      pgList.forEach((pg, i) => {
-        const deg = rotations[i + 1] ?? 0;
-        if (deg !== 0) pg.setRotation(degrees((pg.getRotation().angle + deg) % 360));
-      });
-      const out = await doc.save();
-      downloadBlob(new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }), file.name.replace(/\.pdf$/i, "_rotated.pdf"));
+    const result = await rotatePages(file, rotations);
+    if (result.success && result.blob) {
+      downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_rotated.pdf"));
       setStatus("done");
-    } catch {
-      setError("Rotation failed."); setStatus("error");
+    } else {
+      setError(result.error ?? "Rotation failed."); setStatus("error");
     }
   };
 
@@ -64,6 +63,7 @@ export default function RotatePage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M12 4V8M12 8l-3-3m3 3l3-3" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Click pages to rotate", "Download result"]}>
       {!file && <UploadZone onFilesAdded={handleFile} disabled={status === "loading"} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
       {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

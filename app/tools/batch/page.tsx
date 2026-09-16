@@ -112,7 +112,7 @@ export default function BatchPage() {
           {gate.remaining} of 3 free batch runs left
           {gate.remaining === 0 && (
             <button onClick={gate.openPaywall} className="ml-2 text-red-600 font-semibold hover:underline">
-              Go unlimited for $1 →
+              Go unlimited with Pro →
             </button>
           )}
         </p>

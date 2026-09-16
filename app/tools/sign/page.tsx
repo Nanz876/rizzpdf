@@ -4,8 +4,7 @@ import { logTool } from "@/lib/logTool";
 import { useState, useRef, useEffect, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
-import { PDFDocument } from "pdf-lib";
-import { downloadBlob } from "@/lib/pdf-tools";
+import { downloadBlob, signPDF } from "@/lib/pdf-tools";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -164,6 +163,14 @@ export default function SignPage() {
           sizes.push({ w: vp1.width, h: vp1.height });
         }
         if (alive) { setPageUrls(urls); setPdfSizes(sizes); }
+      } catch (e) {
+        if (alive) {
+          const passwordLocked = (e as { name?: string })?.name === "PasswordException";
+          setErr(passwordLocked
+            ? "This PDF is password-protected. Unlock it first with the Unlock PDF tool, then try again."
+            : "This file couldn't be opened. Make sure it's a valid PDF.");
+          setPdfFile(null);
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -398,28 +405,18 @@ export default function SignPage() {
   const handleSign = async () => {
     if (!pdfFile || !sigDataUrl || !placement || placement.pageIndex >= pdfSizes.length) return;
     logTool("sign"); setStatus("processing"); setErr("");
-    try {
-      const bytes = await pdfFile.arrayBuffer();
-      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      const pg = doc.getPages()[placement.pageIndex];
-      const { width: pw, height: ph } = pg.getSize();
-      const resp = await fetch(sigDataUrl);
-      const sigBytes = await resp.arrayBuffer();
-      const isPng = sigDataUrl.startsWith("data:image/png");
-      const img = isPng ? await doc.embedPng(sigBytes) : await doc.embedJpg(sigBytes);
-      const sw = pw * sigWidthFrac;
-      const sh = (img.height / img.width) * sw;
-      pg.drawImage(img, {
-        x: placement.xFrac * pw,
-        y: ph - placement.yFrac * ph - sh,
-        width: sw,
-        height: sh,
-      });
-      const out = await doc.save();
-      downloadBlob(new Blob([out.buffer as ArrayBuffer], { type: "application/pdf" }), pdfFile.name.replace(/\.pdf$/i, "_signed.pdf"));
+    const result = await signPDF(pdfFile, {
+      signatureDataUrl: sigDataUrl,
+      page: placement.pageIndex + 1,
+      x: placement.xFrac,
+      yFromTop: placement.yFrac,
+      widthRatio: sigWidthFrac,
+    });
+    if (result.success && result.blob) {
+      downloadBlob(result.blob, result.filename ?? pdfFile.name.replace(/\.pdf$/i, "_signed.pdf"));
       setStatus("done");
-    } catch {
-      setErr("Failed to sign PDF. Please try again.");
+    } else {
+      setErr(result.error ?? "Failed to sign PDF. Please try again.");
       setStatus("error");
     }
   };

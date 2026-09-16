@@ -40,7 +40,14 @@ export default function PageNumbersPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
-    const t = await renderThumbnails(files[0], 0.7);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.7);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setPreviewUrl(t[0] ?? null); setPageCount(t.length); setStatus("ready");
   }, []);
 
@@ -107,6 +114,7 @@ export default function PageNumbersPage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><path d="M8 8h8M8 12h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/><circle cx="12" cy="17" r="2.5" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.2"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Choose position & format", "Download numbered PDF"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Loading…</div>}
       {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">

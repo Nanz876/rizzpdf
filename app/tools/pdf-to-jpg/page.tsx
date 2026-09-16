@@ -6,7 +6,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, pdfToJpg, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, pdfToJpg, downloadResults } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -19,7 +19,14 @@ export default function PdfToJpgPage() {
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
-    const t = await renderThumbnails(files[0], 0.5);
+    let t: string[];
+    try {
+      t = await renderThumbnails(files[0], 0.5);
+    } catch (e) {
+      setFile(null); setStatus("idle");
+      setError(e instanceof Error ? e.message : "This file couldn't be opened.");
+      return;
+    }
     setThumbs(t);
     setSelected(new Set(t.map((_, i) => i + 1)));
     setStatus("ready");
@@ -31,15 +38,11 @@ export default function PdfToJpgPage() {
   const pages: ThumbnailPage[] = thumbs.map((url, i) => ({ dataUrl: url, pageNumber: i + 1 }));
 
   const handleConvert = async () => {
-    if (!file) return;
+    if (!file || selected.size === 0) return;
     logTool("pdf-to-jpg"); setStatus("processing");
-    const result = await pdfToJpg(file);
+    const result = await pdfToJpg(file, 150, [...selected]);
     if (result.success && result.blobs) {
-      result.blobs.forEach((blob, i) => {
-        if (selected.has(i + 1)) {
-          downloadBlob(blob, result.filenames?.[i] ?? `page_${i + 1}.jpg`);
-        }
-      });
+      await downloadResults(result.blobs, result.filenames ?? [], file.name.replace(/\.pdf$/i, "_jpg.zip"));
       setStatus("done");
     } else { setError(result.error ?? "Conversion failed."); setStatus("error"); }
   };
@@ -51,6 +54,7 @@ export default function PdfToJpgPage() {
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       steps={file ? undefined : ["Upload your PDF", "Select pages to convert", "Download JPG images"]}>
       {!file && <UploadZone onFilesAdded={handleFile} />}
+      {!file && error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
       {status === "loading" && <div className="text-center py-12 text-gray-400">Rendering pages…</div>}
       {(status === "ready" || status === "processing" || status === "done" || status === "error") && file && (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
