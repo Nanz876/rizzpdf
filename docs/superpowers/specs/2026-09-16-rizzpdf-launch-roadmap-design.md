@@ -42,7 +42,7 @@
 ### 1.1 Money bugs
 
 **Webhook upsert (C2).**
-- Before changing code: query the Supabase `subscriptions` table definition (via the admin client in a one-off script under `scripts/`) and confirm a UNIQUE constraint on `user_id`. If absent, add one via a migration SQL file committed to `supabase/migrations/` and applied by the owner in the Supabase dashboard (the repo has no migration tooling).
+- Before changing code: query the Supabase `subscriptions` table definition (via the admin client in a one-off script under `scripts/`) and confirm a UNIQUE constraint on `user_id`. If absent, add one via a migration SQL file committed to `supabase/migrations/YYYYMMDD_subscriptions_user_id_unique.sql` and applied by the owner in the Supabase SQL editor (the repo has no migration tooling).
 - Change both `upsert(...)` calls to `upsert(row, { onConflict: "user_id" })`.
 - Make `getUserTier` and `getSubscription` in `lib/tier.ts` resilient: use `.maybeSingle()` and, if multiple rows exist, prefer the row with the latest `current_period_end`.
 
@@ -60,7 +60,7 @@
 useFreeGate(): {
   canRun: boolean;         // true if pro/day-pass, or count < 3, or pro status still loading
   remaining: number;       // Infinity for pro; 3 - count otherwise
-  consume(): boolean;      // call on process click; returns false and opens paywall if blocked; increments count otherwise
+  consume(): boolean;      // call on process click; if blocked, the hook itself sets showPaywall=true and returns false; otherwise increments count and returns true
   showPaywall: boolean;
   closePaywall(): void;
   isPro: boolean; loading: boolean;
