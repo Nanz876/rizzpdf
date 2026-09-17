@@ -78,12 +78,30 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number)
 
 // ─── Merge ───────────────────────────────────────────────────────────────────
 
-export async function mergePDFs(files: File[]): Promise<ToolResult> {
+/**
+ * Merge PDFs, optionally picking only some pages from each file.
+ * `pageSelections[i]` is a range string in the same syntax as `parseRanges`
+ * ("1-3, 5"); undefined or empty means "all pages". Pages are copied in the
+ * order written, so "3,1" puts page 3 first.
+ */
+export async function mergePDFs(files: File[], pageSelections?: (string | undefined)[]): Promise<ToolResult> {
   try {
     const merged = await PDFDocument.create();
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const doc = await loadPdf(file);
-      const copied = await merged.copyPages(doc, doc.getPageIndices());
+      const selection = pageSelections?.[i];
+      let indices: number[];
+      if (selection && selection.trim()) {
+        try {
+          indices = parseRanges(selection, doc.getPageCount()).flat();
+        } catch (e) {
+          return { success: false, error: `${file.name}: ${e instanceof Error ? e.message : "Invalid page range."}` };
+        }
+      } else {
+        indices = doc.getPageIndices();
+      }
+      const copied = await merged.copyPages(doc, indices);
       copied.forEach((p) => merged.addPage(p));
     }
     return { success: true, blob: await saveToBlob(merged), filename: "merged.pdf" };
@@ -219,69 +237,82 @@ async function decodeImage(
   return null;
 }
 
+export interface CompressSettings {
+  maxEdge: number;
+  quality: number;
+  flateMaxRatio: number;
+}
+
+/**
+ * Re-encode embedded photos/scans (JPEG and lossless Flate images) as JPEG,
+ * downsampling oversized ones, per explicit settings. Text, fonts and vector
+ * graphics are never touched, so text stays selectable. Shared by `compressPDF`
+ * (fixed low/medium/high presets) and `compressToTarget` (search over a ladder).
+ */
+async function compressWithSettings(originalBytes: Uint8Array, settings: CompressSettings): Promise<Blob> {
+  const doc = await loadPdf(originalBytes);
+  const context = doc.context;
+
+  for (const [ref, obj] of context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFRawStream)) continue;
+    const dict = obj.dict;
+    if (dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
+    const w = numberOf(dict, "Width") ?? 0;
+    const h = numberOf(dict, "Height") ?? 0;
+    if (w < 64 || h < 64) continue;
+
+    const filter = dict.get(PDFName.of("Filter"))?.toString();
+    const original = obj.getContents();
+    let source: CanvasImageSource | null = null;
+    try {
+      source = await decodeImage(doc, obj, w, h);
+    } catch {
+      source = null;
+    }
+    if (!source) continue;
+
+    const scale = Math.min(1, settings.maxEdge / Math.max(w, h));
+    const nw = Math.max(1, Math.round(w * scale));
+    const nh = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, nw, nh);
+    ctx.drawImage(source, 0, 0, nw, nh);
+    if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) source.close(); // free full-size pixels now
+    const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", settings.quality)).arrayBuffer());
+    canvas.width = 0;
+    canvas.height = 0;
+
+    // Lossless (Flate) images are usually screenshots/line art: only switch them
+    // to JPEG when the saving is substantial, to avoid visible artefacts.
+    const limit = filter === "/FlateDecode" ? original.length * settings.flateMaxRatio : original.length;
+    if (jpeg.length >= limit) continue;
+
+    const newDict = dict.clone(context);
+    newDict.set(PDFName.of("Filter"), PDFName.of("DCTDecode"));
+    newDict.delete(PDFName.of("DecodeParms"));
+    newDict.set(PDFName.of("Width"), PDFNumber.of(nw));
+    newDict.set(PDFName.of("Height"), PDFNumber.of(nh));
+    newDict.set(PDFName.of("ColorSpace"), PDFName.of("DeviceRGB"));
+    newDict.set(PDFName.of("BitsPerComponent"), PDFNumber.of(8));
+    context.assign(ref, PDFRawStream.of(newDict, jpeg));
+  }
+
+  return saveToBlob(doc);
+}
+
 export async function compressPDF(
   file: File,
   quality: "low" | "medium" | "high"
 ): Promise<ToolResult> {
   try {
-    // Re-encode embedded photos/scans (JPEG and lossless Flate images) as JPEG,
-    // downsampling oversized ones. Text, fonts and vector graphics are never
-    // touched, so text stays selectable.
     const settings = COMPRESS_SETTINGS[quality];
     const originalBytes = new Uint8Array(await file.arrayBuffer());
-    const doc = await loadPdf(originalBytes);
-    const context = doc.context;
-
-    for (const [ref, obj] of context.enumerateIndirectObjects()) {
-      if (!(obj instanceof PDFRawStream)) continue;
-      const dict = obj.dict;
-      if (dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
-      const w = numberOf(dict, "Width") ?? 0;
-      const h = numberOf(dict, "Height") ?? 0;
-      if (w < 64 || h < 64) continue;
-
-      const filter = dict.get(PDFName.of("Filter"))?.toString();
-      const original = obj.getContents();
-      let source: CanvasImageSource | null = null;
-      try {
-        source = await decodeImage(doc, obj, w, h);
-      } catch {
-        source = null;
-      }
-      if (!source) continue;
-
-      const scale = Math.min(1, settings.maxEdge / Math.max(w, h));
-      const nw = Math.max(1, Math.round(w * scale));
-      const nh = Math.max(1, Math.round(h * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = nw;
-      canvas.height = nh;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) continue;
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, nw, nh);
-      ctx.drawImage(source, 0, 0, nw, nh);
-      if (typeof ImageBitmap !== "undefined" && source instanceof ImageBitmap) source.close(); // free full-size pixels now
-      const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", settings.quality)).arrayBuffer());
-      canvas.width = 0;
-      canvas.height = 0;
-
-      // Lossless (Flate) images are usually screenshots/line art: only switch them
-      // to JPEG when the saving is substantial, to avoid visible artefacts.
-      const limit = filter === "/FlateDecode" ? original.length * settings.flateMaxRatio : original.length;
-      if (jpeg.length >= limit) continue;
-
-      const newDict = dict.clone(context);
-      newDict.set(PDFName.of("Filter"), PDFName.of("DCTDecode"));
-      newDict.delete(PDFName.of("DecodeParms"));
-      newDict.set(PDFName.of("Width"), PDFNumber.of(nw));
-      newDict.set(PDFName.of("Height"), PDFNumber.of(nh));
-      newDict.set(PDFName.of("ColorSpace"), PDFName.of("DeviceRGB"));
-      newDict.set(PDFName.of("BitsPerComponent"), PDFNumber.of(8));
-      context.assign(ref, PDFRawStream.of(newDict, jpeg));
-    }
-
-    const blob = await saveToBlob(doc);
+    const blob = await compressWithSettings(originalBytes, settings);
     const filename = `${baseName(file)}_compressed.pdf`;
     if (blob.size >= originalBytes.length) {
       // Never hand back a bigger file.
@@ -293,6 +324,123 @@ export async function compressPDF(
       };
     }
     return { success: true, blob, filename };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Failed to compress PDF.") };
+  }
+}
+
+// ─── Compress to a target size ─────────────────────────────────────────────
+
+/** A ladder of progressively more aggressive settings, tried in order until the target is hit. */
+const TARGET_SIZE_LADDER: CompressSettings[] = [
+  { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6 },
+  { maxEdge: 1600, quality: 0.65, flateMaxRatio: 0.68 },
+  { maxEdge: 1200, quality: 0.55, flateMaxRatio: 0.75 },
+  { maxEdge: 900, quality: 0.45, flateMaxRatio: 0.8 },
+  { maxEdge: 700, quality: 0.35, flateMaxRatio: 0.85 },
+];
+
+export interface LadderSearchResult {
+  /** Index into the ladder that was used, or -1 when the original was already under target. */
+  index: number;
+  size: number;
+  reachedTarget: boolean;
+}
+
+/**
+ * Try each level of `ladder` in order (via `tryLevel`, which should produce the
+ * resulting size for that level) and stop at the first one at or under `target`.
+ * If `originalSize` is already at or under `target`, no attempts are made at all.
+ * If nothing in the ladder reaches the target, returns the last (smallest) attempt
+ * with `reachedTarget: false`.
+ */
+export async function searchCompressionLadder<S>(
+  tryLevel: (settings: S, index: number) => Promise<number>,
+  target: number,
+  ladder: S[],
+  originalSize?: number
+): Promise<LadderSearchResult> {
+  if (originalSize !== undefined && originalSize <= target) {
+    return { index: -1, size: originalSize, reachedTarget: true };
+  }
+
+  let lastIndex = -1;
+  let lastSize = originalSize ?? Infinity;
+  for (let i = 0; i < ladder.length; i++) {
+    const size = await tryLevel(ladder[i], i);
+    lastIndex = i;
+    lastSize = size;
+    if (size <= target) {
+      return { index: i, size, reachedTarget: true };
+    }
+  }
+  return { index: lastIndex, size: lastSize, reachedTarget: false };
+}
+
+function fmtMB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function settingsLabel(settings: CompressSettings): string {
+  return `${settings.maxEdge}px max image edge · ${Math.round(settings.quality * 100)}% JPEG quality`;
+}
+
+/**
+ * Compress a PDF to try to get it at or under `targetBytes`, searching progressively
+ * stronger settings and stopping as soon as one fits. Reports progress via `onProgress`.
+ * Never returns a file bigger than the original.
+ */
+export async function compressToTarget(
+  file: File,
+  targetBytes: number,
+  onProgress?: (msg: string) => void
+): Promise<ToolResult & { reachedTarget?: boolean; settingsUsed?: string }> {
+  try {
+    const originalBytes = new Uint8Array(await file.arrayBuffer());
+    const filename = `${baseName(file)}_compressed.pdf`;
+
+    if (originalBytes.length <= targetBytes) {
+      return {
+        success: true,
+        blob: new Blob([originalBytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+        filename,
+        reachedTarget: true,
+        warning: `This PDF is already ${fmtMB(originalBytes.length)}, under your ${fmtMB(targetBytes)} target — nothing to do.`,
+      };
+    }
+
+    let bestBlob: Blob | null = null;
+    const result = await searchCompressionLadder<CompressSettings>(
+      async (settings, index) => {
+        onProgress?.(
+          index === 0
+            ? "Trying recommended compression…"
+            : `Trying stronger compression (${index + 1}/${TARGET_SIZE_LADDER.length})…`
+        );
+        const blob = await compressWithSettings(originalBytes, settings);
+        bestBlob = blob;
+        return blob.size;
+      },
+      targetBytes,
+      TARGET_SIZE_LADDER,
+      originalBytes.length
+    );
+
+    if (!bestBlob) throw new Error("Compression failed.");
+    let outBlob: Blob = bestBlob;
+    let usedOriginal = false;
+    if (outBlob.size >= originalBytes.length) {
+      // Never hand back a bigger file.
+      outBlob = new Blob([originalBytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
+      usedOriginal = true;
+    }
+    const reachedTarget = outBlob.size <= targetBytes;
+    const settingsUsed = usedOriginal || result.index < 0 ? "original file" : settingsLabel(TARGET_SIZE_LADDER[result.index]);
+    const warning = reachedTarget
+      ? undefined
+      : `Couldn't get below ${fmtMB(targetBytes)} — this is the smallest we can make it without losing readability; the file's size is mostly text/fonts or vector graphics.`;
+
+    return { success: true, blob: outBlob, filename, reachedTarget, settingsUsed, warning };
   } catch (e) {
     return { success: false, error: toolErrorMessage(e, "Failed to compress PDF.") };
   }
