@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { takeHandedOffFile } from "@/lib/handoff";
 
 interface UploadZoneProps {
   onFilesAdded: (files: File[]) => void;
@@ -35,6 +36,15 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
     },
     [onFilesAdded]
   );
+
+  // Tool chaining: load a PDF handed over from the previous tool, once.
+  const tookHandoff = useRef(false);
+  useEffect(() => {
+    if (tookHandoff.current || disabled) return;
+    tookHandoff.current = true;
+    const handed = takeHandedOffFile();
+    if (handed) onFilesAdded([handed]);
+  }, [onFilesAdded, disabled]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
