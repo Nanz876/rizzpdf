@@ -104,6 +104,8 @@ const siteJsonLd = {
     "Redact PDF",
     "Fill PDF Forms",
     "Flatten PDF",
+    "OCR PDF",
+    "Edit PDF Text",
   ],
   publisher: {
     "@type": "Organization",

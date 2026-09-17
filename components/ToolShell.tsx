@@ -19,6 +19,8 @@ const MORE_TOOLS = [
   { name: "Repair PDF", href: "/tools/repair" },
   { name: "Protect PDF", href: "/tools/protect" },
   { name: "PDF to Word", href: "/tools/pdf-to-word" },
+  { name: "OCR PDF", href: "/tools/ocr" },
+  { name: "Edit PDF Text", href: "/tools/edit-text" },
   { name: "Crop PDF", href: "/tools/crop" },
   { name: "Redact PDF", href: "/tools/redact" },
   { name: "Fill PDF Form", href: "/tools/fill-form" },

@@ -19,6 +19,8 @@ All PDF processing is client-side only. Files never leave the browser. Never add
 
 **Monetization tiers:**
 - Free: every single-file tool is free and unlimited (no gate). Only batch processing is metered: 3 free runs via `lib/useFreeGate.ts` (localStorage `rizzpdf_free_batch_count`), called from `app/tools/batch/page.tsx`. Use the same hook for any future paid feature; never add per-tool counters.
+- OCR is the one exception to "unlimited": free users OCR the first `FREE_OCR_PAGES` (10) pages of a document, Pro gets the whole thing (`app/tools/ocr/page.tsx` checks `useProStatus()`). It is a per-document cap, not a usage counter — do not route it through `useFreeGate`.
+- Never gate a feature that already shipped free. New capabilities may launch with a free tier plus a Pro tier; taking a live free tool away is off the table.
 - Pro $5/mo or $48/yr (the only paid tier; the $1 day pass was retired 2026-09-16): Clerk user + Supabase `subscriptions` table (UNIQUE on `user_id`; webhook upserts with `onConflict: "user_id"` and returns 500 on DB errors so Stripe retries). Stripe API 2025-03+ moved `current_period_end` onto subscription items; always read it via `lib/stripe-rows.ts`.
 
 **Paywall:** `components/PaywallModal.tsx` is the only paywall UI. Gated features render it from `useFreeGate().showPaywall`.

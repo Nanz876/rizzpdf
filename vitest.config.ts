@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["**/__tests__/**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "public"],
+    // .claude/worktrees holds agent worktrees — full copies of this repo whose
+    // tests would otherwise be collected and run alongside our own.
+    exclude: ["**/node_modules/**", ".next", "public", ".claude/**"],
   },
 });

@@ -57,6 +57,11 @@ const CONVERT_TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#f0fdf4" badgeColor="#22c55e" badgeLabel="ZIP" />,
   },
   {
+    name: "OCR PDF", route: "/tools/ocr", desc: "Turn a scan into a searchable PDF.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fef3c7" badgeColor="#ef4444" badgeLabel="IMG" badgeColor2="#d97706" badgeLabel2="TXT" />,
+  },
+  {
     name: "PDF to PNG", route: "/tools/pdf-to-png", desc: "Export pages as PNG images.",
     icon: <ToolIcon variant="double" bgColor="#f0fdfa" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#14b8a6" badgeLabel2="PNG" />,
   },
@@ -82,6 +87,11 @@ const SECURITY_TOOLS = [
   {
     name: "Fill PDF Form", route: "/tools/fill-form", desc: "Type into form fields and download.",
     icon: <ToolIcon variant="single" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="PDF" />,
+  },
+  {
+    name: "Edit PDF Text", route: "/tools/edit-text", desc: "Replace or add text on the page.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#faf5ff" badgeColor="#9333ea" badgeLabel="PDF" />,
   },
   {
     name: "Redact PDF", route: "/tools/redact", desc: "Permanently black out sensitive text.",
