@@ -31,6 +31,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/tools/pdf-to-png`,        lastModified: today, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/tools/pdf-to-word`,       lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/tools/repair`,            lastModified: today, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/tools/crop`,              lastModified: today, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/tools/redact`,            lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/tools/fill-form`,         lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/tools/flatten`,           lastModified: today, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/tools/batch`,             lastModified: today, changeFrequency: "monthly", priority: 0.7 },
 
     // Blog

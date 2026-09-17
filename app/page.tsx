@@ -32,6 +32,10 @@ const ORGANIZE_TOOLS = [
     name: "Page Numbers", route: "/tools/page-numbers", desc: "Stamp page numbers onto your PDF.",
     icon: <ToolIcon variant="single" bgColor="#f0fdfa" badgeColor="#14b8a6" badgeLabel="PDF" />,
   },
+  {
+    name: "Crop PDF", route: "/tools/crop", desc: "Trim margins or cut pages to size.",
+    icon: <ToolIcon variant="single" bgColor="#ecfeff" badgeColor="#0891b2" badgeLabel="PDF" />,
+  },
 ];
 
 const CONVERT_TOOLS = [
@@ -74,6 +78,18 @@ const SECURITY_TOOLS = [
   {
     name: "Sign PDF", route: "/tools/sign", desc: "Draw or upload your signature.",
     icon: <ToolIcon variant="single" bgColor="#fff7ed" badgeColor="#f97316" badgeLabel="PDF" />,
+  },
+  {
+    name: "Fill PDF Form", route: "/tools/fill-form", desc: "Type into form fields and download.",
+    icon: <ToolIcon variant="single" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="PDF" />,
+  },
+  {
+    name: "Redact PDF", route: "/tools/redact", desc: "Permanently black out sensitive text.",
+    icon: <ToolIcon variant="single" bgColor="#f3f4f6" badgeColor="#111827" badgeLabel="PDF" />,
+  },
+  {
+    name: "Flatten PDF", route: "/tools/flatten", desc: "Lock form fields and comments in place.",
+    icon: <ToolIcon variant="single" bgColor="#f5f5f4" badgeColor="#78716c" badgeLabel="PDF" />,
   },
   {
     name: "Repair PDF", route: "/tools/repair", desc: "Fix corrupted or damaged PDFs.",

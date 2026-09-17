@@ -100,6 +100,10 @@ const siteJsonLd = {
     "Repair PDF",
     "PDF to PNG",
     "Batch Processing",
+    "Crop PDF",
+    "Redact PDF",
+    "Fill PDF Forms",
+    "Flatten PDF",
   ],
   publisher: {
     "@type": "Organization",
