@@ -38,7 +38,7 @@ export default function TermsPage() {
           </ul>
           <p>
             Refunds: if a tool fails to work for you, email{" "}
-            <a href="mailto:support@rizzpdf.com" className="text-red-600 hover:underline">support@rizzpdf.com</a>{" "}
+            <a href="mailto:mcalaa7@gmail.com" className="text-red-600 hover:underline">mcalaa7@gmail.com</a>{" "}
             within 7 days of payment and we will refund the most recent subscription charge.
           </p>
         </section>

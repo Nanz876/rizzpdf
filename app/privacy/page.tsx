@@ -65,7 +65,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-gray-900">Deleting your data</h2>
           <p>
-            Email <a href="mailto:support@rizzpdf.com" className="text-red-600 hover:underline">support@rizzpdf.com</a> from
+            Email <a href="mailto:mcalaa7@gmail.com" className="text-red-600 hover:underline">mcalaa7@gmail.com</a> from
             your account email and we will delete your account, subscription record and any stored
             email address within 30 days. Because your files are never uploaded, there are no files
             to delete on our side.

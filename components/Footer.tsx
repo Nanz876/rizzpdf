@@ -35,7 +35,7 @@ export default function Footer() {
           <div>
             <p className="text-white font-bold text-sm uppercase tracking-widest mb-4">Company</p>
             <ul className="space-y-2 text-sm">
-              <li><a href="mailto:support@rizzpdf.com" className="hover:text-white transition-colors">Support</a></li>
+              <li><a href="mailto:mcalaa7@gmail.com" className="hover:text-white transition-colors">Support</a></li>
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
             </ul>
           </div>

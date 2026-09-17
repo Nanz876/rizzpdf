@@ -348,7 +348,7 @@ export default function PricingPage() {
         </h2>
         <p className="text-[14px] text-gray-500 text-center mb-7">
           Need something else?{" "}
-          <a href="mailto:hello@rizzpdf.com" className="text-red-600 font-semibold">
+          <a href="mailto:mcalaa7@gmail.com" className="text-red-600 font-semibold">
             Contact us →
           </a>
         </p>

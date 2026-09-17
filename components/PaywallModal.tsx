@@ -99,10 +99,10 @@ export default function PaywallModal({ onClose }: PaywallModalProps) {
         <p className="text-[11px] text-gray-400 mt-4">
           Questions?{" "}
           <a
-            href="mailto:support@rizzpdf.com"
+            href="mailto:mcalaa7@gmail.com"
             className="text-red-500 hover:underline"
           >
-            support@rizzpdf.com
+            mcalaa7@gmail.com
           </a>
         </p>
       </div>
