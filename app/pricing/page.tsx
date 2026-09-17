@@ -179,7 +179,8 @@ export default function PricingPage() {
               <ul className="flex flex-col gap-2.5">
                 <FeatureItem icon="green"><strong>Unlimited</strong> single-file tools</FeatureItem>
                 <FeatureItem icon="green">3 free batch runs</FeatureItem>
-                <FeatureItem icon="green">All 21 PDF tools</FeatureItem>
+                <FeatureItem icon="green">OCR the first 10 pages of a scan</FeatureItem>
+                <FeatureItem icon="green">All 23 PDF tools</FeatureItem>
                 <FeatureItem icon="green">No account required</FeatureItem>
                 <FeatureItem icon="green">Files never leave your browser</FeatureItem>
                 <FeatureItem icon="gray" muted>No file history</FeatureItem>
@@ -227,9 +228,12 @@ export default function PricingPage() {
                 <FeatureItem icon="red">
                   <strong>Unlimited batch</strong>, always
                 </FeatureItem>
-                <FeatureItem icon="red">All 21 PDF tools</FeatureItem>
+                <FeatureItem icon="red">
+                  <strong>OCR whole documents</strong>, any length
+                </FeatureItem>
+                <FeatureItem icon="red">All 23 PDF tools</FeatureItem>
                 <FeatureItem icon="red">Bulk unlock from a CSV</FeatureItem>
-                <FeatureItem icon="red">Full file history</FeatureItem>
+                <FeatureItem icon="red">File history</FeatureItem>
                 <FeatureItem icon="red">Files stay in your browser</FeatureItem>
                 <FeatureItem icon="red">Priority support</FeatureItem>
               </ul>
@@ -283,7 +287,12 @@ export default function PricingPage() {
                   pro: <span className="text-red-600 font-bold">Unlimited</span>,
                 },
                 {
-                  label: "All 21 PDF tools",
+                  label: "OCR scanned PDFs",
+                  free: "First 10 pages",
+                  pro: <span className="text-red-600 font-bold">Whole document</span>,
+                },
+                {
+                  label: "All 23 PDF tools",
                   free: "✓",
                   pro: "✓",
                   greenAll: true,
@@ -400,7 +409,7 @@ export default function PricingPage() {
           Start free — no card needed
         </h2>
         <p className="text-white/80 text-[15px] mb-7">
-          All 21 PDF tools free with no limits, right in your browser. Upgrade
+          All 23 PDF tools free with no limits, right in your browser. Upgrade
           only for batch processing and power features.
         </p>
         <Link

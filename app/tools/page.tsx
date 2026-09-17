@@ -63,6 +63,12 @@ const TOOLS = [
     icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#2563eb" badgeLabel2="DOC" />,
   },
   {
+    name: "OCR PDF", route: "/tools/ocr", category: "Convert PDF",
+    desc: "Make scanned PDFs searchable with OCR",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fef3c7" badgeColor="#ef4444" badgeLabel="IMG" badgeColor2="#d97706" badgeLabel2="TXT" />,
+  },
+  {
     name: "Compress PDF", route: "/tools/compress", category: "Convert PDF",
     desc: "Reduce PDF file size",
     icon: <ToolIcon variant="single" bgColor="#f0fdf4" badgeColor="#22c55e" badgeLabel="PDF" />,
@@ -89,6 +95,12 @@ const TOOLS = [
     desc: "Type into PDF form fields and download",
     badge: "NEW" as const,
     icon: <ToolIcon variant="single" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="PDF" />,
+  },
+  {
+    name: "Edit PDF Text", route: "/tools/edit-text", category: "Edit & Security",
+    desc: "Replace or add text on the page",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#faf5ff" badgeColor="#9333ea" badgeLabel="PDF" />,
   },
   {
     name: "Redact PDF", route: "/tools/redact", category: "Edit & Security",

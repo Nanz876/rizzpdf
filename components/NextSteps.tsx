@@ -10,6 +10,8 @@ const CHAIN_TARGETS = [
   { name: "Protect", href: "/tools/protect" },
   { name: "Sign", href: "/tools/sign" },
   { name: "Fill form", href: "/tools/fill-form" },
+  { name: "Edit text", href: "/tools/edit-text" },
+  { name: "OCR", href: "/tools/ocr" },
   { name: "Redact", href: "/tools/redact" },
   { name: "Crop", href: "/tools/crop" },
   { name: "Flatten", href: "/tools/flatten" },
