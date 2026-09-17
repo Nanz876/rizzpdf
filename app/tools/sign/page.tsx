@@ -1,22 +1,43 @@
 "use client";
 import { logTool } from "@/lib/logTool";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
-import { downloadBlob, signPDF } from "@/lib/pdf-tools";
+import { downloadBlob, signPDFMulti, type SignItem } from "@/lib/pdf-tools";
 
 type Status = "idle" | "processing" | "done" | "error";
+type SigTab = "draw" | "upload" | "type";
 
 interface Placement {
+  id: string;
   pageIndex: number;
+  /** Left edge as a fraction of the displayed page width. */
   xFrac: number;
+  /** Top edge as a fraction of the displayed page height. */
   yFrac: number;
+  /** Width as a fraction of the displayed page width (signature items only). */
+  widthFrac: number;
+  kind: "signature" | "text";
+  dataUrl?: string;
+  text?: string;
+  /** Font size as a fraction of the displayed page height (text items only). */
+  fontSize?: number;
 }
 
 const PAGE_BASE_WIDTH = 620; // px at zoom 1
 const RENDER_SCALE = 1.5;
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const DEFAULT_SIG_WIDTH_FRAC = 0.22;
+const MIN_FONT_FRAC = 0.012;
+const MAX_FONT_FRAC = 0.12;
+const DEFAULT_PAGE_HEIGHT_PT = 792; // US Letter fallback
+
+function makeId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `p_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
 
 function removeBackground(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
@@ -78,6 +99,63 @@ function removeBackground(dataUrl: string): Promise<string> {
   });
 }
 
+/** Render typed text as a handwriting-style signature, trimmed to its ink bounds. */
+function renderTypedSignature(name: string): string | null {
+  const text = name.trim();
+  if (!text) return null;
+
+  const scale = 4; // high resolution
+  const fontPx = 64 * scale;
+  const fontSpec = `italic ${fontPx}px "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive`;
+
+  const measureCtx = document.createElement("canvas").getContext("2d")!;
+  measureCtx.font = fontSpec;
+  const textWidth = Math.ceil(measureCtx.measureText(text).width);
+
+  const pad = fontPx; // generous padding so cursive flourishes never clip
+  const width = Math.max(1, textWidth + pad * 2);
+  const height = fontPx * 2 + pad * 2;
+
+  const c = document.createElement("canvas");
+  c.width = width;
+  c.height = height;
+  const ctx = c.getContext("2d")!;
+  ctx.font = fontSpec;
+  ctx.fillStyle = "#1c2541"; // dark ink
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(text, pad, height / 2 + fontPx * 0.3);
+
+  // Trim to the actual ink bounding box.
+  const { data } = ctx.getImageData(0, 0, width, height);
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      if (data[(row + x) * 4 + 3] > 10) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX || maxY < minY) return null;
+
+  const margin = Math.round(fontPx * 0.08);
+  minX = Math.max(0, minX - margin);
+  minY = Math.max(0, minY - margin);
+  maxX = Math.min(width - 1, maxX + margin);
+  maxY = Math.min(height - 1, maxY + margin);
+  const outW = maxX - minX + 1;
+  const outH = maxY - minY + 1;
+
+  const out = document.createElement("canvas");
+  out.width = outW;
+  out.height = outH;
+  out.getContext("2d")!.drawImage(c, minX, minY, outW, outH, 0, 0, outW, outH);
+  return out.toDataURL("image/png");
+}
+
 export default function SignPage() {
   // PDF
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -87,13 +165,17 @@ export default function SignPage() {
   const [zoom, setZoom] = useState(1);
 
   // Signature
-  const [sigTab, setSigTab] = useState<"draw" | "upload">("draw");
+  const [sigTab, setSigTab] = useState<SigTab>("draw");
   const [sigDataUrl, setSigDataUrl] = useState<string | null>(null);
   const [origUpload, setOrigUpload] = useState<string | null>(null); // pre-bg-removal
   const [bgRemoved, setBgRemoved] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const drawRef = useRef<HTMLCanvasElement>(null);
+
+  // Type-to-sign
+  const [typedName, setTypedName] = useState("");
+  const typedPreview = useMemo(() => renderTypedSignature(typedName), [typedName]);
 
   // Signature edit mode
   const [isEditing, setIsEditing] = useState(false);
@@ -103,23 +185,21 @@ export default function SignPage() {
   const editCanvasRef = useRef<HTMLCanvasElement>(null);
   const preEditUrl = useRef<string | null>(null);
 
-  // Placement + drag
-  const [placement, setPlacement] = useState<Placement | null>(null);
+  // Placements (signature + text/date stamps), selection, drag + resize
+  const [placements, setPlacements] = useState<Placement[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const dragData = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
-
-  // Resize
-  const [sigWidthFrac, setSigWidthFrac] = useState(0.22);
   const [isResizing, setIsResizing] = useState(false);
-  const resizeData = useRef<{ startX: number; startFrac: number; pageWidth: number } | null>(null);
-  const resizeHandleRef = useRef<HTMLDivElement>(null);
+  const dragData = useRef<{ id: string; startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const resizeData = useRef<{ id: string; startX: number; startWidthFrac: number; startFontSize: number; pageWidth: number; pageHeight: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageImgRefs = useRef<(HTMLImageElement | null)[]>([]);
-  const sigDivRef = useRef<HTMLDivElement>(null);
 
   const [status, setStatus] = useState<Status>("idle");
   const [err, setErr] = useState("");
+
+  const selectedPlacement = placements.find(p => p.id === selectedId) ?? null;
 
   // Init draw canvas
   useEffect(() => {
@@ -140,7 +220,8 @@ export default function SignPage() {
     setLoading(true);
     setPageUrls([]);
     setPdfSizes([]);
-    setPlacement(null);
+    setPlacements([]);
+    setSelectedId(null);
     let alive = true;
     (async () => {
       try {
@@ -214,13 +295,16 @@ export default function SignPage() {
     ctx.fillRect(0, 0, c.width, c.height);
     setHasDrawn(false);
     setSigDataUrl(null);
-    setPlacement(null);
   }, []);
 
   const useSig = () => {
     if (!hasDrawn || !drawRef.current || !pageUrls.length) return;
     setSigDataUrl(drawRef.current.toDataURL("image/png"));
-    setPlacement({ pageIndex: 0, xFrac: 0.63, yFrac: 0.80 });
+  };
+
+  const useTypedSig = () => {
+    if (!typedPreview || !pageUrls.length) return;
+    setSigDataUrl(typedPreview);
   };
 
   // Load sig into edit canvas when editing starts
@@ -302,7 +386,6 @@ export default function SignPage() {
       const cleaned = await removeBackground(url);
       setSigDataUrl(cleaned);
       setBgRemoved(true);
-      setPlacement({ pageIndex: 0, xFrac: 0.63, yFrac: 0.80 });
     };
     reader.readAsDataURL(f);
   };
@@ -319,99 +402,175 @@ export default function SignPage() {
     }
   };
 
-  // Click page to place
+  // Click empty page area: add a new signature placement (doesn't move existing ones)
   const handlePageClick = (e: React.MouseEvent<HTMLImageElement>, pageIndex: number) => {
-    if (!sigDataUrl || dragging || isResizing) return;
+    if (dragging || isResizing) return;
+    if (!sigDataUrl) { setSelectedId(null); return; }
     const r = e.currentTarget.getBoundingClientRect();
-    setPlacement({
-      pageIndex,
-      xFrac: Math.max(0, Math.min(1 - sigWidthFrac, (e.clientX - r.left) / r.width - sigWidthFrac / 2)),
-      yFrac: Math.max(0, Math.min(0.94, (e.clientY - r.top) / r.height - 0.04)),
-    });
+    const widthFrac = DEFAULT_SIG_WIDTH_FRAC;
+    const xFrac = Math.max(0, Math.min(1 - widthFrac, (e.clientX - r.left) / r.width - widthFrac / 2));
+    const yFrac = Math.max(0, Math.min(0.94, (e.clientY - r.top) / r.height - 0.04));
+    const id = makeId();
+    setPlacements(ps => [...ps, { id, pageIndex, xFrac, yFrac, widthFrac, kind: "signature", dataUrl: sigDataUrl }]);
+    setSelectedId(id);
   };
 
-  // Drag signature
-  const onSigPtrDown = (e: React.PointerEvent) => {
+  // Index of the page taking up the most of the scroll viewport.
+  const mostVisiblePage = (): number => {
+    const box = scrollRef.current?.getBoundingClientRect();
+    if (!box) return 0;
+    let best = 0;
+    let bestArea = -1;
+    pageImgRefs.current.forEach((img, i) => {
+      if (!img) return;
+      const r = img.getBoundingClientRect();
+      const visible = Math.max(0, Math.min(r.bottom, box.bottom) - Math.max(r.top, box.top));
+      if (visible > bestArea) { bestArea = visible; best = i; }
+    });
+    return best;
+  };
+
+  // Add a date / text stamp directly (no click-to-place needed)
+  const addTextPlacement = (text: string, pt: number) => {
+    if (!pageUrls.length) return;
+    // Target the selected item's page, otherwise the page most visible in the viewer.
+    const selectedPage = placements.find(p => p.id === selectedId)?.pageIndex;
+    const pageIndex = selectedPage ?? mostVisiblePage();
+    const pageH = pdfSizes[pageIndex]?.h || DEFAULT_PAGE_HEIGHT_PT;
+    const id = makeId();
+    setPlacements(ps => [...ps, {
+      id, pageIndex, xFrac: 0.08, yFrac: 0.06, widthFrac: 0.25,
+      kind: "text", text, fontSize: pt / pageH,
+    }]);
+    setSelectedId(id);
+  };
+
+  const addDate = () => addTextPlacement(new Date().toLocaleDateString(), 12);
+  const addText = () => addTextPlacement("Your text", 14);
+
+  const updateSelectedText = (text: string) => {
+    if (!selectedId) return;
+    setPlacements(ps => ps.map(p => (p.id === selectedId ? { ...p, text } : p)));
+  };
+
+  const adjustFontSize = (delta: number) => {
+    if (!selectedId) return;
+    setPlacements(ps => ps.map(p =>
+      p.id === selectedId && p.kind === "text"
+        ? { ...p, fontSize: Math.max(MIN_FONT_FRAC, Math.min(MAX_FONT_FRAC, (p.fontSize ?? 0.02) + delta)) }
+        : p
+    ));
+  };
+
+  const removePlacement = (id: string) => {
+    setPlacements(ps => ps.filter(p => p.id !== id));
+    setSelectedId(sel => (sel === id ? null : sel));
+  };
+
+  // Drag a placement
+  const onPlacementPtrDown = (e: React.PointerEvent, id: string) => {
     e.preventDefault();
-    if (!placement || isResizing) return;
-    sigDivRef.current?.setPointerCapture(e.pointerId);
-    dragData.current = { startX: e.clientX, startY: e.clientY, ox: placement.xFrac, oy: placement.yFrac };
+    e.stopPropagation();
+    if (isResizing) return;
+    const p = placements.find(pl => pl.id === id);
+    if (!p) return;
+    setSelectedId(id);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragData.current = { id, startX: e.clientX, startY: e.clientY, ox: p.xFrac, oy: p.yFrac };
     setDragging(true);
   };
 
-  const onSigPtrMove = (e: React.PointerEvent) => {
-    if (!dragging || !dragData.current || !placement) return;
+  const onPlacementPtrMove = (e: React.PointerEvent) => {
+    if (!dragging || !dragData.current) return;
     e.preventDefault();
-    const pageImg = pageImgRefs.current[placement.pageIndex];
+    const { id, startX, startY, ox, oy } = dragData.current;
+    const p = placements.find(pl => pl.id === id);
+    if (!p) return;
+    const pageImg = pageImgRefs.current[p.pageIndex];
     if (!pageImg) return;
     const pr = pageImg.getBoundingClientRect();
-    const dx = (e.clientX - dragData.current.startX) / pr.width;
-    const dy = (e.clientY - dragData.current.startY) / pr.height;
-    setPlacement(p => p ? {
-      ...p,
-      xFrac: Math.max(0, Math.min(1 - sigWidthFrac, dragData.current!.ox + dx)),
-      yFrac: Math.max(0, Math.min(0.94, dragData.current!.oy + dy)),
-    } : p);
+    const dx = (e.clientX - startX) / pr.width;
+    const dy = (e.clientY - startY) / pr.height;
+    setPlacements(ps => ps.map(pl => pl.id === id ? {
+      ...pl,
+      xFrac: Math.max(0, Math.min(0.97, ox + dx)),
+      yFrac: Math.max(0, Math.min(0.97, oy + dy)),
+    } : pl));
   };
 
-  const onSigPtrUp = () => { setDragging(false); setIsResizing(false); };
+  const onPlacementPtrUp = () => { setDragging(false); dragData.current = null; };
 
-  // Resize signature
-  const onResizePtrDown = (e: React.PointerEvent) => {
+  // Resize a placement (signature: width, text: font size)
+  const onResizePtrDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!placement) return;
-    const pageImg = pageImgRefs.current[placement.pageIndex];
+    const p = placements.find(pl => pl.id === id);
+    if (!p) return;
+    const pageImg = pageImgRefs.current[p.pageIndex];
     if (!pageImg) return;
-    resizeHandleRef.current?.setPointerCapture(e.pointerId);
-    resizeData.current = { startX: e.clientX, startFrac: sigWidthFrac, pageWidth: pageImg.getBoundingClientRect().width };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const pr = pageImg.getBoundingClientRect();
+    resizeData.current = {
+      id, startX: e.clientX,
+      startWidthFrac: p.widthFrac, startFontSize: p.fontSize ?? 0.02,
+      pageWidth: pr.width, pageHeight: pr.height,
+    };
     setIsResizing(true);
   };
 
   const onResizePtrMove = (e: React.PointerEvent) => {
     if (!isResizing || !resizeData.current) return;
     e.preventDefault();
-    const dx = e.clientX - resizeData.current.startX;
-    setSigWidthFrac(Math.max(0.06, Math.min(0.70, resizeData.current.startFrac + dx / resizeData.current.pageWidth)));
+    const { id, startX, startWidthFrac, startFontSize, pageWidth, pageHeight } = resizeData.current;
+    const p = placements.find(pl => pl.id === id);
+    if (!p) return;
+    const dx = e.clientX - startX;
+    if (p.kind === "signature") {
+      const widthFrac = Math.max(0.06, Math.min(0.70, startWidthFrac + dx / pageWidth));
+      setPlacements(ps => ps.map(pl => pl.id === id ? { ...pl, widthFrac } : pl));
+    } else {
+      const fontSize = Math.max(MIN_FONT_FRAC, Math.min(MAX_FONT_FRAC, startFontSize + (dx / pageHeight) * 0.5));
+      setPlacements(ps => ps.map(pl => pl.id === id ? { ...pl, fontSize } : pl));
+    }
   };
 
-  const onResizePtrUp = () => setIsResizing(false);
+  const onResizePtrUp = () => { setIsResizing(false); resizeData.current = null; };
 
   // Zoom
   const zoomIn = () => setZoom(z => Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], ZOOM_STEPS[ZOOM_STEPS.indexOf(z) + 1] ?? z * 1.25));
   const zoomOut = () => setZoom(z => Math.max(ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.indexOf(z) - 1] ?? z * 0.8));
 
-  // Signature overlay position
-  const getOverlayStyle = (): React.CSSProperties | null => {
-    if (!placement || !sigDataUrl) return null;
+  // Placement overlay position
+  const getPlacementStyle = (p: Placement): React.CSSProperties | null => {
     const scroll = scrollRef.current;
-    const pageImg = pageImgRefs.current[placement.pageIndex];
+    const pageImg = pageImgRefs.current[p.pageIndex];
     if (!scroll || !pageImg) return null;
     const cr = scroll.getBoundingClientRect();
     const pr = pageImg.getBoundingClientRect();
+    const isSelected = selectedId === p.id;
     return {
       position: "absolute",
-      left: (pr.left - cr.left) + scroll.scrollLeft + placement.xFrac * pr.width,
-      top: (pr.top - cr.top) + scroll.scrollTop + placement.yFrac * pr.height,
-      width: pr.width * sigWidthFrac,
-      cursor: dragging ? "grabbing" : "grab",
+      left: (pr.left - cr.left) + scroll.scrollLeft + p.xFrac * pr.width,
+      top: (pr.top - cr.top) + scroll.scrollTop + p.yFrac * pr.height,
+      width: p.kind === "signature" ? pr.width * p.widthFrac : undefined,
+      cursor: dragging && dragData.current?.id === p.id ? "grabbing" : "grab",
       touchAction: "none",
-      zIndex: 10,
+      zIndex: isSelected ? 20 : 10,
       userSelect: "none",
     };
   };
 
   // Sign
   const handleSign = async () => {
-    if (!pdfFile || !sigDataUrl || !placement || placement.pageIndex >= pdfSizes.length) return;
+    if (!pdfFile || !placements.length) return;
     logTool("sign"); setStatus("processing"); setErr("");
-    const result = await signPDF(pdfFile, {
-      signatureDataUrl: sigDataUrl,
-      page: placement.pageIndex + 1,
-      x: placement.xFrac,
-      yFromTop: placement.yFrac,
-      widthRatio: sigWidthFrac,
-    });
+    const items: SignItem[] = placements
+      .filter(p => p.pageIndex < pdfSizes.length)
+      .map(p => p.kind === "signature"
+        ? { page: p.pageIndex + 1, x: p.xFrac, yFromTop: p.yFrac, widthRatio: p.widthFrac, kind: "image" as const, dataUrl: p.dataUrl }
+        : { page: p.pageIndex + 1, x: p.xFrac, yFromTop: p.yFrac, kind: "text" as const, text: p.text, fontSizeRatio: p.fontSize }
+      );
+    const result = await signPDFMulti(pdfFile, items);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? pdfFile.name.replace(/\.pdf$/i, "_signed.pdf"));
       setStatus("done");
@@ -424,17 +583,16 @@ export default function SignPage() {
   const reset = () => {
     setPdfFile(null); setPageUrls([]); setPdfSizes([]);
     setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false);
-    setPlacement(null); setStatus("idle"); setErr("");
-    setZoom(1); setSigWidthFrac(0.22);
+    setPlacements([]); setSelectedId(null); setStatus("idle"); setErr("");
+    setZoom(1); setTypedName("");
     clearDraw();
   };
 
-  const overlayStyle = getOverlayStyle();
-  const canSign = !!sigDataUrl && !!placement && status !== "processing";
+  const canSign = placements.length > 0 && status !== "processing";
   const pageDisplayWidth = PAGE_BASE_WIDTH * zoom;
 
   return (
-    <ToolShell name="Sign PDF" description="Draw your signature and drag it anywhere on your PDF." icon="✍️"
+    <ToolShell name="Sign PDF" description="Draw, type or upload your signature, then place it — and dates or initials — anywhere on your PDF." icon="✍️"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1.8"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><path d="M8 20h8" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>}>
       <div className="space-y-4">
         {!pdfFile && (
@@ -456,7 +614,7 @@ export default function SignPage() {
 
                 {/* Tabs */}
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 text-sm">
-                  {(["draw", "upload"] as const).map(t => (
+                  {(["draw", "upload", "type"] as const).map(t => (
                     <button key={t} onClick={() => setSigTab(t)}
                       className={`flex-1 py-2 font-medium transition-colors capitalize ${sigTab === t ? "bg-red-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
                       {t}
@@ -479,6 +637,32 @@ export default function SignPage() {
                         Use Signature
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* Type */}
+                {sigTab === "type" && (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={typedName}
+                      onChange={e => setTypedName(e.target.value)}
+                      placeholder="Type your name"
+                      maxLength={60}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                    />
+                    <div className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-white" style={{ minHeight: 90 }}>
+                      {typedPreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={typedPreview} alt="Typed signature preview" className="max-h-20 object-contain" draggable={false} />
+                      ) : (
+                        <span className="text-xs text-gray-400">Preview appears here</span>
+                      )}
+                    </div>
+                    <button onClick={useTypedSig} disabled={!typedPreview || !pageUrls.length}
+                      className="w-full py-2 text-xs font-bold bg-red-600 text-white rounded-xl disabled:opacity-40 hover:bg-red-700">
+                      Use Signature
+                    </button>
                   </div>
                 )}
 
@@ -557,9 +741,10 @@ export default function SignPage() {
                 {/* Sig preview */}
                 {sigDataUrl && !isEditing && (
                   <div className="border border-red-200 rounded-xl p-3 space-y-2" style={{ background: "repeating-conic-gradient(#e5e7eb 0% 25%, white 0% 50%) 0 0 / 12px 12px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={sigDataUrl} alt="Signature" className="max-h-14 object-contain mx-auto" draggable={false} />
                     <p className="text-xs text-center text-red-600 font-medium">
-                      {placement ? "Drag to reposition · corner to resize" : "Click on the PDF to place"}
+                      Click on the PDF to add it
                     </p>
                     {sigTab === "upload" && (
                       <button onClick={startEditing}
@@ -568,7 +753,7 @@ export default function SignPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => { setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false); setPlacement(null); setIsEditing(false); }}
+                      onClick={() => { setSigDataUrl(null); setOrigUpload(null); setBgRemoved(false); setIsEditing(false); }}
                       className="w-full py-1.5 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
                       ✕ Remove signature
                     </button>
@@ -577,7 +762,58 @@ export default function SignPage() {
 
                 {!sigDataUrl && pageUrls.length > 0 && (
                   <p className="text-xs text-gray-400 text-center pt-1">
-                    {sigTab === "draw" ? `Draw above, then click "Use Signature"` : "Upload your signature image"}
+                    {sigTab === "draw" ? `Draw above, then click "Use Signature"` : sigTab === "type" ? "Type your name above" : "Upload your signature image"}
+                  </p>
+                )}
+
+                {/* Date / text stamps */}
+                <div className="pt-2 border-t border-gray-100 space-y-2">
+                  <p className="text-xs font-medium text-gray-500">Dates & text</p>
+                  <div className="flex gap-2">
+                    <button onClick={addDate} disabled={!pageUrls.length}
+                      className="flex-1 py-2 text-xs font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40">
+                      📅 Add date
+                    </button>
+                    <button onClick={addText} disabled={!pageUrls.length}
+                      className="flex-1 py-2 text-xs font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40">
+                      🔤 Add text
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selected item controls */}
+                {selectedPlacement && (
+                  <div className="pt-2 border-t border-gray-100 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-gray-500 truncate">
+                        Selected: {selectedPlacement.kind === "signature" ? "Signature" : "Text"} · page {selectedPlacement.pageIndex + 1}
+                      </p>
+                      <button onClick={() => removePlacement(selectedPlacement.id)}
+                        className="text-xs text-red-500 hover:text-red-700 shrink-0">✕ Remove</button>
+                    </div>
+                    {selectedPlacement.kind === "text" && (
+                      <>
+                        <input
+                          type="text"
+                          value={selectedPlacement.text ?? ""}
+                          onChange={e => updateSelectedText(e.target.value)}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">Size</span>
+                          <button onClick={() => adjustFontSize(-0.003)}
+                            className="w-7 h-7 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-bold">−</button>
+                          <button onClick={() => adjustFontSize(0.003)}
+                            className="w-7 h-7 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-bold">+</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {placements.length > 0 && (
+                  <p className="text-xs text-gray-400 text-center pt-1">
+                    {placements.length} placement{placements.length === 1 ? "" : "s"} on this document
                   </p>
                 )}
               </div>
@@ -593,7 +829,7 @@ export default function SignPage() {
                   {err && <p className="text-red-500 text-xs text-center">{err}</p>}
                   <button onClick={handleSign} disabled={!canSign}
                     className="w-full bg-red-600 text-white py-3 rounded-2xl font-bold text-sm disabled:opacity-40 hover:bg-red-700 transition-colors">
-                    {status === "processing" ? "Signing…" : !sigDataUrl ? "Create a signature first" : !placement ? "Place signature on the PDF" : "Sign & Download PDF"}
+                    {status === "processing" ? "Signing…" : placements.length === 0 ? "Add a signature, date or text" : "Sign & Download PDF"}
                   </button>
                 </>
               )}
@@ -628,13 +864,14 @@ export default function SignPage() {
                 <div className="flex flex-col items-center gap-4 p-4" style={{ minWidth: pageDisplayWidth + 32 }}>
                   {pageUrls.map((url, i) => (
                     <div key={i} className="relative flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         ref={el => { pageImgRefs.current[i] = el; }}
                         src={url}
                         alt={`Page ${i + 1}`}
                         draggable={false}
                         onClick={e => handlePageClick(e, i)}
-                        style={{ width: pageDisplayWidth, maxWidth: "none", display: "block", cursor: sigDataUrl ? (placement ? "default" : "crosshair") : "default" }}
+                        style={{ width: pageDisplayWidth, maxWidth: "none", display: "block", cursor: sigDataUrl ? "crosshair" : "default" }}
                         className="shadow-xl"
                       />
                       {pageUrls.length > 1 && (
@@ -646,41 +883,64 @@ export default function SignPage() {
                   ))}
                 </div>
 
-                {/* Draggable signature */}
-                {overlayStyle && sigDataUrl && (
-                  <div ref={sigDivRef} style={overlayStyle}
-                    onPointerDown={onSigPtrDown}
-                    onPointerMove={e => { onSigPtrMove(e); onResizePtrMove(e); }}
-                    onPointerUp={onSigPtrUp}
-                    onPointerCancel={onSigPtrUp}>
+                {/* Placements */}
+                {placements.map(p => {
+                  const style = getPlacementStyle(p);
+                  if (!style) return null;
+                  const isSelected = selectedId === p.id;
+                  const pageImg = pageImgRefs.current[p.pageIndex];
+                  const fontPx = (p.fontSize ?? 0.02) * (pageImg?.getBoundingClientRect().height ?? 0);
+                  return (
+                    <div key={p.id} style={style}
+                      onPointerDown={e => onPlacementPtrDown(e, p.id)}
+                      onPointerMove={e => { onPlacementPtrMove(e); onResizePtrMove(e); }}
+                      onPointerUp={() => { onPlacementPtrUp(); onResizePtrUp(); }}
+                      onPointerCancel={() => { onPlacementPtrUp(); onResizePtrUp(); }}
+                      onClick={e => { e.stopPropagation(); setSelectedId(p.id); }}>
 
-                    <div className="absolute -top-6 left-0 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md whitespace-nowrap shadow pointer-events-none">
-                      ↕ Drag to move
+                      {isSelected && (
+                        <button
+                          onPointerDown={e => e.stopPropagation()}
+                          onClick={e => { e.stopPropagation(); removePlacement(p.id); }}
+                          className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center shadow"
+                          style={{ zIndex: 30 }}>
+                          ✕
+                        </button>
+                      )}
+
+                      {p.kind === "signature" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.dataUrl} alt="Signature" draggable={false}
+                          className={`w-full select-none border-2 rounded ${isSelected ? "border-red-500" : "border-red-300 border-dashed"}`}
+                          style={{ userSelect: "none", display: "block" }} />
+                      ) : (
+                        <div
+                          className={`px-1 whitespace-nowrap border-2 rounded ${isSelected ? "border-red-500" : "border-red-300 border-dashed"}`}
+                          style={{ fontSize: fontPx, color: "#374151", fontFamily: "Helvetica, Arial, sans-serif", background: "rgba(255,255,255,0.7)" }}>
+                          {p.text || " "}
+                        </div>
+                      )}
+
+                      {isSelected && (
+                        <div
+                          onPointerDown={e => onResizePtrDown(e, p.id)}
+                          onPointerMove={onResizePtrMove}
+                          onPointerUp={onResizePtrUp}
+                          onPointerCancel={onResizePtrUp}
+                          style={{
+                            position: "absolute", bottom: -5, right: -5,
+                            width: 14, height: 14,
+                            background: "#7c3aed", border: "2px solid white",
+                            borderRadius: 3, cursor: "se-resize", touchAction: "none",
+                          }}
+                        />
+                      )}
                     </div>
-
-                    <img src={sigDataUrl} alt="Signature" draggable={false}
-                      className="w-full select-none border-2 border-red-400 border-dashed rounded"
-                      style={{ userSelect: "none", display: "block" }} />
-
-                    {/* Resize handle */}
-                    <div
-                      ref={resizeHandleRef}
-                      onPointerDown={onResizePtrDown}
-                      onPointerMove={onResizePtrMove}
-                      onPointerUp={onResizePtrUp}
-                      onPointerCancel={onResizePtrUp}
-                      style={{
-                        position: "absolute", bottom: -5, right: -5,
-                        width: 14, height: 14,
-                        background: "#7c3aed", border: "2px solid white",
-                        borderRadius: 3, cursor: "se-resize", touchAction: "none",
-                      }}
-                    />
-                  </div>
-                )}
+                  );
+                })}
 
                 {/* Placement hint */}
-                {!loading && pageUrls.length > 0 && sigDataUrl && !placement && (
+                {!loading && pageUrls.length > 0 && sigDataUrl && placements.length === 0 && (
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div className="bg-red-600/90 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-lg">
                       Click anywhere on the PDF to place your signature

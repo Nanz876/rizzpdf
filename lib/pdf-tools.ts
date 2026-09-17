@@ -1,5 +1,6 @@
-import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
+import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFImage, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
 import { loadPdf, saveToBlob, toolErrorMessage, displayedPage } from "@/lib/pdf-load";
+import { recordOutput } from "@/lib/handoff";
 
 export interface ToolResult {
   success: boolean;
@@ -14,6 +15,7 @@ export interface ToolResult {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 export function downloadBlob(blob: Blob, filename: string) {
+  recordOutput(blob, filename); // lets the user continue in another tool
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -643,6 +645,76 @@ export async function signPDF(file: File, opts: SignOptions): Promise<ToolResult
     const dy = opts.yFromTop !== undefined ? view.height - opts.yFromTop * view.height - sh : (opts.y ?? 0.1) * view.height;
     const pos = view.toUser(dx, dy);
     target.drawImage(sig, { x: pos.x, y: pos.y, width: sw, height: sh, rotate: degrees(view.rotation) });
+
+    return { success: true, blob: await saveToBlob(doc), filename: `${baseName(file)}_signed.pdf` };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Failed to add signature.") };
+  }
+}
+
+export interface SignItem {
+  page: number; // 1-based
+  /** Left edge as a fraction of the displayed page width. */
+  x: number;
+  /** Top edge as a fraction of the displayed page height (0 = top). */
+  yFromTop: number;
+  /** Fraction of displayed page width (image items only), default 0.3. */
+  widthRatio?: number;
+  kind: "image" | "text";
+  dataUrl?: string; // PNG or JPEG data URL, for kind "image"
+  text?: string; // for kind "text"
+  /** Font size as a fraction of the displayed page height (text items only), default 0.02. */
+  fontSizeRatio?: number;
+}
+
+const LATIN_TEXT_ERROR = "Text can use Latin letters, numbers and common symbols only.";
+
+/** Place multiple signature images, dates and text items onto a PDF in one pass. */
+export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolResult> {
+  try {
+    if (!items.length) return { success: false, error: "Add at least one signature, date or text before signing." };
+    const doc = await loadPdf(file);
+    const pages = doc.getPages();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const imageCache = new Map<string, PDFImage>();
+
+    for (const item of items) {
+      const target = pages[item.page - 1];
+      if (!target) return { success: false, error: "That page doesn't exist." };
+      const view = displayedPage(target);
+
+      if (item.kind === "image") {
+        if (!item.dataUrl) continue;
+        let img = imageCache.get(item.dataUrl);
+        if (!img) {
+          const [header, base64] = item.dataUrl.split(",");
+          const imgBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+          img = header.includes("image/png") ? await doc.embedPng(imgBytes) : await doc.embedJpg(imgBytes);
+          imageCache.set(item.dataUrl, img);
+        }
+        const widthRatio = item.widthRatio ?? 0.3;
+        const sw = view.width * widthRatio;
+        const sh = (img.height / img.width) * sw;
+        const dx = item.x * view.width;
+        const dy = view.height - item.yFromTop * view.height - sh;
+        const pos = view.toUser(dx, dy);
+        target.drawImage(img, { x: pos.x, y: pos.y, width: sw, height: sh, rotate: degrees(view.rotation) });
+      } else {
+        const text = (item.text ?? "").trim();
+        if (!text) continue;
+        try {
+          font.encodeText(text);
+        } catch {
+          return { success: false, error: LATIN_TEXT_ERROR };
+        }
+        const fontSize = (item.fontSizeRatio ?? 0.02) * view.height;
+        const ascent = font.heightAtSize(fontSize, { descender: false });
+        const dx = item.x * view.width;
+        const dy = view.height - item.yFromTop * view.height - ascent;
+        const pos = view.toUser(dx, dy);
+        target.drawText(text, { x: pos.x, y: pos.y, size: fontSize, font, color: rgb(0.25, 0.25, 0.28), rotate: degrees(view.rotation) });
+      }
+    }
 
     return { success: true, blob: await saveToBlob(doc), filename: `${baseName(file)}_signed.pdf` };
   } catch (e) {
