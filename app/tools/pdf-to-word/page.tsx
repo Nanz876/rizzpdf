@@ -66,7 +66,7 @@ export default function PdfToWordPage() {
                 <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
                 <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <p>Conversion happens in your browser. Text, headings and paragraphs are preserved; complex layouts, tables and images may need tidying in Word.</p>
+              <p>Conversion happens in your browser. Text, headings, paragraphs, images and simple tables are preserved; complex multi-column layouts may still need tidying in Word.</p>
             </div>
             {status === "done" && (
               <p className="text-sm text-green-600 font-semibold">✓ Word document downloaded</p>

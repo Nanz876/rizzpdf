@@ -560,6 +560,31 @@ async function main() {
     }
   }
 
+  // 11. Table document for PDF to Word: a heading, a 3-column x 4-row grid (each
+  // cell drawn as its own text run so columns are detectable by x-position), and
+  // a trailing paragraph — checks that only the grid becomes a table.
+  {
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const page = doc.addPage([612, 792]);
+    const cols = [54, 250, 400];
+    let y = 720;
+    page.drawText("Order Summary", { x: 54, y, size: 18, font: bold });
+    y -= 40;
+    const row = (cells, f = font) => {
+      cells.forEach((c, i) => page.drawText(c, { x: cols[i], y, size: 11, font: f }));
+      y -= 20;
+    };
+    row(["Item", "Qty", "Price"], bold);
+    row(["Widget", "3", "9.00"]);
+    row(["Gadget", "1", "25.00"]);
+    row(["Gizmo", "2", "14.50"]);
+    y -= 10;
+    page.drawText("Thank you for your order.", { x: 54, y, size: 11, font });
+    await save(doc, "table-doc.pdf");
+  }
+
   const files = await fs.readdir(outDir);
   for (const f of files) {
     const { size } = await fs.stat(path.join(outDir, f));
