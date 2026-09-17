@@ -76,7 +76,7 @@ export default function PdfToPngPage() {
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Resolution</p>
             <div className="grid grid-cols-3 gap-3 mb-5">
               {DPI_OPTS.map(opt => (
-                <button key={opt.value} onClick={() => setDpi(opt.value)}
+                <button key={opt.value} onClick={() => { setDpi(opt.value); if (status === "done" || status === "error") setStatus("ready"); }}
                   className={`p-4 rounded-xl border-2 text-left transition-all
                     ${dpi === opt.value ? "border-red-500 bg-red-50" : "border-gray-200 bg-white hover:border-red-300"}`}>
                   <div className={`text-sm font-bold ${dpi === opt.value ? "text-red-700" : "text-gray-900"}`}>{opt.label}</div>
