@@ -6,8 +6,9 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, addPageNumbers, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, type ToolResult } from "@/lib/pdf-tools";
 import type { PageNumberOptions } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -54,7 +55,7 @@ export default function PageNumbersPage() {
   const handleApply = async () => {
     if (!file) return;
     logTool("page-numbers"); setStatus("processing");
-    const result = await addPageNumbers(file, { position, format, fontSize, startFrom });
+    const result = await runInWorker<ToolResult>("addPageNumbers", file, { position, format, fontSize, startFrom });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_numbered.pdf"));
       setStatus("done");

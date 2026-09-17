@@ -5,13 +5,45 @@ import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
-import { renderThumbnails, mergePDFs, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, parseRanges, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "processing" | "done" | "error";
+
+/** Parse a range string into 1-based page numbers, in the order written. `null` = invalid. */
+function parsePagesSafe(str: string, total: number): number[] | null {
+  if (!str.trim()) return Array.from({ length: total }, (_, i) => i + 1);
+  try {
+    return parseRanges(str, total).flat().map((i) => i + 1);
+  } catch {
+    return null;
+  }
+}
+
+/** Compress an ordered list of 1-based page numbers back into range syntax, e.g. [1,2,3,5] -> "1-3, 5". */
+function rangeStringFromPages(pages: number[]): string {
+  if (!pages.length) return "";
+  const parts: string[] = [];
+  let start = pages[0];
+  let prev = pages[0];
+  for (let i = 1; i <= pages.length; i++) {
+    const cur = pages[i];
+    if (cur === prev + 1) { prev = cur; continue; }
+    parts.push(start === prev ? `${start}` : `${start}-${prev}`);
+    if (i < pages.length) { start = cur; prev = cur; }
+  }
+  return parts.join(", ");
+}
+
+function isFullAscending(pages: number[], total: number): boolean {
+  if (pages.length !== total) return false;
+  return pages.every((p, i) => p === i + 1);
+}
 
 export default function MergePage() {
   const [files, setFiles] = useState<File[]>([]);
   const [allThumbs, setAllThumbs] = useState<string[][]>([]);
+  const [selections, setSelections] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
@@ -25,6 +57,7 @@ export default function MergePage() {
       const newThumbs = await Promise.all(newFiles.map(f => renderThumbnails(f, 0.35)));
       setFiles(prev => [...prev, ...newFiles]);
       setAllThumbs(prev => [...prev, ...newThumbs]);
+      setSelections(prev => [...prev, ...newFiles.map(() => "")]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "One of the files couldn't be opened.");
     } finally {
@@ -39,44 +72,61 @@ export default function MergePage() {
     const swap = <T,>(arr: T[]) => { const next = [...arr]; [next[idx], next[to]] = [next[to], next[idx]]; return next; };
     setFiles(swap);
     setAllThumbs(swap);
+    setSelections(swap);
   };
 
   const removeFile = (idx: number) => {
     setFiles(prev => prev.filter((_, i) => i !== idx));
     setAllThumbs(prev => prev.filter((_, i) => i !== idx));
+    setSelections(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleDrop = (toIdx: number) => {
     if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOver(null); return; }
-    setFiles(prev => {
-      const next = [...prev];
+    const reorder = <T,>(arr: T[]) => {
+      const next = [...arr];
       const [moved] = next.splice(dragIdx, 1);
       next.splice(toIdx, 0, moved);
       return next;
-    });
-    setAllThumbs(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(dragIdx, 1);
-      next.splice(toIdx, 0, moved);
-      return next;
-    });
+    };
+    setFiles(reorder);
+    setAllThumbs(reorder);
+    setSelections(reorder);
     setDragIdx(null);
     setDragOver(null);
+  };
+
+  const setSelectionText = (fi: number, text: string) => {
+    setSelections(prev => { const next = [...prev]; next[fi] = text; return next; });
+  };
+
+  const togglePage = (fi: number, pageNum: number) => {
+    const total = allThumbs[fi]?.length ?? 0;
+    const current = parsePagesSafe(selections[fi] ?? "", total) ?? Array.from({ length: total }, (_, i) => i + 1);
+    const included = current.includes(pageNum);
+    const next = included ? current.filter(p => p !== pageNum) : [...current, pageNum];
+    setSelectionText(fi, isFullAscending(next, total) ? "" : rangeStringFromPages(next));
   };
 
   const handleMerge = async () => {
     if (files.length < 2) return;
     logTool("merge"); setStatus("processing");
-    const result = await mergePDFs(files);
+    const result = await runInWorker<ToolResult>("mergePDFs", files, selections.map(s => s || undefined));
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? "merged.pdf");
       setStatus("done");
     } else { setError(result.error ?? "Merge failed."); setStatus("error"); }
   };
 
-  const reset = () => { setFiles([]); setAllThumbs([]); setStatus("idle"); setError(""); };
+  const reset = () => { setFiles([]); setAllThumbs([]); setSelections([]); setStatus("idle"); setError(""); };
 
-  const totalPages = allThumbs.reduce((sum, t) => sum + t.length, 0);
+  const includedCounts = files.map((_, fi) => {
+    const total = allThumbs[fi]?.length ?? 0;
+    const pages = parsePagesSafe(selections[fi] ?? "", total);
+    return pages ? pages.length : 0;
+  });
+  const hasInvalidSelection = files.some((_, fi) => parsePagesSafe(selections[fi] ?? "", allThumbs[fi]?.length ?? 0) === null);
+  const totalPages = includedCounts.reduce((sum, n) => sum + n, 0);
 
   if (files.length === 0) {
     return (
@@ -95,12 +145,12 @@ export default function MergePage() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <WorkspaceBar
           icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M4 6h7v12H4V6z" fill="white" opacity=".5"/><path d="M13 6h7v12h-7V6z" fill="white"/><path d="M10 12h4" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
-          title="Merge PDF" subtitle={`${files.length} files · ${totalPages} pages · drag to reorder`}
+          title="Merge PDF" subtitle={`${files.length} files · ${totalPages} output page${totalPages === 1 ? "" : "s"} · drag to reorder`}
           onReset={reset}
           secondaryLabel="+ Add more files" onSecondary={() => fileInputRef.current?.click()}
           primaryLabel={status === "processing" ? "Merging…" : status === "done" ? "✓ Downloaded!" : `Merge ${files.length} PDFs →`}
           onPrimary={status === "done" ? reset : handleMerge}
-          primaryDisabled={files.length < 2 || status === "processing"} />
+          primaryDisabled={files.length < 2 || status === "processing" || hasInvalidSelection || totalPages === 0} />
         <input ref={fileInputRef} type="file" accept=".pdf" multiple className="hidden"
           onChange={e => { if (e.target.files) { addFiles(Array.from(e.target.files)); e.target.value = ""; } }} />
         {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
@@ -127,7 +177,9 @@ export default function MergePage() {
                   </span>
                   <span className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">{fi + 1}</span>
                   <span className="text-sm font-semibold text-gray-700">{f.name}</span>
-                  <span className="text-xs text-gray-400">· {allThumbs[fi]?.length ?? 0} pages</span>
+                  <span className={`text-xs ${parsePagesSafe(selections[fi] ?? "", allThumbs[fi]?.length ?? 0) === null ? "text-red-500 font-semibold" : "text-gray-400"}`}>
+                    · {includedCounts[fi]} of {allThumbs[fi]?.length ?? 0} pages
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button type="button" aria-label={`Move ${f.name} up`} disabled={fi === 0} onClick={() => moveFile(fi, -1)}
@@ -137,16 +189,42 @@ export default function MergePage() {
                   <button onClick={() => removeFile(fi)} className="text-xs text-gray-300 hover:text-red-500 transition-colors ml-1">✕ Remove</button>
                 </div>
               </div>
+              <div className="mb-2" onMouseDown={e => e.stopPropagation()}>
+                <input
+                  value={selections[fi] ?? ""}
+                  onChange={e => setSelectionText(fi, e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  draggable={false}
+                  placeholder="All pages"
+                  aria-label={`Pages to include from ${f.name}`}
+                  className={`w-full max-w-xs border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none
+                    ${parsePagesSafe(selections[fi] ?? "", allThumbs[fi]?.length ?? 0) === null
+                      ? "border-red-400 focus:border-red-500"
+                      : "border-gray-200 focus:border-red-400"}`}
+                />
+              </div>
               {allThumbs[fi] && allThumbs[fi].length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {allThumbs[fi].map((url, pi) => (
-                    <div key={pi} className="flex-shrink-0 w-16">
-                      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                        <img src={url} alt={`Page ${pi + 1}`} draggable={false} className="w-full object-contain aspect-[3/4]" />
+                  {allThumbs[fi].map((url, pi) => {
+                    const pageNum = pi + 1;
+                    const included = (parsePagesSafe(selections[fi] ?? "", allThumbs[fi].length) ?? []).includes(pageNum);
+                    return (
+                      <div key={pi} className="flex-shrink-0 w-16">
+                        <button
+                          type="button"
+                          onClick={e => { e.stopPropagation(); togglePage(fi, pageNum); }}
+                          onMouseDown={e => e.stopPropagation()}
+                          draggable={false}
+                          title={included ? `Exclude page ${pageNum}` : `Include page ${pageNum}`}
+                          className={`block w-full border rounded-lg overflow-hidden bg-white shadow-sm transition-opacity
+                            ${included ? "border-gray-200" : "border-gray-200 opacity-30"}`}
+                        >
+                          <img src={url} alt={`Page ${pageNum}`} draggable={false} className="w-full object-contain aspect-[3/4]" />
+                        </button>
+                        <div className="text-center text-xs text-gray-400 mt-0.5">{pageNum}</div>
                       </div>
-                      <div className="text-center text-xs text-gray-400 mt-0.5">{pi + 1}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

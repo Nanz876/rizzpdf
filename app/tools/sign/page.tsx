@@ -4,7 +4,8 @@ import { logTool } from "@/lib/logTool";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
-import { downloadBlob, signPDFMulti, type SignItem } from "@/lib/pdf-tools";
+import { downloadBlob, type SignItem, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "processing" | "done" | "error";
 type SigTab = "draw" | "upload" | "type";
@@ -570,7 +571,7 @@ export default function SignPage() {
         ? { page: p.pageIndex + 1, x: p.xFrac, yFromTop: p.yFrac, widthRatio: p.widthFrac, kind: "image" as const, dataUrl: p.dataUrl }
         : { page: p.pageIndex + 1, x: p.xFrac, yFromTop: p.yFrac, kind: "text" as const, text: p.text, fontSizeRatio: p.fontSize }
       );
-    const result = await signPDFMulti(pdfFile, items);
+    const result = await runInWorker<ToolResult>("signPDFMulti", pdfFile, items);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? pdfFile.name.replace(/\.pdf$/i, "_signed.pdf"));
       setStatus("done");

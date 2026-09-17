@@ -6,8 +6,9 @@ import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
-import { downloadBlob } from "@/lib/pdf-tools";
-import { readFormFields, fillForm, type FormFieldInfo } from "@/lib/tools/fill-form";
+import { downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { readFormFields, type FormFieldInfo } from "@/lib/tools/fill-form";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "processing" | "done" | "error";
 type FieldValue = string | boolean | string[];
@@ -227,7 +228,7 @@ export default function FillFormPage() {
     logTool("fill-form");
     setStatus("processing");
     setErr("");
-    const result = await fillForm(file, values, { flatten });
+    const result = await runInWorker<ToolResult>("fillForm", file, values, { flatten });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_filled.pdf"));
       setStatus("done");

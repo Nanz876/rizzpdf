@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
-import { downloadBlob, organizePDF, renderThumbnails } from "@/lib/pdf-tools";
+import { downloadBlob, renderThumbnails, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 import { logTool } from "@/lib/logTool";
 
 type Status = "idle" | "loading-thumbs" | "ready" | "saving" | "done";
@@ -83,7 +84,7 @@ export default function OrganizePage() {
     setError("");
 
     try {
-      const result = await organizePDF(file, pageOrder);
+      const result = await runInWorker<ToolResult>("organizePDF", file, pageOrder);
       if (!result.success || !result.blob) {
         setError(result.error ?? "Failed to organize PDF.");
         setStatus("ready");

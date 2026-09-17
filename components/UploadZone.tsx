@@ -9,10 +9,12 @@ interface UploadZoneProps {
 }
 
 const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200MB — matches the copy below
+const BIG_FILE_BYTES = 50 * 1024 * 1024; // 50MB — shows the "stays responsive" note
 
 export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [rejected, setRejected] = useState("");
+  const [hasBigFile, setHasBigFile] = useState(false);
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -31,6 +33,8 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
       } else {
         setRejected("");
       }
+
+      if (sized.some((f) => f.size > BIG_FILE_BYTES)) setHasBigFile(true);
 
       if (sized.length) onFilesAdded(sized);
     },
@@ -122,6 +126,12 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
 
         {rejected && (
           <p className="text-xs text-amber-600 font-medium mt-1">⚠️ {rejected}</p>
+        )}
+
+        {hasBigFile && (
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            ⏳ Large file — this may take a minute; your tab stays responsive.
+          </p>
         )}
       </div>
     </div>

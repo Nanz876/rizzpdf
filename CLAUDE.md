@@ -29,5 +29,9 @@ All PDF processing is client-side only. Files never leave the browser. Never add
 
 **Supabase:** `lib/supabase.ts` has browser + admin clients. Admin uses service role key (server only).
 
+**Web Worker for pdf-lib:** pdf-lib-only tool functions (merge, split, rotate, organize, delete-pages, page-numbers, watermark, sign, protect, unlock's decrypt step, non-permanent crop, flatten, fill-form) run via `runInWorker()` from `lib/worker/run.ts`, which falls back to calling the function directly on the main thread if `Worker` is unavailable or errors. Worker code (`lib/worker/pdf-worker.ts` and anything it imports) must never touch the DOM (`document`, `canvas`, `window`) — canvas/pdf.js rendering (compress, PDF-to-image, permanent crop, thumbnails) stays on the main thread. Register any new worker-safe function in both `lib/worker/pdf-worker.ts`'s `FUNCTIONS` map and `lib/worker/run.ts`'s `DIRECT` map, plus `lib/worker/types.ts`'s `WorkerFnName`.
+
 ## Vercel
 `https://vercel.com/michael-nanans-projects/rizzpdf`
+
+**Worker import cycle:** code under `lib/` must never import `lib/worker/run` (only pages and components may). The worker bundle imports `lib/` tool code, so a library file that spawns the worker makes the Turbopack production build recurse and hang forever. A test in `lib/__tests__/batch3.test.ts` enforces this.
