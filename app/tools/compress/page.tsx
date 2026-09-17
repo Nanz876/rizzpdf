@@ -1,6 +1,6 @@
 "use client";
 import { logTool } from "@/lib/logTool";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
@@ -9,6 +9,23 @@ import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { compressPDF, downloadBlob } from "@/lib/pdf-tools";
 
 type Quality = "low" | "medium" | "high";
+
+/** Render page 1 of a PDF at a readable size for the before/after comparison. */
+async function renderFirstPage(blob: Blob, scale = 1.5): Promise<string> {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+  const page = await doc.getPage(1);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  await page.render({ canvasContext: canvas.getContext("2d")!, viewport, canvas }).promise;
+  const url = canvas.toDataURL("image/jpeg", 0.9);
+  canvas.width = 0;
+  canvas.height = 0;
+  return url;
+}
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
 const QUALITY_OPTS: { value: Quality; label: string; emoji: string; desc: string }[] = [
@@ -24,6 +41,18 @@ export default function CompressPage() {
   const [error, setError] = useState("");
   const [origSize, setOrigSize] = useState(0);
   const [newSize, setNewSize] = useState(0);
+  const [result, setResult] = useState<{ blob: Blob; filename: string; quality: Quality } | null>(null);
+  const [preview, setPreview] = useState<{ before: string; after: string } | null>(null);
+
+  // Build the before/after preview whenever a new result arrives.
+  useEffect(() => {
+    if (!file || !result) return;
+    let alive = true;
+    Promise.all([renderFirstPage(file), renderFirstPage(result.blob)])
+      .then(([before, after]) => { if (alive) setPreview({ before, after }); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [file, result]);
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setOrigSize(files[0].size); setStatus("ready");
@@ -32,16 +61,27 @@ export default function CompressPage() {
   const handleCompress = async () => {
     if (!file) return;
     logTool("compress"); setStatus("processing");
-    const result = await compressPDF(file, quality);
-    if (result.success && result.blob) {
-      setNewSize(result.blob.size);
-      downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_compressed.pdf"));
-      setError(result.warning ?? "");
+    setPreview(null); setResult(null);
+    const out = await compressPDF(file, quality);
+    if (out.success && out.blob) {
+      setNewSize(out.blob.size);
+      setResult({ blob: out.blob, filename: out.filename ?? file.name.replace(/\.pdf$/i, "_compressed.pdf"), quality });
+      setError(out.warning ?? "");
       setStatus("done");
-    } else { setError(result.error ?? "Compression failed."); setStatus("error"); }
+    } else { setError(out.error ?? "Compression failed."); setStatus("error"); }
   };
 
-  const reset = () => { setFile(null); setStatus("idle"); setError(""); setOrigSize(0); setNewSize(0); };
+  const handleDownload = () => {
+    if (result) downloadBlob(result.blob, result.filename);
+  };
+
+  // Changing the level after a result lets the user compare again.
+  const chooseQuality = (q: Quality) => {
+    setQuality(q);
+    if (status === "done" || status === "error") { setStatus("ready"); setResult(null); setPreview(null); }
+  };
+
+  const reset = () => { setFile(null); setStatus("idle"); setError(""); setOrigSize(0); setNewSize(0); setResult(null); setPreview(null); };
 
   const fmt = (b: number) => b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`;
 
@@ -56,21 +96,43 @@ export default function CompressPage() {
             icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 20l-8-4V8l8-4 8 4v8l-8 4z" stroke="white" strokeWidth="1.8"/></svg>}
             title="Compress PDF" subtitle={`${file.name} · ${fmt(origSize)}${status === "done" ? ` → ${fmt(newSize)}` : ""}`}
             onReset={reset}
-            primaryLabel={status === "processing" ? "Compressing…" : status === "done" ? "✓ Downloaded!" : "Compress PDF →"}
-            onPrimary={status === "done" ? reset : handleCompress}
+            primaryLabel={status === "processing" ? "Compressing…" : status === "done" ? "Download compressed PDF ↓" : "Compress PDF →"}
+            onPrimary={status === "done" ? handleDownload : handleCompress}
             primaryDisabled={status === "processing"} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
           {status === "done" && newSize > 0 && (
             <div className="px-5 py-3 bg-green-50 border-b border-green-100 text-sm text-green-700 font-medium">
               Saved {Math.round((1 - newSize / origSize) * 100)}% · {fmt(origSize)} → {fmt(newSize)}
+              <span className="text-green-600 font-normal"> · Check the preview, then download. Pick another level below to compare.</span>
             </div>
           )}
-          <PdfPreviewArea files={[file]} />
+          {status === "done" && result ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+              {(["before", "after"] as const).map((side) => (
+                <figure key={side} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                  <figcaption className="flex justify-between px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-200">
+                    <span>{side === "before" ? "Original" : "Compressed"}</span>
+                    <span>{fmt(side === "before" ? origSize : newSize)}</span>
+                  </figcaption>
+                  <div className="max-h-[520px] overflow-auto">
+                    {preview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={preview[side]} alt={`${side === "before" ? "Original" : "Compressed"} page 1`} className="w-full block" />
+                    ) : (
+                      <p className="text-center text-sm text-gray-400 py-16">Rendering preview…</p>
+                    )}
+                  </div>
+                </figure>
+              ))}
+            </div>
+          ) : (
+            <PdfPreviewArea files={[file]} />
+          )}
           <div className="p-5 bg-gray-50 border-t border-gray-100">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Quality Level</p>
             <div className="grid grid-cols-3 gap-3">
               {QUALITY_OPTS.map(opt => (
-                <button key={opt.value} onClick={() => setQuality(opt.value)}
+                <button key={opt.value} onClick={() => chooseQuality(opt.value)}
                   className={`p-4 rounded-xl border-2 text-left transition-all
                     ${quality === opt.value ? "border-red-500 bg-red-50" : "border-gray-200 bg-white hover:border-red-300"}`}>
                   <div className="text-2xl mb-2">{opt.emoji}</div>

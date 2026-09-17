@@ -21,7 +21,7 @@ async function toBytes(input: File | Blob | Uint8Array | ArrayBuffer): Promise<U
  *
  * pdf-lib cannot decrypt, and `ignoreEncryption` only skips the check, so editing
  * an encrypted file silently produces garbled pages. Instead:
- * - Restriction-only files (no open password) are decrypted losslessly first.
+ * - Restriction-only files (no open password) are decrypted losslessly first (lib/pdf-decrypt.ts, which escapes decrypted strings correctly).
  * - Files that need an open password throw PdfPasswordError with a clear message.
  *
  * Metadata (title, author, producer) is left untouched.
@@ -31,12 +31,14 @@ export async function loadPdf(input: File | Blob | Uint8Array | ArrayBuffer): Pr
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
   if (!doc.isEncrypted) return doc;
 
-  const { decryptPDF } = await import("@pdfsmaller/pdf-decrypt");
+  const { decryptPdf } = await import("@/lib/pdf-decrypt");
   let decrypted: Uint8Array;
   try {
-    decrypted = await decryptPDF(bytes, "");
+    decrypted = await decryptPdf(bytes, "");
   } catch (e) {
-    if (/password/i.test(e instanceof Error ? e.message : String(e))) throw new PdfPasswordError();
+    // Needs an open password, or uses a security handler we can't open for editing:
+    // either way the Unlock tool is the right next step.
+    if (/password|unsupported encryption/i.test(e instanceof Error ? e.message : String(e))) throw new PdfPasswordError();
     throw e;
   }
   return PDFDocument.load(decrypted, { updateMetadata: false });

@@ -1,4 +1,5 @@
 import { PDFDocument } from "pdf-lib";
+import { recordOutput } from "@/lib/handoff";
 
 export interface UnlockResult {
   success: boolean;
@@ -13,8 +14,9 @@ const unlockedName = (file: File) => file.name.replace(/\.pdf$/i, "_unlocked.pdf
 /**
  * Remove a PDF's open password and/or permission restrictions.
  *
- * RC4 and AES-256 files are decrypted losslessly: text, links, forms and image
- * quality are untouched. Other encryption types (e.g. AES-128) fall back to
+ * RC4 (V1/V2), AES-128 (V4 crypt-filter) and AES-256 (V5) files are all
+ * decrypted losslessly: text, links, forms and image quality are untouched.
+ * Other encryption types (e.g. public-key security handlers) fall back to
  * rendering each page, which loses selectable text.
  */
 export async function unlockPDF(file: File, password: string): Promise<UnlockResult> {
@@ -37,8 +39,8 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
   }
 
   try {
-    const { decryptPDF } = await import("@pdfsmaller/pdf-decrypt");
-    const decrypted = await decryptPDF(bytes, password);
+    const { decryptPdf } = await import("./pdf-decrypt");
+    const decrypted = await decryptPdf(bytes, password);
     return {
       success: true,
       blob: new Blob([decrypted as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
@@ -46,7 +48,7 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (/password/i.test(msg)) {
+    if (/incorrect password/i.test(msg)) {
       return {
         success: false,
         error: password
@@ -112,6 +114,7 @@ async function renderUnlock(file: File, bytes: Uint8Array, password: string): Pr
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
+  recordOutput(blob, filename); // lets the user continue in another tool
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

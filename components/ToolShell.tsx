@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import React from "react";
+import NextSteps from "@/components/NextSteps";
 
 const MORE_TOOLS = [
   { name: "Merge PDF", href: "/tools/merge" },
@@ -92,6 +93,7 @@ export default function ToolShell({ name, description, icon, svgIcon, steps, chi
             </div>
           )}
           {children}
+          <NextSteps />
         </div>
       </main>
 

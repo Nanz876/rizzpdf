@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
-import { PDFDocument, PDFName, PDFDict } from "pdf-lib";
+import { PDFDocument, PDFName, PDFDict, PDFRawStream } from "pdf-lib";
 import JSZip from "jszip";
 
 const require = createRequire(import.meta.url);
@@ -373,6 +373,55 @@ describe("sign", () => {
     expect(y).toBeLessThanOrEqual(crop.y + crop.height);
     // Page is displayed at 90° clockwise, so the image is drawn rotated 90° counter-clockwise to appear upright.
     expect(transforms.some((t) => t[0] === 0 && t[1] === 1 && t[2] === -1 && t[3] === 0)).toBe(true);
+  });
+
+  it("signPDFMulti places images and text on the requested pages", async () => {
+    const png = await fs.readFile(path.join(FIX, "audit/graphic.png"));
+    const dataUrl = `data:image/png;base64,${png.toString("base64")}`;
+    const r = await tools.signPDFMulti(await fixture("smoke/multi-page.pdf"), [
+      { page: 1, x: 0.1, yFromTop: 0.1, widthRatio: 0.2, kind: "image", dataUrl },
+      { page: 2, x: 0.1, yFromTop: 0.1, widthRatio: 0.2, kind: "image", dataUrl },
+      { page: 2, x: 0.1, yFromTop: 0.4, kind: "text", text: "16/09/2026", fontSizeRatio: 0.03 },
+    ]);
+    expect(r.success).toBe(true);
+    const bytes = await bytesOf(r.blob!);
+    const page1Ops = await drawOps(bytes, 1);
+    const page2Ops = await drawOps(bytes, 2);
+    expect(page1Ops.imagesPainted).toBe(1);
+    expect(page2Ops.imagesPainted).toBe(1);
+    const texts = await pageTexts(bytes);
+    expect(texts[1]).toContain("16/09/2026");
+  });
+
+  it("signPDFMulti embeds a repeated image only once", async () => {
+    const png = await fs.readFile(path.join(FIX, "audit/graphic.png"));
+    const dataUrl = `data:image/png;base64,${png.toString("base64")}`;
+    const r = await tools.signPDFMulti(await fixture("smoke/multi-page.pdf"), [
+      { page: 1, x: 0.1, yFromTop: 0.1, widthRatio: 0.2, kind: "image", dataUrl },
+      { page: 2, x: 0.1, yFromTop: 0.1, widthRatio: 0.2, kind: "image", dataUrl },
+    ]);
+    expect(r.success).toBe(true);
+    const doc = await PDFDocument.load(await bytesOf(r.blob!));
+    let imageXObjects = 0;
+    for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+      if (obj instanceof PDFRawStream && obj.dict.get(PDFName.of("Subtype")) === PDFName.of("Image")) {
+        imageXObjects++;
+      }
+    }
+    expect(imageXObjects).toBe(1);
+  });
+
+  it("signPDFMulti rejects non-Latin text", async () => {
+    const r = await tools.signPDFMulti(await fixture("smoke/multi-page.pdf"), [
+      { page: 1, x: 0.1, yFromTop: 0.1, kind: "text", text: "こんにちは" },
+    ]);
+    expect(r.success).toBe(false);
+    expect(r.error).toMatch(/Latin letters/i);
+  });
+
+  it("signPDFMulti fails when given no items", async () => {
+    const r = await tools.signPDFMulti(await fixture("smoke/multi-page.pdf"), []);
+    expect(r.success).toBe(false);
   });
 });
 

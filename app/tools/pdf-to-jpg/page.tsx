@@ -10,12 +10,19 @@ import { renderThumbnails, pdfToJpg, downloadResults } from "@/lib/pdf-tools";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
+const DPI_OPTS: { value: number; label: string; desc: string }[] = [
+  { value: 72, label: "Screen 72 DPI", desc: "Smallest files" },
+  { value: 150, label: "Standard 150 DPI", desc: "Good for most uses" },
+  { value: 300, label: "Print 300 DPI", desc: "Sharp prints, large files" },
+];
+
 export default function PdfToJpgPage() {
   const [file, setFile] = useState<File | null>(null);
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [dpi, setDpi] = useState(150);
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
@@ -40,7 +47,7 @@ export default function PdfToJpgPage() {
   const handleConvert = async () => {
     if (!file || selected.size === 0) return;
     logTool("pdf-to-jpg"); setStatus("processing");
-    const result = await pdfToJpg(file, 150, [...selected]);
+    const result = await pdfToJpg(file, dpi, [...selected]);
     if (result.success && result.blobs) {
       await downloadResults(result.blobs, result.filenames ?? [], file.name.replace(/\.pdf$/i, "_jpg.zip"));
       setStatus("done");
@@ -68,6 +75,17 @@ export default function PdfToJpgPage() {
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
           <PdfPreviewArea files={[file]} />
           <div className="p-5 bg-gray-50 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Resolution</p>
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {DPI_OPTS.map(opt => (
+                <button key={opt.value} onClick={() => { setDpi(opt.value); if (status === "done" || status === "error") setStatus("ready"); }}
+                  className={`p-4 rounded-xl border-2 text-left transition-all
+                    ${dpi === opt.value ? "border-red-500 bg-red-50" : "border-gray-200 bg-white hover:border-red-300"}`}>
+                  <div className={`text-sm font-bold ${dpi === opt.value ? "text-red-700" : "text-gray-900"}`}>{opt.label}</div>
+                  <div className="text-xs text-gray-400 mt-1">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-gray-400">Click pages to select / deselect</p>
               <div className="flex gap-2">
