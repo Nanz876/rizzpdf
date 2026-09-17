@@ -194,8 +194,9 @@ export default function OcrPage() {
                 ) : (
                   <>
                     <span className="font-bold">This PDF already has text.</span>{" "}
-                    {plural(scanInfo.textPages, "page")} of {scanInfo.pageCount} can already be searched and copied. You can still
-                    run OCR, but those pages will be replaced by images of themselves, which usually makes the text worse.
+                    {plural(scanInfo.textPages, "page")} of {scanInfo.pageCount} can already be searched and copied. Running OCR
+                    won&apos;t change how they look, but it adds a second, recognised copy of the text on top, so selecting and
+                    copying can get messy. OCR is best kept for the pages that have no text.
                   </>
                 )}
               </div>
@@ -223,7 +224,7 @@ export default function OcrPage() {
               <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span>
                   Free accounts read the first {FREE_OCR_PAGES} pages of a document. Pages {FREE_OCR_PAGES + 1}–{thumbs.length}{" "}
-                  will be copied through unchanged.
+                  stay in the file exactly as they are, just without a text layer.
                 </span>
                 <button
                   onClick={() => { setShowPaywall(true); logTool("event:paywall_shown"); }}

@@ -1,28 +1,21 @@
-import {
-  PDFDocument,
-  PDFFont,
-  StandardFonts,
-  pushGraphicsState,
-  popGraphicsState,
-  concatTransformationMatrix,
-  drawObject,
-} from "pdf-lib";
+import { PDFFont, StandardFonts, degrees } from "pdf-lib";
 import type { PDFPageProxy } from "pdfjs-dist";
 import type { ImageLike, Word } from "tesseract.js";
 import { loadPdf, saveToBlob, toolErrorMessage, displayedPage } from "@/lib/pdf-load";
-import { paintBoxesToRgb } from "@/lib/tools/redact";
 import type { ToolResult } from "@/lib/pdf-tools";
 
 /**
  * OCR for scanned PDFs — everything runs in the browser.
  *
  * A scanned page is a picture of text: nothing to select, search or copy. Each
- * selected page is rasterised with pdf.js, read by tesseract.js (WASM), and
- * rebuilt as: the same pixels, plus one invisible (`opacity: 0`) text run per
- * recognised word, positioned on the word it came from. The page looks identical
- * but its text is now selectable and searchable, and Ctrl+F lands on the right spot.
+ * selected page is rasterised with pdf.js at OCR_DPI and read by tesseract.js
+ * (WASM). The raster is ONLY the OCR engine's input — it is never written back.
+ * What lands in the output is the original page, byte for byte, with one
+ * invisible (`opacity: 0`) text run drawn per recognised word, positioned on the
+ * word it came from. The scan keeps its own resolution and file size; it just
+ * becomes selectable and searchable.
  *
- * Pages that aren't OCR'd are copied from the original untouched.
+ * Pages that aren't OCR'd are left exactly as they were.
  *
  * Privacy: the user's file never leaves the browser. Only tesseract.js's WASM core
  * and language model are fetched, from its default CDN.
@@ -35,7 +28,7 @@ import type { ToolResult } from "@/lib/pdf-tools";
 /** Pages a free (non-Pro) user may OCR per document. */
 export const FREE_OCR_PAGES = 10;
 
-/** Rasterisation resolution handed to tesseract. 200 DPI is its sweet spot for scans. */
+/** Resolution the page is rasterised at for tesseract. Output quality is unaffected. */
 export const OCR_DPI = 200;
 
 /** A page with fewer than this many non-space characters has no usable text layer. */
@@ -43,12 +36,10 @@ export const MIN_TEXT_CHARS = 20;
 
 const MAX_SIDE_PX = 14000;
 const MAX_AREA_PX = 50_000_000;
-const PAGE_TOO_LARGE = "One of these pages is too large to OCR in this browser.";
 
-/** A rendered page: RGBA pixels for the output PDF, plus whatever tesseract should read. */
+/** What tesseract should read for one page, and how big that image is. */
 export interface OcrRenderedPage {
-  /** RGBA, 4 bytes per pixel, row-major, top row first. */
-  data: Uint8Array | Uint8ClampedArray;
+  /** Pixel size of `image`. Recognised word boxes are measured in these pixels. */
   width: number;
   height: number;
   /** Passed straight to tesseract (a canvas in the browser). */
@@ -60,7 +51,7 @@ export interface OcrRenderedPage {
 export type OcrPageRenderer = (page: PDFPageProxy, scale: number) => Promise<OcrRenderedPage>;
 
 export interface OcrOptions {
-  /** 1-based page numbers to OCR. Default: every page. Others are copied unchanged. */
+  /** 1-based page numbers to OCR. Default: every page. Others are left untouched. */
   pages?: number[];
   /** Called before each page and once at the end; OCR is slow, so surface this. */
   onProgress?: (done: number, total: number, stage: string) => void;
@@ -123,7 +114,7 @@ export async function isScanned(file: File): Promise<{ scanned: boolean; pageCou
   }
 }
 
-// ─── Rendering ──────────────────────────────────────────────────────────────
+// ─── Rendering (OCR input only) ─────────────────────────────────────────────
 
 const canvasRenderer: OcrPageRenderer = async (page, scale) => {
   const viewport = page.getViewport({ scale });
@@ -132,14 +123,14 @@ const canvasRenderer: OcrPageRenderer = async (page, scale) => {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable");
+  // Tesseract reads the canvas directly, so give it an opaque white background
+  // rather than the transparent pixels a scan's own margins would leave.
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
   await page.render({ canvasContext: ctx, canvas, viewport, background: "#ffffff" }).promise;
-  const { data } = ctx.getImageData(0, 0, width, height);
   return {
-    data,
     width,
     height,
     image: canvas,
@@ -216,6 +207,9 @@ function encodable(font: PDFFont, text: string): boolean {
   }
 }
 
+/** Descender share of the font size: how far a word's box reaches below its baseline. */
+const DESCENDER = 0.18;
+
 // ─── OCR ────────────────────────────────────────────────────────────────────
 
 function normalizePages(pages: number[] | undefined, total: number): number[] {
@@ -231,26 +225,22 @@ function normalizePages(pages: number[] | undefined, total: number): number[] {
 /**
  * OCR a scanned PDF into a searchable PDF.
  *
- * Returns the new PDF plus the plain text, so the page can offer a .txt download
- * without running OCR twice.
+ * Returns the same PDF with an invisible text layer added, plus the plain text,
+ * so the page can offer a .txt download without running OCR twice.
  */
 export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResult> {
   const report = opts.onProgress ?? (() => {});
   let worker: Awaited<ReturnType<TesseractModule["createWorker"]>> | null = null;
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const src = await loadPdf(bytes); // decrypts restriction-only files, rejects password-locked ones
-    const total = src.getPageCount();
+    // Edited in place: every page keeps its own content, size, /Rotate and crop box.
+    const doc = await loadPdf(bytes); // decrypts restriction-only files, rejects password-locked ones
+    const total = doc.getPageCount();
     const targets = normalizePages(opts.pages, total);
     if (!targets.length) return { success: false, error: "Select at least one page to read." };
 
     const render = opts.renderPage ?? canvasRenderer;
-    const targetSet = new Set(targets);
-    const keptIndices = src.getPageIndices().filter((i) => !targetSet.has(i + 1));
-
-    const out = await PDFDocument.create({ updateMetadata: false });
-    const font = await out.embedFont(StandardFonts.Helvetica);
-    const copied = await out.copyPages(src, keptIndices);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
     const pageTexts: string[] = Array.from({ length: total }, () => "");
 
     report(0, targets.length, "Starting the OCR engine…");
@@ -259,51 +249,22 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
 
     const pdfjsDoc = await openPdfjs(bytes);
     try {
-      let kept = 0;
       let done = 0;
-      for (let i = 0; i < total; i++) {
-        const pageNum = i + 1;
-        if (!targetSet.has(pageNum)) {
-          out.addPage(copied[kept++]);
-          continue;
-        }
+      for (const pageNum of targets) {
         report(done, targets.length, `Reading page ${pageNum} of ${total}…`);
 
-        const view = displayedPage(src.getPage(i));
+        const page = doc.getPage(pageNum - 1);
+        // Geometry as the reader sees it: crop box, after /Rotate. pdf.js bakes both
+        // into the pixels it renders, so image pixels and displayed points share an
+        // origin (top-left) and orientation; `toUser` inverts that back to the page.
+        const view = displayedPage(page);
         const pdfjsPage = await pdfjsDoc.getPage(pageNum);
         const img = await render(pdfjsPage, renderScale(pdfjsPage));
         pdfjsPage.cleanup();
 
-        // Flatten to opaque RGB before recognising, so the pixels we embed are
-        // exactly the pixels tesseract read.
-        const rgbBytes = paintBoxesToRgb(img, []);
-
         const recognized = await worker.recognize(img.image, {}, { text: true, blocks: true });
         img.release?.();
-        pageTexts[i] = recognized.data.text ?? "";
-
-        const imageRef = out.context.register(
-          out.context.flateStream(rgbBytes, {
-            Type: "XObject",
-            Subtype: "Image",
-            Width: img.width,
-            Height: img.height,
-            ColorSpace: "DeviceRGB",
-            BitsPerComponent: 8,
-          })
-        );
-
-        // A fresh page sized to the DISPLAYED page (crop box after /Rotate), with no
-        // rotation of its own — the render already baked the rotation into the pixels,
-        // so pixel coordinates map straight onto this page.
-        const page = out.addPage([view.width, view.height]);
-        const name = page.node.newXObject("Scan", imageRef);
-        page.pushOperators(
-          pushGraphicsState(),
-          concatTransformationMatrix(view.width, 0, 0, view.height, 0, 0),
-          drawObject(name),
-          popGraphicsState()
-        );
+        pageTexts[pageNum - 1] = recognized.data.text ?? "";
 
         const sx = view.width / img.width;
         const sy = view.height / img.height;
@@ -313,9 +274,8 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
           const left = word.bbox.x0 * sx;
           const boxW = Math.max((word.bbox.x1 - word.bbox.x0) * sx, 0.1);
           // tesseract measures y downwards from the top of the image.
-          const boxTop = word.bbox.y0 * sy;
-          const boxBottom = word.bbox.y1 * sy;
-          const boxH = Math.max(boxBottom - boxTop, 0.1);
+          const boxH = Math.max((word.bbox.y1 - word.bbox.y0) * sy, 0.1);
+          const boxBottomFromTop = word.bbox.y1 * sy;
 
           // Size the invisible glyphs so the run roughly fills the word's box:
           // start from its height, then stretch/shrink to match its width.
@@ -323,9 +283,11 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
           const size = natural > 0
             ? Math.min(Math.max((boxH * boxW) / natural, boxH * 0.5), boxH * 1.5)
             : boxH;
-          // Baseline sits a little above the box's bottom edge (descender allowance).
-          const baseline = view.height - boxBottom + size * 0.18;
-          page.drawText(text, { x: left, y: baseline, size, font, opacity: 0 });
+
+          // Baseline sits a little above the box's bottom edge, measured from the
+          // bottom of the DISPLAYED page, then mapped into the page's user space.
+          const { x, y } = view.toUser(left, view.height - boxBottomFromTop + size * DESCENDER);
+          page.drawText(text, { x, y, size, font, opacity: 0, rotate: degrees(view.rotation) });
         }
 
         done++;
@@ -335,21 +297,17 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
       await pdfjsDoc.destroy();
     }
 
-    report(targets.length, targets.length, "Building the searchable PDF…");
+    report(targets.length, targets.length, "Saving the searchable PDF…");
     const text = targets.map((p) => pageTexts[p - 1].trim()).filter(Boolean).join("\n\n");
     return {
       success: true,
-      blob: await saveToBlob(out),
+      blob: await saveToBlob(doc),
       filename: `${file.name.replace(/\.pdf$/i, "")}_ocr.pdf`,
       text,
       pageTexts,
       warning: text.trim() ? undefined : "No text was recognised. The scan may be too faint, skewed or low-resolution.",
     };
   } catch (e) {
-    // paintBoxesToRgb speaks in redaction terms; say it in OCR terms here.
-    if (e instanceof Error && /too large to redact|unexpected size/.test(e.message)) {
-      return { success: false, error: PAGE_TOO_LARGE };
-    }
     return { success: false, error: toolErrorMessage(e, "Failed to OCR this PDF. Make sure it's a valid PDF.") };
   } finally {
     try {
