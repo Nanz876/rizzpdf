@@ -6,7 +6,8 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, rotatePages, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -47,7 +48,7 @@ export default function RotatePage() {
   const handleApply = async () => {
     if (!file) return;
     logTool("rotate"); setStatus("processing");
-    const result = await rotatePages(file, rotations);
+    const result = await runInWorker<ToolResult>("rotatePages", file, rotations);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_rotated.pdf"));
       setStatus("done");

@@ -5,8 +5,9 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
-import { renderThumbnails, downloadBlob, parseRanges } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, parseRanges, type ToolResult } from "@/lib/pdf-tools";
 import { cropPDF, autoCropMargins, type CropMargins } from "@/lib/tools/crop";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 type ApplyMode = "all" | "current" | "custom";
@@ -101,7 +102,11 @@ export default function CropPage() {
     const pages: "all" | number[] =
       applyMode === "all" ? "all" : applyMode === "current" ? [1] : (customPages as number[]);
     logTool("crop"); setStatus("processing");
-    const result = await cropPDF(file, { margins, pages, permanent });
+    // Permanent crop re-renders pages via canvas (DOM-only), so it must run on the
+    // main thread. Non-permanent crop is pure pdf-lib and can run in the worker.
+    const result = permanent
+      ? await cropPDF(file, { margins, pages, permanent })
+      : await runInWorker<ToolResult>("cropPDF", file, { margins, pages, permanent });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_cropped.pdf"));
       setStatus("done");

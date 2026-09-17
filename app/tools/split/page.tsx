@@ -5,7 +5,8 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, splitPDF, downloadResults } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadResults, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -70,7 +71,7 @@ export default function SplitPage() {
     } else {
       ranges = splitPointsToRanges(splitAfter, thumbs.length);
     }
-    const result = await splitPDF(file, mode, ranges);
+    const result = await runInWorker<ToolResult>("splitPDF", file, mode, ranges);
     if (result.success && result.blobs) {
       await downloadResults(result.blobs, result.filenames!, file.name.replace(/\.pdf$/i, "_split.zip"));
       setSplitCount(result.blobs.length); setStatus("done");

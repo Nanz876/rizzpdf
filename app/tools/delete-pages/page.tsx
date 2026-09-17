@@ -7,7 +7,8 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, deletePages, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -39,7 +40,7 @@ export default function DeletePagesPage() {
   const handleDelete = async () => {
     if (!file || selected.size === 0) return;
     logTool("delete-pages"); setStatus("processing");
-    const result = await deletePages(file, [...selected]);
+    const result = await runInWorker<ToolResult>("deletePages", file, [...selected]);
     if (result.success && result.blob) {
       downloadBlob(result.blob, file.name.replace(/\.pdf$/i, "_deleted.pdf"));
       setStatus("done");

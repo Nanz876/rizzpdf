@@ -5,8 +5,9 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { downloadBlob } from "@/lib/pdf-tools";
-import { flattenPDF, countFlattenable } from "@/lib/tools/flatten";
+import { downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { countFlattenable } from "@/lib/tools/flatten";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -34,7 +35,7 @@ export default function FlattenPage() {
   const handleApply = async () => {
     if (!file) return;
     logTool("flatten"); setStatus("processing"); setWarning("");
-    const result = await flattenPDF(file, { forms, annotations });
+    const result = await runInWorker<ToolResult>("flattenPDF", file, { forms, annotations });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_flattened.pdf"));
       if (result.warning) setWarning(result.warning);

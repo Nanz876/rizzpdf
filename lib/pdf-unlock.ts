@@ -39,7 +39,10 @@ export async function unlockPDF(file: File, password: string): Promise<UnlockRes
   }
 
   try {
-    const { decryptPdf } = await import("./pdf-decrypt");
+    // Decrypt directly. Don't route this through lib/worker/run: the worker bundle
+    // reaches this file (via batchProcess), and a worker that imports the code
+    // that spawns the worker makes the Turbopack build recurse forever.
+    const { decryptPdf } = await import("@/lib/pdf-decrypt");
     const decrypted = await decryptPdf(bytes, password);
     return {
       success: true,

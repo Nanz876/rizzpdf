@@ -6,7 +6,8 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import SidebarWorkspace from "@/components/pdf/SidebarWorkspace";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { renderThumbnails, watermarkPDF, downloadBlob } from "@/lib/pdf-tools";
+import { renderThumbnails, downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 type WmPosition = "center" | "diagonal";
@@ -45,7 +46,7 @@ export default function WatermarkPage() {
   const handleApply = async () => {
     if (!file) return;
     logTool("watermark"); setStatus("processing");
-    const result = await watermarkPDF(file, { text, opacity, position, color, fontSize });
+    const result = await runInWorker<ToolResult>("watermarkPDF", file, { text, opacity, position, color, fontSize });
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_watermarked.pdf"));
       setStatus("done");

@@ -5,7 +5,8 @@ import ToolShell from "@/components/ToolShell";
 import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
-import { protectPDF, downloadBlob } from "@/lib/pdf-tools";
+import { downloadBlob, type ToolResult } from "@/lib/pdf-tools";
+import { runInWorker } from "@/lib/worker/run";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -25,7 +26,7 @@ export default function ProtectPage() {
   const handleProtect = async () => {
     if (!file || !password.trim()) return;
     logTool("protect"); setStatus("processing"); setError("");
-    const result = await protectPDF(file, password.trim(), ownerPassword.trim() || undefined);
+    const result = await runInWorker<ToolResult>("protectPDF", file, password.trim(), ownerPassword.trim() || undefined);
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, "_protected.pdf"));
       setStatus("done");
