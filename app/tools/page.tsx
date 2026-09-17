@@ -24,6 +24,12 @@ const TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#fefce8" badgeColor="#eab308" badgeLabel="PDF" />,
   },
   {
+    name: "Crop PDF", route: "/tools/crop", category: "Organize PDF",
+    desc: "Trim margins or cut pages down to size",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#ecfeff" badgeColor="#0891b2" badgeLabel="PDF" />,
+  },
+  {
     name: "Delete Pages", route: "/tools/delete-pages", category: "Organize PDF",
     desc: "Remove specific pages from a PDF",
     icon: <ToolIcon variant="single" bgColor="#fff7ed" badgeColor="#f97316" badgeLabel="PDF" />,
@@ -77,6 +83,24 @@ const TOOLS = [
     name: "Sign PDF", route: "/tools/sign", category: "Edit & Security",
     desc: "Draw or upload your signature",
     icon: <ToolIcon variant="single" bgColor="#fdf4ff" badgeColor="#a855f7" badgeLabel="PDF" />,
+  },
+  {
+    name: "Fill PDF Form", route: "/tools/fill-form", category: "Edit & Security",
+    desc: "Type into PDF form fields and download",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="PDF" />,
+  },
+  {
+    name: "Redact PDF", route: "/tools/redact", category: "Edit & Security",
+    desc: "Permanently black out sensitive text",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#f3f4f6" badgeColor="#111827" badgeLabel="PDF" />,
+  },
+  {
+    name: "Flatten PDF", route: "/tools/flatten", category: "Edit & Security",
+    desc: "Lock form fields and comments into the page",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#f5f5f4" badgeColor="#78716c" badgeLabel="PDF" />,
   },
   {
     name: "Repair PDF", route: "/tools/repair", category: "Edit & Security",
