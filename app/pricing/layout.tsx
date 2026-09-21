@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     "PDF tool subscription",
     "cheap PDF tools",
   ],
-  alternates: { canonical: "https://rizzpdf.com/pricing" },
+  alternates: { canonical: "https://www.rizzpdf.com/pricing" },
   openGraph: {
     title: "RizzPDF Pricing — Free & Pro",
     description: "All 23 PDF tools free. Upgrade only when you need more.",
-    url: "https://rizzpdf.com/pricing",
+    url: "https://www.rizzpdf.com/pricing",
   },
 };
 

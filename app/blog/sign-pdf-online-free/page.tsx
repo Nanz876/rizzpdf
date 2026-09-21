@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "e-sign PDF free",
     "sign document online",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/sign-pdf-online-free" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/sign-pdf-online-free" },
   openGraph: {
     title: "How to Sign a PDF Online Free",
     description: "Draw or upload your signature and place it on any PDF — free, no upload, no account.",
-    url: "https://rizzpdf.com/blog/sign-pdf-online-free",
+    url: "https://www.rizzpdf.com/blog/sign-pdf-online-free",
   },
 };
 
@@ -26,9 +26,9 @@ const jsonLd = {
   headline: "How to Sign a PDF Online Free — Draw or Upload Your Signature",
   description: "Add a signature to any PDF in your browser — no printing, no account, files stay on your device.",
   author: { "@type": "Organization", name: "RizzPDF" },
-  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://rizzpdf.com" },
+  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://www.rizzpdf.com" },
   datePublished: "2025-03-24",
-  url: "https://rizzpdf.com/blog/sign-pdf-online-free",
+  url: "https://www.rizzpdf.com/blog/sign-pdf-online-free",
 };
 
 export default function SignPDFBlog() {

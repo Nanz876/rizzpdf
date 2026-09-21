@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "shrink PDF",
     "PDF compressor",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/compress-pdf-without-losing-quality" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/compress-pdf-without-losing-quality" },
   openGraph: {
     title: "How to Compress a PDF Without Losing Quality",
     description: "Reduce PDF size without blurring text or images — free, no upload, no account.",
-    url: "https://rizzpdf.com/blog/compress-pdf-without-losing-quality",
+    url: "https://www.rizzpdf.com/blog/compress-pdf-without-losing-quality",
   },
 };
 
@@ -26,9 +26,9 @@ const jsonLd = {
   headline: "How to Compress a PDF Without Losing Quality — Free Online Tool",
   description: "Reduce PDF file size without making it blurry or unreadable.",
   author: { "@type": "Organization", name: "RizzPDF" },
-  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://rizzpdf.com" },
+  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://www.rizzpdf.com" },
   datePublished: "2025-03-24",
-  url: "https://rizzpdf.com/blog/compress-pdf-without-losing-quality",
+  url: "https://www.rizzpdf.com/blog/compress-pdf-without-losing-quality",
 };
 
 export default function CompressPDFBlog() {

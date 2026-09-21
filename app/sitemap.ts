@@ -41,6 +41,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Blog
     { url: `${base}/blog`,                                                    lastModified: today, changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${base}/blog/ocr-pdf-online-free`,                                      lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/redact-pdf-online-free`,                                   lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/edit-pdf-text-online-free`,                                lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/fill-pdf-form-online-free`,                                lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/crop-pdf-online-free`,                                     lastModified: today, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/blog/flatten-pdf-online-free`,                                  lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog/merge-pdf-files-online-free`,                        lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog/compress-pdf-without-losing-quality`,                lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog/split-pdf-online-free`,                              lastModified: today, changeFrequency: "monthly", priority: 0.8 },

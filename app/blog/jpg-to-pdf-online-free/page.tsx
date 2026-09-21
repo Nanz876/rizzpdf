@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "photo to PDF",
     "image to PDF converter",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/jpg-to-pdf-online-free" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/jpg-to-pdf-online-free" },
   openGraph: {
     title: "JPG to PDF Online Free — Convert Images to PDF Instantly",
     description: "Turn photos or scans into a PDF — free, no upload, no account needed.",
-    url: "https://rizzpdf.com/blog/jpg-to-pdf-online-free",
+    url: "https://www.rizzpdf.com/blog/jpg-to-pdf-online-free",
   },
 };
 
@@ -26,9 +26,9 @@ const jsonLd = {
   headline: "JPG to PDF Online Free — Convert Images to PDF in Seconds",
   description: "Convert JPG images to PDF entirely in your browser — no upload, no account.",
   author: { "@type": "Organization", name: "RizzPDF" },
-  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://rizzpdf.com" },
+  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://www.rizzpdf.com" },
   datePublished: "2025-03-24",
-  url: "https://rizzpdf.com/blog/jpg-to-pdf-online-free",
+  url: "https://www.rizzpdf.com/blog/jpg-to-pdf-online-free",
 };
 
 export default function JpgToPdfBlog() {

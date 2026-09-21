@@ -10,6 +10,48 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "ocr-pdf-online-free",
+    title: "How to OCR a PDF Free — Make a Scan Searchable",
+    description: "Turn a scanned PDF into text you can search, select and copy — without uploading the scan anywhere.",
+    date: "September 20, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "redact-pdf-online-free",
+    title: "How to Redact a PDF Properly — Black Boxes Are Not Enough",
+    description: "A black rectangle doesn't remove text; anyone can copy it straight back out. How to delete it for real.",
+    date: "September 20, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "edit-pdf-text-online-free",
+    title: "How to Edit Text in a PDF Free — Without Acrobat",
+    description: "Fix a typo, a date or a name in a PDF in your browser — and an honest account of what browser editing can't do.",
+    date: "September 20, 2026",
+    readTime: "5 min read",
+  },
+  {
+    slug: "fill-pdf-form-online-free",
+    title: "How to Fill Out a PDF Form Online Free",
+    description: "Type into a PDF form and download it — including what to do when the form has no fields at all.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "crop-pdf-online-free",
+    title: "How to Crop a PDF — Trim Margins and Scan Edges",
+    description: "Cut white margins and scanner shadows off your pages — and why cropping hides content rather than deleting it.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "flatten-pdf-online-free",
+    title: "How to Flatten a PDF — Lock Form Fields and Comments",
+    description: "Why your filled form looks empty to the person you sent it to, and how flattening fixes it.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
     slug: "merge-pdf-files-online-free",
     title: "How to Merge PDF Files Online Free — No Install, No Sign Up",
     description: "Combine multiple PDF files into one in seconds. Works entirely in your browser — no uploads, no account.",
