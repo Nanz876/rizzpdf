@@ -57,6 +57,21 @@ const CONVERT_TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#f0fdf4" badgeColor="#22c55e" badgeLabel="ZIP" />,
   },
   {
+    name: "Word to PDF", route: "/tools/word-to-pdf", desc: "Turn a .docx into a PDF.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="DOC" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
+    name: "Excel to PDF", route: "/tools/excel-to-pdf", desc: "Turn a spreadsheet into a readable table.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#f0fdf4" badgeColor="#16a34a" badgeLabel="XLS" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
+    name: "PowerPoint to PDF", route: "/tools/powerpoint-to-pdf", desc: "One page per slide.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fff7ed" badgeColor="#ea580c" badgeLabel="PPT" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
     name: "OCR PDF", route: "/tools/ocr", desc: "Turn a scan into a searchable PDF.",
     badge: "NEW" as const,
     icon: <ToolIcon variant="double" bgColor="#fef3c7" badgeColor="#ef4444" badgeLabel="IMG" badgeColor2="#d97706" badgeLabel2="TXT" />,

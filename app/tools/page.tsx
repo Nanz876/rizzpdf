@@ -63,6 +63,24 @@ const TOOLS = [
     icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#2563eb" badgeLabel2="DOC" />,
   },
   {
+    name: "Word to PDF", route: "/tools/word-to-pdf", category: "Convert PDF",
+    desc: "Turn a Word document into a PDF",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#2563eb" badgeLabel="DOC" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
+    name: "Excel to PDF", route: "/tools/excel-to-pdf", category: "Convert PDF",
+    desc: "Turn a spreadsheet into a readable PDF table",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#f0fdf4" badgeColor="#16a34a" badgeLabel="XLS" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
+    name: "PowerPoint to PDF", route: "/tools/powerpoint-to-pdf", category: "Convert PDF",
+    desc: "One page per slide, text stays selectable",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fff7ed" badgeColor="#ea580c" badgeLabel="PPT" badgeColor2="#ef4444" badgeLabel2="PDF" />,
+  },
+  {
     name: "OCR PDF", route: "/tools/ocr", category: "Convert PDF",
     desc: "Make scanned PDFs searchable with OCR",
     badge: "NEW" as const,
