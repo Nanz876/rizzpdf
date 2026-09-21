@@ -10,6 +10,27 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "word-to-pdf-free",
+    title: "How to Convert Word to PDF Free — Without Uploading Your Document",
+    description: "Four ways to turn a .docx into a PDF, what each one costs you, and why your CV or contract shouldn't be uploaded to do it.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "excel-to-pdf-free",
+    title: "How to Convert Excel to PDF Without Cutting Off Columns",
+    description: "Converting a spreadsheet is easy; fitting it on a page isn't. Repeating headers, column splits and readable output.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
+    slug: "powerpoint-to-pdf-free",
+    title: "How to Convert PowerPoint to PDF Free — One Page Per Slide",
+    description: "Why decks break on someone else's computer, and how to send one that looks the same everywhere.",
+    date: "September 20, 2026",
+    readTime: "4 min read",
+  },
+  {
     slug: "ocr-pdf-online-free",
     title: "How to OCR a PDF Free — Make a Scan Searchable",
     description: "Turn a scanned PDF into text you can search, select and copy — without uploading the scan anywhere.",

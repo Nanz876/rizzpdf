@@ -44,6 +44,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Blog
     { url: `${base}/blog`,                                                    lastModified: today, changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${base}/blog/word-to-pdf-free`,                                         lastModified: today, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/blog/excel-to-pdf-free`,                                        lastModified: today, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/blog/powerpoint-to-pdf-free`,                                   lastModified: today, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/blog/ocr-pdf-online-free`,                                      lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog/redact-pdf-online-free`,                                   lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog/edit-pdf-text-online-free`,                                lastModified: today, changeFrequency: "monthly", priority: 0.8 },
