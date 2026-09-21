@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 import jpeg from "jpeg-js";
+import ExcelJS from "exceljs";
 import {
   PDFDocument, StandardFonts, rgb, grayscale, degrees,
   PDFName, PDFHexString, PDFDict, PDFArray, PDFRawStream, PDFString,
@@ -583,6 +584,54 @@ async function main() {
     y -= 10;
     page.drawText("Thank you for your order.", { x: 54, y, size: 11, font });
     await save(doc, "table-doc.pdf");
+  }
+
+  // 12. Excel workbook for Excel to PDF: one sheet with values/dates/formulas
+  // worth checking for display fidelity, one wide sheet (forces column-group
+  // splitting with the first column repeated), one tall sheet (forces a
+  // vertical page break with the header row repeated), and one empty sheet.
+  {
+    const wb = new ExcelJS.Workbook();
+
+    const data = wb.addWorksheet("Data");
+    data.getRow(1).values = ["Item", "Amount", "Purchased On", "Growth", "Total"];
+    const dataRows = [
+      ["Widget", 120.5, new Date(Date.UTC(2026, 0, 15)), 0.125, "=B2*1.1"],
+      ["Gadget", 45, new Date(Date.UTC(2026, 2, 3)), 0.08, "=B3*1.1"],
+      ["Gizmo", 300.25, new Date(Date.UTC(2026, 5, 30)), 0.2, "=B4*1.1"],
+    ];
+    dataRows.forEach((vals, i) => {
+      const r = data.getRow(i + 2);
+      r.getCell(1).value = vals[0];
+      r.getCell(2).value = vals[1];
+      r.getCell(2).numFmt = "$#,##0.00";
+      r.getCell(3).value = vals[2];
+      r.getCell(3).numFmt = "m/d/yyyy";
+      r.getCell(4).value = vals[3];
+      r.getCell(4).numFmt = "0.0%";
+      const amount = vals[1];
+      r.getCell(5).value = { formula: `B${i + 2}*1.1`, result: Math.round(amount * 1.1 * 100) / 100 };
+      r.getCell(5).numFmt = "$#,##0.00";
+    });
+
+    const wide = wb.addWorksheet("Wide");
+    const wideCols = 20;
+    for (let c = 1; c <= wideCols; c++) {
+      wide.getColumn(c).width = 14;
+      wide.getRow(1).getCell(c).value = `Col${c}`;
+    }
+    for (let r = 2; r <= 4; r++) {
+      wide.getRow(r).getCell(1).value = `Row${r - 1}`;
+      for (let c = 2; c <= wideCols; c++) wide.getRow(r).getCell(c).value = `R${r - 1}C${c}`;
+    }
+
+    const tall = wb.addWorksheet("Tall");
+    tall.getRow(1).getCell(1).value = "Header";
+    for (let r = 2; r <= 80; r++) tall.getRow(r).getCell(1).value = `Row ${r - 1}`;
+
+    wb.addWorksheet("Empty");
+
+    await fs.writeFile(path.join(outDir, "financials.xlsx"), await wb.xlsx.writeBuffer());
   }
 
   const files = await fs.readdir(outDir);
