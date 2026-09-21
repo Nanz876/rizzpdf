@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "delete pdf page online free",
     "remove pages from pdf no sign up",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/how-to-delete-pages-from-pdf-without-acrobat" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/how-to-delete-pages-from-pdf-without-acrobat" },
   openGraph: {
     title: "How to Delete a Page from a PDF Without Acrobat (Free, No Sign-Up)",
     description: "Delete PDF pages for free — no Adobe, no account, files never leave your browser.",
-    url: "https://rizzpdf.com/blog/how-to-delete-pages-from-pdf-without-acrobat",
+    url: "https://www.rizzpdf.com/blog/how-to-delete-pages-from-pdf-without-acrobat",
   },
 };
 
@@ -31,7 +31,7 @@ const howToSchema = {
       "@type": "HowToStep",
       name: "Open the Delete Pages tool",
       text: "Go to rizzpdf.com/tools/delete-pages in any browser — no account or download required.",
-      url: "https://rizzpdf.com/tools/delete-pages",
+      url: "https://www.rizzpdf.com/tools/delete-pages",
     },
     {
       "@type": "HowToStep",

@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "separate PDF pages",
     "PDF splitter",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/split-pdf-online-free" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/split-pdf-online-free" },
   openGraph: {
     title: "How to Split a PDF Online Free",
     description: "Extract pages or split into separate files — free, no upload, files stay on your device.",
-    url: "https://rizzpdf.com/blog/split-pdf-online-free",
+    url: "https://www.rizzpdf.com/blog/split-pdf-online-free",
   },
 };
 
@@ -26,9 +26,9 @@ const jsonLd = {
   headline: "How to Split a PDF Online Free — Extract Pages Instantly",
   description: "Split a PDF into separate pages or extract a page range, entirely in your browser.",
   author: { "@type": "Organization", name: "RizzPDF" },
-  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://rizzpdf.com" },
+  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://www.rizzpdf.com" },
   datePublished: "2025-03-24",
-  url: "https://rizzpdf.com/blog/split-pdf-online-free",
+  url: "https://www.rizzpdf.com/blog/split-pdf-online-free",
 };
 
 export default function SplitPDFBlog() {

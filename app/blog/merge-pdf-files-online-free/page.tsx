@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     "join PDF files",
     "PDF merger free",
   ],
-  alternates: { canonical: "https://rizzpdf.com/blog/merge-pdf-files-online-free" },
+  alternates: { canonical: "https://www.rizzpdf.com/blog/merge-pdf-files-online-free" },
   openGraph: {
     title: "How to Merge PDF Files Online Free",
     description: "Combine multiple PDFs into one — free, no sign up, files never leave your browser.",
-    url: "https://rizzpdf.com/blog/merge-pdf-files-online-free",
+    url: "https://www.rizzpdf.com/blog/merge-pdf-files-online-free",
   },
 };
 
@@ -26,9 +26,9 @@ const jsonLd = {
   headline: "How to Merge PDF Files Online Free — No Install, No Sign Up",
   description: "Combine multiple PDF files into one in seconds, entirely in your browser.",
   author: { "@type": "Organization", name: "RizzPDF" },
-  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://rizzpdf.com" },
+  publisher: { "@type": "Organization", name: "RizzPDF", url: "https://www.rizzpdf.com" },
   datePublished: "2025-03-24",
-  url: "https://rizzpdf.com/blog/merge-pdf-files-online-free",
+  url: "https://www.rizzpdf.com/blog/merge-pdf-files-online-free",
 };
 
 export default function MergePDFBlog() {
