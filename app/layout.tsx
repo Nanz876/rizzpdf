@@ -123,7 +123,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        // Google and GitHub sign-in are switched on in the Clerk production
+        // instance but have no OAuth credentials yet, so both buttons send
+        // visitors to a Google/GitHub "Access blocked: missing client_id" page.
+        // Hidden until the credentials are added in Clerk; email codes work.
+        // Remove these two lines once social sign-in is configured.
+        elements: {
+          socialButtonsRoot: { display: "none" },
+          dividerRow: { display: "none" },
+        },
+      }}
+    >
       <html lang="en">
         <body className={`${inter.className} antialiased bg-white text-gray-900`}>
           <script
