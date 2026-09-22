@@ -151,9 +151,42 @@ describe("pdf to word: tables", () => {
   });
 });
 
+/** A letter page with a line of text and a 200x150 JPEG drawn at 300x225pt. */
+async function smallPhotoPdf(): Promise<File> {
+  const { PDFDocument, StandardFonts } = await import("pdf-lib");
+  const jpeg = require("jpeg-js");
+  const w = 200;
+  const h = 150;
+  const data = Buffer.alloc(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      data[i] = x;
+      data[i + 1] = y;
+      data[i + 2] = 128;
+      data[i + 3] = 255;
+    }
+  }
+  // Copy into a fresh array: jpeg-js returns a Buffer that is a view into a
+  // shared pool, and pdf-lib reads the underlying memory without its offset.
+  const jpg = new Uint8Array(jpeg.encode({ data, width: w, height: h }, 85).data);
+
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  page.drawText("A page with a photo on it.", { x: 72, y: 720, size: 14, font });
+  const img = await doc.embedJpg(jpg);
+  page.drawImage(img, { x: 72, y: 400, width: 300, height: 225 });
+  return new File([new Uint8Array(await doc.save())], "small-photo.pdf", { type: "application/pdf" });
+}
+
 describe("pdf to word: images", () => {
+  // A real JPEG photo on a text page, built small on purpose. The 3.4 MB
+  // audit photo took ~4.6s of a 5s budget on its own — the canvas stub encodes
+  // PNGs in pure JS, so cost scales with pixel count — and any parallel load
+  // timed it out. Same path end to end, a fraction of the pixels.
   it("embeds a page image as a media file in the docx", async () => {
-    const r = await tools.pdfToWord(await fixture("audit/photo-jpeg.pdf"));
+    const r = await tools.pdfToWord(await smallPhotoPdf());
     expect(r.success).toBe(true);
     const zip = await JSZip.loadAsync(await bytesOf(r.blob!));
     const media = Object.keys(zip.files).filter((n) => n.startsWith("word/media/") && !zip.files[n].dir);

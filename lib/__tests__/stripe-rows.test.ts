@@ -87,3 +87,21 @@ describe("shouldReplaceSubscriptionRow", () => {
     expect(shouldReplaceSubscriptionRow(row("lifetime_manual", "active", "2099-01-01T00:00:00.000Z"), row("sub_x", "active", future), NOW)).toBe(false);
   });
 });
+
+import { isLifetimeGrant } from "@/lib/stripe-rows";
+
+describe("isLifetimeGrant", () => {
+  it("recognises a hand-granted lifetime row", () => {
+    expect(isLifetimeGrant({ stripe_subscription_id: "lifetime_manual" })).toBe(true);
+  });
+
+  it("does not mistake a real Stripe subscription for one", () => {
+    expect(isLifetimeGrant({ stripe_subscription_id: "sub_1PzExample" })).toBe(false);
+  });
+
+  it("is false for missing rows and ids rather than throwing", () => {
+    expect(isLifetimeGrant(null)).toBe(false);
+    expect(isLifetimeGrant(undefined)).toBe(false);
+    expect(isLifetimeGrant({ stripe_subscription_id: null })).toBe(false);
+  });
+});

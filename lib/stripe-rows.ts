@@ -37,6 +37,18 @@ type StoredRow = {
 };
 
 /**
+ * Pro granted by hand rather than sold through Stripe. These rows carry a
+ * placeholder like `lifetime_manual` instead of a real Stripe subscription id,
+ * so nothing may ever send that id to Stripe, and no Stripe event may replace
+ * the row.
+ */
+export function isLifetimeGrant(
+  row: { stripe_subscription_id?: string | null } | null | undefined
+): boolean {
+  return !!row?.stripe_subscription_id?.startsWith("lifetime");
+}
+
+/**
  * The table holds one row per user, but a user can have more than one Stripe
  * subscription over time (e.g. re-subscribing after a failed card). Decide
  * whether an event for `incoming` may overwrite the stored row:
@@ -51,7 +63,7 @@ export function shouldReplaceSubscriptionRow(
 ): boolean {
   if (!existing) return true;
   if (existing.stripe_subscription_id === incoming.stripe_subscription_id) return true;
-  if (existing.stripe_subscription_id?.startsWith("lifetime")) return false;
+  if (isLifetimeGrant(existing)) return false;
   if (incoming.status === "active") return true;
   const existingLive =
     existing.status === "active" &&

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 import { getSubscription } from "@/lib/tier";
+import { isLifetimeGrant } from "@/lib/stripe-rows";
 import { rateLimit, clientKey, tooMany } from "@/lib/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -18,6 +19,15 @@ export async function POST(req: Request) {
   const sub = await getSubscription(userId);
   if (!sub?.stripe_subscription_id) {
     return NextResponse.json({ error: "No active subscription" }, { status: 404 });
+  }
+
+  // Lifetime Pro has no Stripe subscription behind it, so there's nothing to
+  // cancel — and its placeholder id must never reach the Stripe API.
+  if (isLifetimeGrant(sub)) {
+    return NextResponse.json(
+      { error: "Lifetime Pro doesn't renew, so there's nothing to cancel." },
+      { status: 409 }
+    );
   }
 
   // Cancel at period end — user keeps Pro until billing cycle ends

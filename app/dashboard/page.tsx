@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getUserTier, getSubscription } from "@/lib/tier";
+import { isLifetimeGrant } from "@/lib/stripe-rows";
 import { createAdminClient } from "@/lib/supabase";
 import SubscribeButton from "@/components/SubscribeButton";
 import CancelButton from "@/components/CancelButton";
@@ -101,7 +102,13 @@ export default async function DashboardPage({
               >
                 CSV Bulk Unlock →
               </Link>
-              <CancelButton periodEnd={subscription?.current_period_end ?? undefined} />
+              {isLifetimeGrant(subscription) ? (
+                <span className="text-xs font-semibold text-gray-500">
+                  Lifetime · never renews
+                </span>
+              ) : (
+                <CancelButton periodEnd={subscription?.current_period_end ?? undefined} />
+              )}
             </div>
           )}
         </div>

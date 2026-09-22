@@ -3,9 +3,11 @@
 
 import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { useProStatus } from "@/lib/useProStatus";
 
 export default function Navbar() {
   const { isSignedIn, isLoaded } = useUser();
+  const { isPro } = useProStatus();
 
   return (
     <nav className="w-full border-b border-gray-100 bg-white sticky top-0 z-50">
@@ -62,6 +64,16 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              {/* Your plan, where you'd look for it — not only on the dashboard. */}
+              {isPro && (
+                <Link
+                  href="/dashboard"
+                  title="You're on RizzPDF Pro"
+                  className="text-[11px] font-black tracking-wider bg-red-600 text-white px-2 py-0.5 rounded-full hover:bg-red-700 transition-colors"
+                >
+                  PRO
+                </Link>
+              )}
               <UserButton />
             </>
           ) : (
