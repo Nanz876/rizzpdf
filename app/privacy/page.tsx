@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const UPDATED = "September 22, 2026";
+const UPDATED = "September 23, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -96,10 +96,18 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-gray-900">Deleting your account and data</h2>
           <p>
-            To delete your account, email{" "}
+            In the RizzPDF Android app, open the <strong>Account</strong> tab and tap{" "}
+            <strong>Delete Account</strong>. Your account, your subscription record, your unlock
+            history and your tool usage records are removed straight away, and an active website
+            subscription is cancelled at the same time so you are not billed again.
+          </p>
+          <p>
+            You can also email{" "}
             <a href="mailto:mcalaa7@gmail.com" className="text-red-600 hover:underline">mcalaa7@gmail.com</a> from
-            your account email address. We will delete your account, your subscription record and
-            any stored email address within 30 days, and confirm when it is done.
+            your account email address, and we will delete it within 30 days and confirm when it is
+            done. Our{" "}
+            <Link href="/delete-account" className="text-red-600 hover:underline">account deletion page</Link>{" "}
+            sets out exactly what is removed and what is kept.
           </p>
           <p>
             Because your files are never uploaded, there are no files to delete on our side.
