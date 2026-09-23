@@ -45,16 +45,19 @@ export default function PrivacyPage() {
             backed up to us.
           </p>
           <p>
-            The app contacts our servers in only one case: if you are signed in, it asks
-            rizzpdf.com whether your account has Pro, so that features you have paid for are
-            available on your phone. That request contains your sign-in token and nothing else. It
-            returns only your subscription tier.
+            The app contacts our servers in two cases, both of them only when you are signed
+            in. It asks rizzpdf.com whether your account has Pro, so that features you have paid
+            for are available on your phone; that request contains your sign-in token and nothing
+            else, and it returns only your subscription tier. And if you tap Delete Account, it
+            asks us to delete your account and the records listed below. Nothing about your
+            documents is sent in either case.
           </p>
           <p>
-            If you buy Pro inside the app, the purchase is handled by Google Play and by RevenueCat,
-            our subscription provider. We never see your payment details. RevenueCat receives your
-            purchase history and a device identifier so it can tell us whether your subscription is
-            active.
+            The app does not sell anything. There is no way to buy Pro inside it, and it sends
+            nothing to a payment provider. If you are a Pro member, you subscribed on the website
+            and Stripe handled it there. Should we ever add in-app purchases, they would be handled
+            by Google Play and by our subscription provider RevenueCat, we would still never see
+            your payment details, and we would update this page before that shipped.
           </p>
           <p>
             The app contains no advertising and no third-party analytics or tracking.
@@ -69,7 +72,6 @@ export default function PrivacyPage() {
             <li><strong>Account data.</strong> If you create an account, our sign-in provider Clerk stores your email address and login details.</li>
             <li><strong>Payment data.</strong> Payments are handled by Stripe. We never see or store your card number. We store your Stripe customer and subscription IDs and your subscription status so we can tell whether you are a Pro member.</li>
             <li><strong>Free batch counter.</strong> How many free batch runs you have used is stored on your device, in your browser or in the app. It is not sent to us.</li>
-            <li><strong>Purchase data (app only).</strong> If you subscribe through the Android app, Google Play and RevenueCat process the purchase. We never see your payment details, and we store only whether your subscription is active.</li>
             <li><strong>Email signups.</strong> If you enter your email to be notified about new features, we store that email address.</li>
             <li><strong>Analytics.</strong> We use Vercel Web Analytics, which records page views without cookies and without identifying you personally.</li>
             <li><strong>Server logs.</strong> Like any website, our hosting provider (Vercel) processes your IP address to serve pages and to rate-limit abuse. We do not use it to identify you.</li>
@@ -80,8 +82,9 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-bold text-gray-900">Where data is stored</h2>
           <p>
             Account, subscription and Pro unlock-history records live in Supabase (hosted database), authentication in
-            Clerk, and payments in Stripe. Subscriptions bought in the Android app are handled by
-            Google Play and RevenueCat. Each of these providers publishes its own privacy policy.
+            Clerk, and payments in Stripe. Each of these providers publishes its own privacy
+            policy. Subscriptions are sold on the website only, so no purchase data is held by
+            Google Play for RizzPDF.
           </p>
         </section>
 
