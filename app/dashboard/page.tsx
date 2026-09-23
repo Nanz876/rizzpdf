@@ -205,6 +205,16 @@ export default async function DashboardPage({
             </ul>
           )}
         </div>
+
+        {/* Account controls. This page has no Footer, so the deletion page is
+            otherwise unreachable for a signed-in user. */}
+        <p className="text-sm text-gray-400 text-center">
+          Want to close your account?{" "}
+          <Link href="/delete-account" className="text-gray-500 hover:text-red-600 hover:underline">
+            Delete your account and data
+          </Link>
+          .
+        </p>
       </main>
     </div>
   );
