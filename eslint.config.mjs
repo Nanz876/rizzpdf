@@ -16,6 +16,12 @@ const eslintConfig = defineConfig([
     "public/**",
     "test-fixtures/**",
   ]),
+  {
+    // scripts/*.js are one-off CommonJS maintenance scripts run by hand with
+    // `node`, never bundled into the site. require() is correct there.
+    files: ["scripts/**/*.js"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;
