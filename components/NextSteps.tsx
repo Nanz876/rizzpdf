@@ -22,7 +22,11 @@ const CHAIN_TARGETS = [
   { name: "Rotate", href: "/tools/rotate" },
   { name: "Split", href: "/tools/split" },
   { name: "Delete pages", href: "/tools/delete-pages" },
+  { name: "Extract pages", href: "/tools/extract-pages" },
   { name: "PDF to Word", href: "/tools/pdf-to-word" },
+  { name: "PDF to Excel", href: "/tools/pdf-to-excel" },
+  { name: "PDF to PowerPoint", href: "/tools/pdf-to-powerpoint" },
+  { name: "PDF to Markdown", href: "/tools/pdf-to-markdown" },
   { name: "PDF to JPG", href: "/tools/pdf-to-jpg" },
 ];
 

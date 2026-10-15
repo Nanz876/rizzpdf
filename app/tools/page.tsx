@@ -40,6 +40,12 @@ const TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" />,
   },
   {
+    name: "Extract Pages", route: "/tools/extract-pages", category: "Organize PDF",
+    desc: "Pull selected pages into a new PDF",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#eef2ff" badgeColor="#6366f1" badgeLabel="PDF" />,
+  },
+  {
     name: "Page Numbers", route: "/tools/page-numbers", category: "Organize PDF",
     desc: "Add page numbers to your PDF",
     icon: <ToolIcon variant="single" bgColor="#f0fdfa" badgeColor="#14b8a6" badgeLabel="123" />,
@@ -61,6 +67,24 @@ const TOOLS = [
     desc: "Export PDF text as an editable Word doc",
     badge: "NEW" as const,
     icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#2563eb" badgeLabel2="DOC" />,
+  },
+  {
+    name: "PDF to Excel", route: "/tools/pdf-to-excel", category: "Convert PDF",
+    desc: "Pull tables into an editable spreadsheet",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#f0fdf4" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#16a34a" badgeLabel2="XLS" />,
+  },
+  {
+    name: "PDF to PowerPoint", route: "/tools/pdf-to-powerpoint", category: "Convert PDF",
+    desc: "Turn each page into a slide",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fff7ed" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#ea580c" badgeLabel2="PPT" />,
+  },
+  {
+    name: "PDF to Markdown", route: "/tools/pdf-to-markdown", category: "Convert PDF",
+    desc: "Clean Markdown for LLMs, wikis and docs",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#eef2ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#6366f1" badgeLabel2="MD" />,
   },
   {
     name: "Word to PDF", route: "/tools/word-to-pdf", category: "Convert PDF",
@@ -125,6 +149,12 @@ const TOOLS = [
     desc: "Permanently black out sensitive text",
     badge: "NEW" as const,
     icon: <ToolIcon variant="single" bgColor="#f3f4f6" badgeColor="#111827" badgeLabel="PDF" />,
+  },
+  {
+    name: "Compare PDF", route: "/tools/compare", category: "Edit & Security",
+    desc: "See what changed between two PDFs",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#f97316" badgeLabel2="PDF" />,
   },
   {
     name: "Flatten PDF", route: "/tools/flatten", category: "Edit & Security",

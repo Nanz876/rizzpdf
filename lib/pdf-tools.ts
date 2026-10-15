@@ -888,6 +888,29 @@ export async function deletePages(file: File, pagesToDelete: number[]): Promise<
   }
 }
 
+// ─── Extract Pages ────────────────────────────────────────────────────────────
+
+/**
+ * Keep only the given pages, in the order supplied, as a new PDF. `pages` are
+ * 1-based page numbers. Duplicates are allowed (the page is copied more than
+ * once); out-of-range numbers are ignored. Copies into a fresh document so the
+ * result carries only the kept pages.
+ */
+export async function extractPages(file: File, pages: number[]): Promise<ToolResult> {
+  try {
+    const src = await loadPdf(file);
+    const total = src.getPageCount();
+    const indices = pages.map((p) => p - 1).filter((i) => i >= 0 && i < total);
+    if (!indices.length) return { success: false, error: "Select at least one page to extract." };
+    const out = await PDFDocument.create();
+    const copied = await out.copyPages(src, indices);
+    copied.forEach((p) => out.addPage(p));
+    return { success: true, blob: await saveToBlob(out), filename: `${baseName(file)}_extracted.pdf` };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Failed to extract pages.") };
+  }
+}
+
 // ─── Repair PDF ───────────────────────────────────────────────────────────────
 
 export async function repairPDF(file: File): Promise<ToolResult> {

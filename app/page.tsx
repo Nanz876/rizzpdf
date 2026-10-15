@@ -36,6 +36,11 @@ const ORGANIZE_TOOLS = [
     name: "Crop PDF", route: "/tools/crop", desc: "Trim margins or cut pages to size.",
     icon: <ToolIcon variant="single" bgColor="#ecfeff" badgeColor="#0891b2" badgeLabel="PDF" />,
   },
+  {
+    name: "Extract Pages", route: "/tools/extract-pages", desc: "Pull selected pages into a new PDF.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#eef2ff" badgeColor="#6366f1" badgeLabel="PDF" />,
+  },
 ];
 
 const CONVERT_TOOLS = [
@@ -51,6 +56,21 @@ const CONVERT_TOOLS = [
     name: "PDF to Word", route: "/tools/pdf-to-word", desc: "Export as an editable .docx file.",
     badge: "NEW" as const,
     icon: <ToolIcon variant="double" bgColor="#eff6ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#2563eb" badgeLabel2="DOC" />,
+  },
+  {
+    name: "PDF to Excel", route: "/tools/pdf-to-excel", desc: "Pull tables into a spreadsheet.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#f0fdf4" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#16a34a" badgeLabel2="XLS" />,
+  },
+  {
+    name: "PDF to PowerPoint", route: "/tools/pdf-to-powerpoint", desc: "Each page becomes a slide.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fff7ed" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#ea580c" badgeLabel2="PPT" />,
+  },
+  {
+    name: "PDF to Markdown", route: "/tools/pdf-to-markdown", desc: "Clean Markdown for LLMs and wikis.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#eef2ff" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#6366f1" badgeLabel2="MD" />,
   },
   {
     name: "Compress PDF", route: "/tools/compress", desc: "Shrink PDFs by recompressing images. Text stays selectable.",
@@ -115,6 +135,11 @@ const SECURITY_TOOLS = [
   {
     name: "Flatten PDF", route: "/tools/flatten", desc: "Lock form fields and comments in place.",
     icon: <ToolIcon variant="single" bgColor="#f5f5f4" badgeColor="#78716c" badgeLabel="PDF" />,
+  },
+  {
+    name: "Compare PDF", route: "/tools/compare", desc: "See what changed between two PDFs.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="double" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" badgeColor2="#f97316" badgeLabel2="PDF" />,
   },
   {
     name: "Repair PDF", route: "/tools/repair", desc: "Fix corrupted or damaged PDFs.",
