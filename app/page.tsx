@@ -146,6 +146,11 @@ const SECURITY_TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#f5f3ff" badgeColor="#8b5cf6" badgeLabel="PDF" />,
   },
   {
+    name: "Fast Web View", route: "/tools/linearize", desc: "Linearize so page 1 loads instantly.",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#fffbeb" badgeColor="#f59e0b" badgeLabel="PDF" />,
+  },
+  {
     name: "Batch Processing", route: "/tools/batch", desc: "Apply one tool to many PDFs at once.",
     icon: <ToolIcon variant="single" bgColor="#f0fdf4" badgeColor="#22c55e" badgeLabel="PDF"
       innerContent={<svg width="18" height="16" fill="none" viewBox="0 0 20 18"><rect x="1" y="5" width="18" height="4" rx="2" fill="rgba(34,197,94,0.25)" stroke="#22c55e" strokeWidth="1.3"/><rect x="1" y="11" width="18" height="4" rx="2" fill="rgba(34,197,94,0.4)" stroke="#22c55e" strokeWidth="1.3"/><rect x="1" y="1" width="18" height="3" rx="1.5" fill="rgba(34,197,94,0.15)" stroke="#22c55e" strokeWidth="1.3"/></svg>}

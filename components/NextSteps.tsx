@@ -7,6 +7,7 @@ import { getLastOutput, handOffLastOutput, subscribeOutput } from "@/lib/handoff
 /** Tools that accept a single PDF, in the order most people chain them. */
 const CHAIN_TARGETS = [
   { name: "Compress", href: "/tools/compress" },
+  { name: "Fast Web View", href: "/tools/linearize" },
   { name: "Protect", href: "/tools/protect" },
   { name: "Sign", href: "/tools/sign" },
   { name: "Fill form", href: "/tools/fill-form" },

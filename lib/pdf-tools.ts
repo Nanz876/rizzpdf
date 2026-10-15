@@ -931,10 +931,29 @@ export async function repairPDF(file: File): Promise<ToolResult> {
     return { success: true, blob: await saveToBlob(doc), filename: `${baseName(file)}_repaired.pdf` };
   } catch (e) {
     if ((e as Error)?.name === "PdfPasswordError") return { success: false, error: toolErrorMessage(e, "") };
-    // pdf-lib couldn't parse — fall through to rendering recovery
+    // pdf-lib couldn't parse — fall through to qpdf recovery
   }
 
-  // Pass 2: PDF.js is more tolerant; rebuild each page from a rendered image at its real size.
+  // Pass 2: qpdf (in-browser) reconstructs the xref table and object structure,
+  // keeping text selectable. Tried before the lossy raster rebuild. Progressive
+  // enhancement — skipped if qpdf can't load or can't recover the file.
+  try {
+    const { repairWithQpdf } = await import("@/lib/tools/qpdf");
+    const recovered = await repairWithQpdf(bytes);
+    if (recovered) {
+      // Confirm the result actually opens before handing it back.
+      await loadPdf(recovered);
+      return {
+        success: true,
+        blob: new Blob([recovered as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+        filename: `${baseName(file)}_repaired.pdf`,
+      };
+    }
+  } catch {
+    // qpdf unavailable or its output still won't open — fall through to raster rebuild.
+  }
+
+  // Pass 3: PDF.js is more tolerant; rebuild each page from a rendered image at its real size.
   try {
     const pdfjsLib = await getPdfjsLib();
     const pdfJsDoc = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
@@ -957,6 +976,33 @@ export async function repairPDF(file: File): Promise<ToolResult> {
     };
   } catch (e) {
     return { success: false, error: toolErrorMessage(e, "Failed to repair PDF. The file may be too corrupted to recover.") };
+  }
+}
+
+// ─── Linearize (Fast Web View) ──────────────────────────────────────────────
+
+/**
+ * Linearise a PDF ("Fast Web View") so viewers can render the first page before
+ * the whole file downloads. Uses qpdf in the browser. Decrypts restriction-only
+ * files via loadPdf first (and gives the clear "unlock it first" message for
+ * password-protected ones). The output is often slightly larger — that's
+ * expected; linearisation trades a little size for streaming.
+ */
+export async function linearizePDF(file: File): Promise<ToolResult> {
+  try {
+    // Normalise/decrypt through pdf-lib first so qpdf gets an openable file and
+    // password-protected inputs produce the standard guidance message.
+    const doc = await loadPdf(file);
+    const normalized = new Uint8Array(await (await saveToBlob(doc)).arrayBuffer());
+    const { linearize } = await import("@/lib/tools/qpdf");
+    const out = await linearize(normalized);
+    return {
+      success: true,
+      blob: new Blob([out as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+      filename: `${baseName(file)}_web.pdf`,
+    };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Couldn't optimize this PDF for web view. Make sure it's a valid PDF.") };
   }
 }
 

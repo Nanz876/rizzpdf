@@ -18,6 +18,7 @@ const MORE_TOOLS = [
   { name: "PDF to JPG", href: "/tools/pdf-to-jpg" },
   { name: "JPG to PDF", href: "/tools/jpg-to-pdf" },
   { name: "Repair PDF", href: "/tools/repair" },
+  { name: "Fast Web View", href: "/tools/linearize" },
   { name: "Protect PDF", href: "/tools/protect" },
   { name: "PDF to Word", href: "/tools/pdf-to-word" },
   { name: "PDF to Excel", href: "/tools/pdf-to-excel" },

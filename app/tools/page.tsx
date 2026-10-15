@@ -168,6 +168,12 @@ const TOOLS = [
     icon: <ToolIcon variant="single" bgColor="#f5f3ff" badgeColor="#8b5cf6" badgeLabel="PDF" />,
   },
   {
+    name: "Fast Web View", route: "/tools/linearize", category: "Edit & Security",
+    desc: "Linearize so page 1 loads instantly",
+    badge: "NEW" as const,
+    icon: <ToolIcon variant="single" bgColor="#fffbeb" badgeColor="#f59e0b" badgeLabel="PDF" />,
+  },
+  {
     name: "Protect PDF", route: "/tools/protect", category: "Edit & Security",
     desc: "Password-protect PDFs with AES-256 encryption.",
     icon: <ToolIcon variant="single" bgColor="#fef2f2" badgeColor="#ef4444" badgeLabel="PDF" />,

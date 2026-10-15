@@ -37,6 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/tools/extract-pages`,     lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/tools/compare`,           lastModified: today, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/tools/repair`,            lastModified: today, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/tools/linearize`,         lastModified: today, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/tools/word-to-pdf`,        lastModified: today, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/tools/excel-to-pdf`,       lastModified: today, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/tools/powerpoint-to-pdf`,  lastModified: today, changeFrequency: "monthly", priority: 0.8 },

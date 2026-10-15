@@ -67,16 +67,21 @@ function loadQpdfFactory(): Promise<QpdfFactory> {
 /**
  * Run qpdf once: `qpdf [args] <input> <output>`, returning the output bytes.
  * A fresh module instance is created per call so there's no Emscripten FS state
- * to leak between runs. Throws on a non-zero qpdf exit or any load failure.
+ * to leak between runs. Throws if qpdf's exit code isn't in `okCodes`, or on any
+ * load failure.
+ *
+ * qpdf exit codes: 0 = success, 2 = errors, 3 = warnings (a valid file is still
+ * written). The default accepts 0 only; repair passes [0, 3] because qpdf
+ * recovering a damaged file routinely reports warnings while producing a good PDF.
  */
-export async function qpdfRun(input: Uint8Array, args: string[]): Promise<Uint8Array> {
+export async function qpdfRun(input: Uint8Array, args: string[], okCodes: number[] = [0]): Promise<Uint8Array> {
   if (typeof window === "undefined") throw new Error("qpdf runs in the browser only");
   const factory = await loadQpdfFactory();
   const instance: QpdfInstance = await factory({ locateFile: () => QPDF_WASM_URL });
 
   // Write the input into the in-memory FS (MEMFS). We deliberately don't use
   // WORKERFS — it relies on FileReaderSync, which only exists inside a Web
-  // Worker, and compress runs on the main thread.
+  // Worker, and these tools run on the main thread.
   const fs = instance.FS as unknown as {
     writeFile: (path: string, data: Uint8Array) => void;
     readFile: (path: string) => Uint8Array;
@@ -85,8 +90,12 @@ export async function qpdfRun(input: Uint8Array, args: string[]): Promise<Uint8A
   fs.writeFile("/input.pdf", input);
   try {
     const code = instance.callMain([...args, "/input.pdf", "/output.pdf"]);
-    if (code !== 0) throw new Error(`qpdf exited with code ${code}`);
-    return fs.readFile("/output.pdf");
+    if (!okCodes.includes(code)) throw new Error(`qpdf exited with code ${code}`);
+    const out = fs.readFile("/output.pdf");
+    if (out.length < 5 || String.fromCharCode(out[0], out[1], out[2], out[3], out[4]) !== "%PDF-") {
+      throw new Error("qpdf produced an invalid PDF");
+    }
+    return out;
   } finally {
     try {
       fs.unlink("/input.pdf");
@@ -123,5 +132,22 @@ export async function structurallyCompress(input: Uint8Array): Promise<Uint8Arra
 
 /** Linearise a PDF for "Fast Web View" (byte-range streaming). Throws if qpdf is unavailable. */
 export async function linearize(input: Uint8Array): Promise<Uint8Array> {
-  return qpdfRun(input, ["--linearize"]);
+  // Accept warnings (code 3): a slightly non-conformant input still linearises fine.
+  return qpdfRun(input, ["--linearize"], [0, 3]);
+}
+
+/**
+ * Recover a damaged PDF with qpdf, which reconstructs the cross-reference table
+ * and object structure while keeping text selectable (unlike a raster rebuild).
+ * Returns the recovered bytes, or null if qpdf can't recover it or isn't
+ * available. Never throws.
+ */
+export async function repairWithQpdf(input: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    // No special flags: simply reading and rewriting triggers qpdf's recovery.
+    // Accept warnings (code 3) — damaged inputs almost always warn.
+    return await qpdfRun(input, [], [0, 3]);
+  } catch {
+    return null;
+  }
 }
