@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, jpgToPdf } from "@/lib/pdf-tools";
+import { isHeic, heicToJpeg } from "@/lib/tools/heic";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -13,14 +14,30 @@ export default function JpgToPdfPage() {
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [converting, setConverting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIdx = useRef<number | null>(null);
 
-  const addImages = (files: File[]) => {
-    const valid = files.filter(f => f.type.startsWith("image/"));
-    const urls = valid.map(f => URL.createObjectURL(f));
-    setImages(prev => [...prev, ...valid]);
-    setPreviews(prev => [...prev, ...urls]);
+  const addImages = async (files: File[]) => {
+    // Accept anything that looks like an image, including HEIC/HEIF whose MIME
+    // type the browser often leaves blank.
+    const valid = files.filter(f => f.type.startsWith("image/") || isHeic(f));
+    if (!valid.length) return;
+    setError("");
+    // iPhone HEIC photos can't be rendered or embedded directly — transcode to
+    // JPEG in the browser first. Everything downstream then sees a normal JPEG.
+    const needsHeic = valid.some(isHeic);
+    if (needsHeic) setConverting(true);
+    try {
+      const prepared = await Promise.all(valid.map(f => heicToJpeg(f)));
+      const urls = prepared.map(f => URL.createObjectURL(f));
+      setImages(prev => [...prev, ...prepared]);
+      setPreviews(prev => [...prev, ...urls]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't read one of the images.");
+    } finally {
+      setConverting(false);
+    }
   };
 
   const removeImage = (idx: number) => {
@@ -60,7 +77,7 @@ export default function JpgToPdfPage() {
   };
 
   return (
-    <ToolShell name="JPG to PDF" description="Convert JPG and PNG images into a PDF document." icon="📄"
+    <ToolShell name="JPG to PDF" description="Convert JPG, PNG and iPhone HEIC images into a PDF document." icon="📄"
       svgIcon={<svg width="28" height="28" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.8"/><circle cx="9" cy="9" r="2" fill="white" opacity=".6"/><path d="M4 16l4-4 3 3 2-2 4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       steps={images.length === 0 ? ["Upload images", "Arrange order", "Convert to PDF"] : undefined}>
       {images.length === 0 ? (
@@ -69,7 +86,7 @@ export default function JpgToPdfPage() {
           onClick={() => fileInputRef.current?.click()}
           className={`relative border-2 border-dashed rounded-3xl p-12 text-center cursor-pointer transition-all
             ${dragOver ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50 hover:border-red-400"}`}>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer"
+          <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif,image/heic,image/heif" multiple className="absolute inset-0 opacity-0 cursor-pointer"
             onChange={e => { if (e.target.files) { addImages(Array.from(e.target.files)); e.target.value = ""; } }} />
           <div className="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center mx-auto mb-3">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +94,9 @@ export default function JpgToPdfPage() {
             </svg>
           </div>
           <p className="text-lg font-bold text-gray-800">Drop your images here</p>
-          <p className="text-sm text-gray-500 mt-1">or <span className="text-red-600 font-semibold">click to browse</span> — JPG, PNG supported</p>
+          <p className="text-sm text-gray-500 mt-1">or <span className="text-red-600 font-semibold">click to browse</span> — JPG, PNG, HEIC supported</p>
+          {converting && <p className="text-sm text-red-600 font-medium mt-3">Converting HEIC photos…</p>}
+          {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -88,8 +107,9 @@ export default function JpgToPdfPage() {
             secondaryLabel="+ Add more" onSecondary={() => fileInputRef.current?.click()}
             primaryLabel={status === "processing" ? "Converting…" : status === "done" ? "✓ Downloaded!" : "Convert to PDF →"}
             onPrimary={status === "done" ? reset : handleConvert}
-            primaryDisabled={status === "processing"} />
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+            primaryDisabled={status === "processing" || converting} />
+          {converting && <p className="text-red-600 text-sm px-5 py-2">Converting HEIC photos…</p>}
+          <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif,image/heic,image/heif" multiple className="hidden"
             onChange={e => { if (e.target.files) { addImages(Array.from(e.target.files)); e.target.value = ""; } }} />
           {error && <p className="text-red-500 text-sm px-5 py-2">{error}</p>}
           <div className="p-5 bg-gray-50">
