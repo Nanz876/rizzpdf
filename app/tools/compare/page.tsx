@@ -3,15 +3,21 @@ import { logTool } from "@/lib/logTool";
 import { useState, useCallback, useRef } from "react";
 import ToolShell from "@/components/ToolShell";
 import { comparePdfs, type CompareResult, type DiffToken } from "@/lib/tools/pdf-compare";
+import { unlockFileIfNeeded } from "@/lib/pdf-unlock-file";
+import { usePasswordPrompt } from "@/components/PasswordPromptProvider";
 
 type Status = "idle" | "processing" | "done" | "error";
 
 function FileSlot({ label, file, onPick }: { label: string; file: File | null; onPick: (f: File) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const take = (files: FileList | null) => {
+  const requestPassword = usePasswordPrompt();
+  const take = async (files: FileList | null) => {
     const pdf = files && Array.from(files).find((f) => f.type === "application/pdf");
-    if (pdf) onPick(pdf);
+    if (!pdf) return;
+    // Unlock password-protected PDFs inline, same as every other tool.
+    const unlocked = await unlockFileIfNeeded(pdf, requestPassword);
+    if (unlocked) onPick(unlocked);
   };
   return (
     <div

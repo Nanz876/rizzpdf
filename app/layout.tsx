@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
+import PasswordPromptProvider from "@/components/PasswordPromptProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -142,7 +143,7 @@ export default function RootLayout({
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
           />
-          {children}
+          <PasswordPromptProvider>{children}</PasswordPromptProvider>
           <Analytics />
         </body>
       </html>
