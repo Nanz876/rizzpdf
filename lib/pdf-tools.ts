@@ -312,7 +312,16 @@ export async function compressPDF(
   try {
     const settings = COMPRESS_SETTINGS[quality];
     const originalBytes = new Uint8Array(await file.arrayBuffer());
-    const blob = await compressWithSettings(originalBytes, settings);
+    const imageBlob = await compressWithSettings(originalBytes, settings);
+    // Structural pass (qpdf, in-browser): object streams + flate recompression
+    // on top of the image re-encoding. Progressive enhancement — falls back to
+    // the image-only result if qpdf can't load.
+    const { structurallyCompress } = await import("@/lib/tools/qpdf");
+    const structured = await structurallyCompress(new Uint8Array(await imageBlob.arrayBuffer()));
+    const blob =
+      structured.length < imageBlob.size
+        ? new Blob([structured as Uint8Array<ArrayBuffer>], { type: "application/pdf" })
+        : imageBlob;
     const filename = `${baseName(file)}_compressed.pdf`;
     if (blob.size >= originalBytes.length) {
       // Never hand back a bigger file.
