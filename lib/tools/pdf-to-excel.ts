@@ -33,6 +33,12 @@ export function parseCell(text: string): CellValue {
   // Thousands separators: commas with groups of 3 digits. Strip them; keep the decimal point.
   if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(body)) body = body.replace(/,/g, "");
   if (!/^[+-]?\d*\.?\d+$/.test(body)) return t;
+  // Identifiers that merely look numeric must stay text: a leading zero (ZIP
+  // "02139", "007") would be dropped, and a run longer than 15 digits (card /
+  // account numbers) would lose precision through parseFloat.
+  const intDigits = body.replace(/^[+-]/, "").split(".")[0];
+  if (/^0\d/.test(intDigits)) return t;
+  if (body.replace(/[^\d]/g, "").length > 15) return t;
   let n = parseFloat(body);
   if (Number.isNaN(n)) return t;
   if (negative) n = -n;
@@ -95,7 +101,12 @@ async function buildWorkbook(pages: PageText[]): Promise<Any> {
     for (const row of grid) {
       const added = ws.addRow(row);
       row.forEach((v, c) => {
-        if (typeof v === "number") added.getCell(c + 1).numFmt = Number.isInteger(v) ? "#,##0" : "#,##0.00";
+        if (typeof v === "number") {
+          // Group only large magnitudes; a plain 4-digit integer like a year must
+          // not become "2,024". Decimals always show two places.
+          if (!Number.isInteger(v)) added.getCell(c + 1).numFmt = "#,##0.00";
+          else if (Math.abs(v) >= 10000) added.getCell(c + 1).numFmt = "#,##0";
+        }
         widths[c] = Math.max(widths[c] ?? 0, String(v).length);
       });
     }

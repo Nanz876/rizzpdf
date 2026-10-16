@@ -29,12 +29,22 @@ export default function JpgToPdfPage() {
     const needsHeic = valid.some(isHeic);
     if (needsHeic) setConverting(true);
     try {
-      const prepared = await Promise.all(valid.map(f => heicToJpeg(f)));
-      const urls = prepared.map(f => URL.createObjectURL(f));
-      setImages(prev => [...prev, ...prepared]);
-      setPreviews(prev => [...prev, ...urls]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't read one of the images.");
+      // One unreadable image (e.g. a corrupt HEIC) must not drop the whole batch,
+      // so settle each independently and add the ones that succeeded.
+      const settled = await Promise.allSettled(valid.map(f => heicToJpeg(f)));
+      const prepared = settled.flatMap(r => (r.status === "fulfilled" ? [r.value] : []));
+      const failed = settled.length - prepared.length;
+      if (prepared.length) {
+        const urls = prepared.map(f => URL.createObjectURL(f));
+        setImages(prev => [...prev, ...prepared]);
+        setPreviews(prev => [...prev, ...urls]);
+      }
+      if (failed) {
+        setError(
+          `Couldn't read ${failed} of ${valid.length} image${valid.length === 1 ? "" : "s"}` +
+            (prepared.length ? " — the rest were added." : ".")
+        );
+      }
     } finally {
       setConverting(false);
     }

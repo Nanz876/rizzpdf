@@ -80,4 +80,42 @@ describe("PasswordPromptProvider modal", () => {
     setup(true);
     expect(await screen.findByText(/Incorrect password/i)).toBeTruthy();
   });
+
+  it("queues a second concurrent request instead of dropping the first", async () => {
+    // Two independent callers (e.g. the Compare tool's two file slots) ask while the
+    // first prompt is still open. Both promises must resolve, one after the other.
+    const resolved: Record<string, string | null> = {};
+    function TwoAskers() {
+      const requestPassword = usePasswordPrompt();
+      return (
+        <button
+          onClick={() => {
+            requestPassword("first.pdf", false).then((v) => (resolved.first = v));
+            requestPassword("second.pdf", false).then((v) => (resolved.second = v));
+          }}
+        >
+          ask both
+        </button>
+      );
+    }
+    render(
+      <PasswordPromptProvider>
+        <TwoAskers />
+      </PasswordPromptProvider>
+    );
+    fireEvent.click(screen.getByText("ask both"));
+
+    // First request is on screen; answer it.
+    expect(await screen.findByText("first.pdf")).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "one" } });
+    fireEvent.click(screen.getByText("Unlock"));
+    await waitFor(() => expect(resolved.first).toBe("one"));
+
+    // The second request now takes its place — it was not lost.
+    expect(await screen.findByText("second.pdf")).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "two" } });
+    fireEvent.click(screen.getByText("Unlock"));
+    await waitFor(() => expect(resolved.second).toBe("two"));
+    expect(screen.queryByText("Password required")).toBeNull();
+  });
 });

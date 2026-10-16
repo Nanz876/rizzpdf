@@ -8,15 +8,10 @@
 // like compress and PDF-to-image. JSZip and pdf.js are dynamically imported.
 import { toolErrorMessage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
+import { getPdfjsLib } from "@/lib/tools/pdf-text";
 
 // EMU (English Metric Units) are OOXML's absolute unit: 914400 per inch.
 const EMU_PER_PT = 12700;
-
-async function getPdfjsLib() {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  return pdfjsLib;
-}
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) =>

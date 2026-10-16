@@ -101,7 +101,7 @@ const PAGE_ALIGN_MAX = 60;
 /** Two pages count as "the same page" when this share of their word sequence matches. */
 const PAGE_SIM = 0.4;
 /** Words of each page compared when measuring page similarity (bounds the cost). */
-const SIM_WORD_CAP = 400;
+const SIM_WORD_CAP = 200;
 
 /** Length of the longest common subsequence of two token arrays (rolling array, O(m) memory). */
 function lcsLength(a: string[], b: string[]): number {
@@ -119,25 +119,29 @@ function lcsLength(a: string[], b: string[]): number {
   return prev[0];
 }
 
-/**
- * Whether two pages are "the same page" for alignment: a strong share of their word
- * sequence is common. Order-aware (an LCS, not a set overlap), so a shared header and
- * footer alone can't make two otherwise-different pages match.
- */
-function pagesSimilar(a: string[], b: string[]): boolean {
-  if (!a.length && !b.length) return true;
-  if (!a.length || !b.length) return false;
-  const ca = a.length > SIM_WORD_CAP ? a.slice(0, SIM_WORD_CAP) : a;
-  const cb = b.length > SIM_WORD_CAP ? b.slice(0, SIM_WORD_CAP) : b;
-  return lcsLength(ca, cb) / Math.max(ca.length, cb.length) >= PAGE_SIM;
+const cap = (a: string[]): string[] => (a.length > SIM_WORD_CAP ? a.slice(0, SIM_WORD_CAP) : a);
+
+function countWords(a: string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const w of a) m.set(w, (m.get(w) ?? 0) + 1);
+  return m;
+}
+
+/** Size of two pages' word-multiset intersection — an exact upper bound on their LCS. */
+function multisetOverlap(a: Map<string, number>, b: Map<string, number>): number {
+  const [small, big] = a.size <= b.size ? [a, b] : [b, a];
+  let n = 0;
+  for (const [w, c] of small) n += Math.min(c, big.get(w) ?? 0);
+  return n;
 }
 
 /**
  * Align the two documents' pages so an inserted or deleted page doesn't cascade
- * into every page after it reading as fully changed. An LCS over pages (using
- * `pagesSimilar` as equality) pairs matching pages in order; unpaired left pages are
- * removals, unpaired right pages additions. `li`/`ri` are 0-based indices, or -1 for
- * "no page on this side".
+ * into every page after it reading as fully changed. An LCS over pages — two pages
+ * count as the same when a strong share of their word sequence matches, order-aware
+ * so a shared header/footer alone can't pair unrelated pages — gives the pairing in
+ * order; unpaired left pages are removals, unpaired right pages additions. `li`/`ri`
+ * are 0-based indices, or -1 for "no page on this side".
  */
 function alignPages(left: string[][], right: string[][]): { li: number; ri: number }[] {
   const n = left.length;
@@ -149,11 +153,29 @@ function alignPages(left: string[][], right: string[][]): { li: number; ri: numb
     }));
   }
 
+  // Precompute each page's capped token list and word counts once, so the cheap
+  // overlap prune below is O(words) per pair rather than re-scanning every time.
+  const la = left.map(cap);
+  const ra = right.map(cap);
+  const lc = la.map(countWords);
+  const rc = ra.map(countWords);
+  const similar = (i: number, j: number): boolean => {
+    const al = la[i].length;
+    const bl = ra[j].length;
+    if (!al && !bl) return true;
+    if (!al || !bl) return false;
+    const max = Math.max(al, bl);
+    // Multiset overlap ≥ LCS, so if even the overlap can't clear the bar, skip the
+    // quadratic LCS entirely. This prunes the many dissimilar pairs in the n×m table.
+    if (multisetOverlap(lc[i], rc[j]) / max < PAGE_SIM) return false;
+    return lcsLength(la[i], ra[j]) / max >= PAGE_SIM;
+  };
+
   const eq: boolean[][] = Array.from({ length: n }, () => new Array(m).fill(false));
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      eq[i][j] = pagesSimilar(left[i], right[j]);
+      eq[i][j] = similar(i, j);
       dp[i][j] = eq[i][j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }

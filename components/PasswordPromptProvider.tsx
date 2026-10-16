@@ -30,24 +30,36 @@ export default function PasswordPromptProvider({ children }: { children: React.R
   const [state, setState] = useState<PromptState | null>(null);
   const [value, setValue] = useState("");
   const [show, setShow] = useState(false);
-  const resolverRef = useRef<((password: string | null) => void) | null>(null);
+  // Requests queue up: on the Compare tool both file slots can ask at once, and a
+  // second ask must not overwrite the first's resolver (which would leave the first
+  // promise pending forever). The head of the queue is the request on screen.
+  type Pending = { filename: string; wrong: boolean; resolve: (password: string | null) => void };
+  const queueRef = useRef<Pending[]>([]);
 
-  const requestPassword = useCallback<RequestPassword>((filename, wrong) => {
-    setState({ filename, wrong });
+  const showHead = useCallback(() => {
+    const head = queueRef.current[0];
     setValue("");
     setShow(false);
-    return new Promise<string | null>((resolve) => {
-      resolverRef.current = resolve;
-    });
+    setState(head ? { filename: head.filename, wrong: head.wrong } : null);
   }, []);
 
-  const settle = useCallback((password: string | null) => {
-    const resolve = resolverRef.current;
-    resolverRef.current = null;
-    setState(null);
-    setValue("");
-    resolve?.(password);
-  }, []);
+  const requestPassword = useCallback<RequestPassword>(
+    (filename, wrong) =>
+      new Promise<string | null>((resolve) => {
+        queueRef.current.push({ filename, wrong: !!wrong, resolve });
+        if (queueRef.current.length === 1) showHead(); // nothing was showing — show this one
+      }),
+    [showHead]
+  );
+
+  const settle = useCallback(
+    (password: string | null) => {
+      const current = queueRef.current.shift();
+      current?.resolve(password);
+      showHead(); // advance to the next queued request, or close
+    },
+    [showHead]
+  );
 
   const submit = useCallback(() => {
     if (!value) return;

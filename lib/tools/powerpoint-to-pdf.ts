@@ -206,10 +206,11 @@ const FOLD: Record<string, string> = {
   "‣": "•", "⁃": "•", " ": " ",
 };
 
-// When a Unicode font (DejaVu) is embedded for a deck, this predicate reports
-// which extra characters it can actually draw, so sanitize keeps them instead of
-// replacing with "?". Scoped per conversion (set/reset in pptxToPdf).
-let unicodeCovers: ((ch: string) => boolean) | null = null;
+// When a Unicode font (DejaVu) is embedded for a deck, this predicate reports which
+// extra characters it can actually draw, so sanitize keeps them instead of replacing
+// with "?". Threaded through SlideContext per conversion (never module-global state,
+// which would let two concurrent conversions clobber each other's predicate).
+type Covers = ((ch: string) => boolean) | null;
 
 /** Pull the visible text out of slide XML (`<a:t>` runs), decoding numeric entities. */
 function extractSlideText(xml: string): string {
@@ -234,7 +235,7 @@ function needsUnicodeFont(text: string): boolean {
 }
 
 /** Keeps characters the active fonts can draw; anything else is recorded in `dropped`. */
-function sanitize(text: string, dropped: Set<string>): string {
+function sanitize(text: string, dropped: Set<string>, covers: Covers): string {
   let out = "";
   for (const ch of text) {
     const cp = ch.codePointAt(0)!;
@@ -243,7 +244,7 @@ function sanitize(text: string, dropped: Set<string>): string {
     if (isWinAnsi(cp)) { out += ch; continue; }
     const folded = FOLD[ch];
     if (folded !== undefined) { out += folded; continue; }
-    if (unicodeCovers?.(ch)) { out += ch; continue; }
+    if (covers?.(ch)) { out += ch; continue; }
     dropped.add(ch);
     out += "?";
   }
@@ -319,7 +320,7 @@ function placeholderSize(sp: Element): number {
   return 18;
 }
 
-function readParagraphs(txBody: Element, defaultSize: number, dropped: Set<string>): Para[] {
+function readParagraphs(txBody: Element, defaultSize: number, dropped: Set<string>, covers: Covers): Para[] {
   const paras: Para[] = [];
   for (const p of kids(txBody, "p")) {
     const pPr = kid(p, "pPr");
@@ -343,7 +344,7 @@ function readParagraphs(txBody: Element, defaultSize: number, dropped: Set<strin
       const szAttr = rPr?.getAttribute("sz");
       const size = szAttr ? Math.max(4, Number(szAttr) / 100) : defaultSize;
       para.runs.push({
-        text: sanitize(raw, dropped),
+        text: sanitize(raw, dropped, covers),
         size: Number.isFinite(size) ? size : defaultSize,
         bold: rPr?.getAttribute("b") === "1",
         italic: rPr?.getAttribute("i") === "1",
@@ -558,6 +559,8 @@ interface SlideContext {
   fonts: Fonts;
   pageH: number;
   dropped: Set<string>;
+  /** Glyph-coverage predicate for the embedded Unicode font, or null when none is used. */
+  covers: Covers;
   skippedImages: Set<string>;
   /** Where the next shape without an explicit position goes (points, top-down). */
   flowTop: number;
@@ -582,7 +585,7 @@ function drawShapeFill(page: PDFPage, sp: Element, box: Box) {
 function drawSp(ctx: SlideContext, sp: Element, frame: Frame) {
   const box = boxFromXfrm(path(sp, "spPr", "xfrm"), frame, ctx.pageH);
   const txBody = kid(sp, "txBody");
-  const paras = txBody ? readParagraphs(txBody, placeholderSize(sp), ctx.dropped) : [];
+  const paras = txBody ? readParagraphs(txBody, placeholderSize(sp), ctx.dropped, ctx.covers) : [];
   const hasText = paras.some((p) => p.runs.some((r) => r.text.trim()));
 
   if (box) {
@@ -676,7 +679,7 @@ function drawTable(ctx: SlideContext, frame: Element, tf: Frame) {
       const colW = (colWidths[ci] ?? gridWidth / colWidths.length) * kx;
       const txBody = kid(tc, "txBody");
       if (txBody) {
-        const paras = readParagraphs(txBody, 14, ctx.dropped);
+        const paras = readParagraphs(txBody, 14, ctx.dropped, ctx.covers);
         if (paras.some((p) => p.runs.some((r) => r.text.trim()))) {
           drawParagraphs(
             ctx.page,
@@ -744,13 +747,13 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
     // Unicode font. If so, embed DejaVu (regular/bold) and let sanitize keep the
     // characters it covers; otherwise keep the tiny built-in fonts.
     const slideXmls = await Promise.all(paths.map((p) => zip.file(p)!.async("string")));
-    unicodeCovers = null;
+    let covers: Covers = null;
     let fonts: Fonts;
     if (needsUnicodeFont(slideXmls.map(extractSlideText).join(""))) {
       const uni = await embedUnicodeFont(pdf, false);
       const uniBold = await embedUnicodeFont(pdf, true);
       fonts = { regular: uni.font, bold: uniBold.font, italic: uni.font, boldItalic: uniBold.font };
-      unicodeCovers = uni.covers;
+      covers = uni.covers;
     } else {
       fonts = {
         regular: await pdf.embedFont(StandardFonts.Helvetica),
@@ -783,6 +786,7 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
             fonts,
             pageH: sizePt[1],
             dropped,
+            covers,
             skippedImages,
             flowTop: sizePt[1] * 0.92,
           };
@@ -829,7 +833,5 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
       success: false,
       error: err instanceof Error && err.message ? err.message : NOT_PPTX_MESSAGE,
     };
-  } finally {
-    unicodeCovers = null;
   }
 }

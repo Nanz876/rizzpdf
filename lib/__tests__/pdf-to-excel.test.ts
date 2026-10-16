@@ -53,6 +53,15 @@ describe("parseCell", () => {
     expect(parseCell("12-34-56")).toBe("12-34-56");
     expect(parseCell("")).toBe("");
   });
+  it("keeps identifiers that only look numeric as text", () => {
+    expect(parseCell("02139")).toBe("02139"); // ZIP with a leading zero
+    expect(parseCell("007")).toBe("007");
+    expect(parseCell("1234567890123456")).toBe("1234567890123456"); // 16-digit card number
+    // Genuine numbers still parse.
+    expect(parseCell("2024")).toBe(2024);
+    expect(parseCell("0")).toBe(0);
+    expect(parseCell("0.5")).toBe(0.5);
+  });
 });
 
 describe("pdfToExcel", () => {
