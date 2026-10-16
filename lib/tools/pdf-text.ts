@@ -71,51 +71,103 @@ export function rowSegments(row: TextRow, gapFactor = 2): Segment[] {
 }
 
 const COL_TOL = 4; // pt
+const MIN_GUTTER = 3; // pt — a column separator must survive a gap at least this wide in every row
 
-/** A run of consecutive rows (inclusive indices) that share ≥2 column start positions. */
+/**
+ * A run of consecutive rows (inclusive indices) that form a table.
+ * `cols` holds the column separators (cut lines) as ascending x-positions; the
+ * table has `cols.length + 1` columns. Cells are assigned by their horizontal
+ * centre, so columns of any alignment — left, right or centred — line up.
+ */
 export interface TableRun {
   start: number;
   end: number;
   cols: number[];
 }
 
+type Interval = [number, number];
+
+/** The internal gaps of a row: the whitespace bands that sit between two of its segments. */
+function rowGaps(segs: Segment[]): Interval[] {
+  const gaps: Interval[] = [];
+  for (let i = 0; i < segs.length - 1; i++) {
+    const lo = segs[i].end;
+    const hi = segs[i + 1].x;
+    if (hi - lo > COL_TOL) gaps.push([lo, hi]);
+  }
+  return gaps;
+}
+
+/** Intersect two sets of ascending, disjoint intervals into the bands common to both. */
+function intersectIntervals(a: Interval[], b: Interval[]): Interval[] {
+  const out: Interval[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    const lo = Math.max(a[i][0], b[j][0]);
+    const hi = Math.min(a[i][1], b[j][1]);
+    if (hi - lo > COL_TOL) out.push([lo, hi]);
+    if (a[i][1] < b[j][1]) i++;
+    else j++;
+  }
+  return out;
+}
+
+/** Cut lines (gutter midpoints) wide enough to act as column separators. */
+function cutsFrom(gutters: Interval[]): number[] {
+  return gutters.filter(([lo, hi]) => hi - lo >= MIN_GUTTER).map(([lo, hi]) => (lo + hi) / 2);
+}
+
 /**
- * Find table-like runs: two or more consecutive rows whose segments start at two or
- * more shared x-positions. Ordinary prose has a single segment per row, so it never
- * qualifies. Under-detects on purpose; a missed table just reads as text.
+ * Find table-like runs: two or more consecutive rows that share at least one vertical
+ * gutter — a band of whitespace that every row in the run leaves open between its
+ * segments. Columns are the bands between those gutters, so right-aligned numeric
+ * columns and centred columns are detected as readily as left-aligned ones. Ordinary
+ * prose has a single segment (and so no internal gap) per row, so it never qualifies.
+ * Under-detects on purpose; a missed table just reads as text.
  */
 export function detectTableRuns(segRows: Segment[][]): TableRun[] {
   const runs: TableRun[] = [];
   if (!segRows.length) return runs;
-  const starts = segRows.map((s) => s.map((g) => g.x));
-  const intersect = (a: number[], b: number[]) => a.filter((x) => b.some((y) => Math.abs(x - y) <= COL_TOL));
+  const gaps = segRows.map(rowGaps);
+
   let runStart = 0;
-  let common = starts[0];
-  for (let i = 1; i <= starts.length; i++) {
-    const next = i < starts.length ? intersect(common, starts[i]) : [];
-    if (i < starts.length && next.length >= 2) {
+  let common = gaps[0];
+  const flush = (endExclusive: number) => {
+    const cuts = cutsFrom(common);
+    if (endExclusive - runStart >= 2 && cuts.length >= 1) {
+      runs.push({ start: runStart, end: endExclusive - 1, cols: cuts });
+    }
+  };
+  for (let i = 1; i <= gaps.length; i++) {
+    const next = i < gaps.length && common.length ? intersectIntervals(common, gaps[i]) : [];
+    if (i < gaps.length && cutsFrom(next).length >= 1) {
       common = next;
       continue;
     }
-    if (i - runStart >= 2 && common.length >= 2) runs.push({ start: runStart, end: i - 1, cols: common });
+    flush(i);
     runStart = i;
-    common = i < starts.length ? starts[i] : [];
+    common = i < gaps.length ? gaps[i] : [];
   }
   return runs;
 }
 
-/** Index of the column a segment starting at `x` belongs to, given ascending column starts. */
-export function columnIndex(cols: number[], x: number): number {
+/** Index of the column a centre x falls into, given ascending cut lines. */
+export function columnIndex(cuts: number[], center: number): number {
   let idx = 0;
-  for (let c = 0; c < cols.length; c++) if (x + COL_TOL >= cols[c]) idx = c;
+  for (const c of cuts) {
+    if (center >= c) idx++;
+    else break;
+  }
   return idx;
 }
 
-/** Lay a run of segment rows onto its shared columns, joining segments that land in one cell. */
-export function tableGrid(segRows: Segment[][], cols: number[]): string[][] {
+/** Lay a run of segment rows onto its columns, joining segments that land in one cell. */
+export function tableGrid(segRows: Segment[][], cuts: number[]): string[][] {
+  const nCols = cuts.length + 1;
   return segRows.map((segs) => {
-    const cells: string[][] = cols.map(() => []);
-    for (const s of segs) cells[columnIndex(cols, s.x)].push(s.text);
+    const cells: string[][] = Array.from({ length: nCols }, () => []);
+    for (const s of segs) cells[columnIndex(cuts, (s.x + s.end) / 2)].push(s.text);
     return cells.map((parts) => parts.join(" ").trim());
   });
 }
