@@ -759,8 +759,12 @@ export async function renderThumbnails(
 
 // ─── Page Numbers ─────────────────────────────────────────────────────────────
 
+export type PageNumberPosition =
+  | "top-left" | "top-center" | "top-right"
+  | "bottom-left" | "bottom-center" | "bottom-right";
+
 export interface PageNumberOptions {
-  position?: "bottom-center" | "bottom-right" | "bottom-left" | "top-center";
+  position?: PageNumberPosition;
   startFrom?: number;
   fontSize?: number;
   format?: "1" | "Page 1" | "1 / N";
@@ -781,10 +785,10 @@ export async function addPageNumbers(file: File, opts: PageNumberOptions = {}): 
       const view = displayedPage(page);
       const tw = font.widthOfTextAtSize(label, fontSize);
       const dx =
-        position === "bottom-right" ? view.width - tw - margin
-        : position === "bottom-left" ? margin
+        position.endsWith("-right") ? view.width - tw - margin
+        : position.endsWith("-left") ? margin
         : (view.width - tw) / 2;
-      const dy = position === "top-center" ? view.height - margin - fontSize : margin;
+      const dy = position.startsWith("top-") ? view.height - margin - fontSize : margin;
       const { x, y } = view.toUser(dx, dy);
       page.drawText(label, { x, y, size: fontSize, font, color: rgb(0.2, 0.2, 0.2), rotate: degrees(view.rotation) });
     });
