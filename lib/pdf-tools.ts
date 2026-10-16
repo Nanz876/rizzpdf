@@ -172,9 +172,13 @@ export async function splitPDF(
 // ─── Compress ────────────────────────────────────────────────────────────────
 
 const COMPRESS_SETTINGS = {
-  low: { maxEdge: 1400, quality: 0.6, flateMaxRatio: 0.8 },     // "Extreme"
-  medium: { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6 }, // "Recommended"
-  high: { maxEdge: 3200, quality: 0.85, flateMaxRatio: 0.45 },  // "Less"
+  // dpiTarget/dpiThreshold drive the smart path: an image is only downsampled
+  // when its effective resolution ON THE PAGE exceeds dpiThreshold, and then only
+  // down to dpiTarget — so an image that's already a sensible size is never
+  // softened. maxEdge is the fallback when placement can't be determined.
+  low: { maxEdge: 1400, quality: 0.6, flateMaxRatio: 0.8, dpiTarget: 72, dpiThreshold: 110 },     // "Extreme"
+  medium: { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6, dpiTarget: 150, dpiThreshold: 200 }, // "Recommended"
+  high: { maxEdge: 3200, quality: 0.85, flateMaxRatio: 0.45, dpiTarget: 220, dpiThreshold: 300 },  // "Less"
 } as const;
 
 function numberOf(dict: PDFDict, key: string): number | undefined {
@@ -242,6 +246,87 @@ export interface CompressSettings {
   maxEdge: number;
   quality: number;
   flateMaxRatio: number;
+  /** Downsample an image only when its on-page DPI exceeds this. */
+  dpiThreshold?: number;
+  /** When downsampling, the DPI to aim for. */
+  dpiTarget?: number;
+}
+
+/** Image pixel-dims "WxH" → the largest size (in points) it's drawn at anywhere in the PDF. */
+export type ImagePlacements = Map<string, { wPt: number; hPt: number }>;
+
+/**
+ * Scale factor to apply to a `w`×`h` px image. With a known on-page placement and
+ * DPI settings, an image is left untouched (scale 1) unless its effective DPI
+ * exceeds `dpiThreshold`, in which case it's scaled down to `dpiTarget`. Without a
+ * placement it falls back to the flat `maxEdge` pixel cap. Pure; exported for tests.
+ */
+export function imageScale(
+  w: number,
+  h: number,
+  settings: CompressSettings,
+  place?: { wPt: number; hPt: number }
+): number {
+  if (place && settings.dpiTarget && settings.dpiThreshold && place.wPt > 0 && place.hPt > 0) {
+    const dpi = Math.max(w / (place.wPt / 72), h / (place.hPt / 72));
+    return dpi > settings.dpiThreshold ? Math.min(1, settings.dpiTarget / dpi) : 1;
+  }
+  return Math.min(1, settings.maxEdge / Math.max(w, h));
+}
+
+/**
+ * Find how large each image is actually drawn on the page, so compression can
+ * reason about effective DPI instead of raw pixel count. Keyed by pixel
+ * dimensions (unique enough to match back to the pdf-lib image XObject); the
+ * largest placement wins so a reused image keeps enough resolution. Best-effort:
+ * returns an empty map on any failure, and compression falls back to maxEdge.
+ */
+export async function collectImagePlacements(bytes: Uint8Array): Promise<ImagePlacements> {
+  const map: ImagePlacements = new Map();
+  try {
+    const pdfjsLib = await getPdfjsLib();
+    const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+    const OPS = pdfjsLib.OPS;
+    try {
+      for (let n = 1; n <= pdf.numPages; n++) {
+        const page = await pdf.getPage(n);
+        let ops: { fnArray: number[]; argsArray: unknown[][] };
+        try {
+          ops = await page.getOperatorList();
+        } catch {
+          page.cleanup();
+          continue;
+        }
+        const stack: number[][] = [];
+        let ctm: number[] = [1, 0, 0, 1, 0, 0];
+        for (let i = 0; i < ops.fnArray.length; i++) {
+          const fn = ops.fnArray[i];
+          if (fn === OPS.save) stack.push(ctm);
+          else if (fn === OPS.restore) ctm = stack.pop() ?? ctm;
+          else if (fn === OPS.transform) ctm = pdfjsLib.Util.transform(ctm, ops.argsArray[i]);
+          else if (fn === OPS.paintImageXObject) {
+            // pdf.js carries the image's intrinsic pixel size in the op args
+            // ([objId, width, height]) — no need to resolve page.objs.
+            const a = ops.argsArray[i];
+            const px = typeof a?.[1] === "number" ? a[1] : 0;
+            const py = typeof a?.[2] === "number" ? a[2] : 0;
+            if (!px || !py) continue;
+            const wPt = Math.hypot(ctm[0], ctm[1]);
+            const hPt = Math.hypot(ctm[2], ctm[3]);
+            const key = `${px}x${py}`;
+            const prev = map.get(key);
+            map.set(key, { wPt: Math.max(wPt, prev?.wPt ?? 0), hPt: Math.max(hPt, prev?.hPt ?? 0) });
+          }
+        }
+        page.cleanup();
+      }
+    } finally {
+      await pdf.destroy();
+    }
+  } catch {
+    // Placement unknown — compression will use the maxEdge fallback.
+  }
+  return map;
 }
 
 /**
@@ -253,7 +338,8 @@ export interface CompressSettings {
 async function compressWithSettings(
   originalBytes: Uint8Array,
   settings: CompressSettings,
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  placements?: ImagePlacements
 ): Promise<Blob> {
   const doc = await loadPdf(originalBytes);
   const context = doc.context;
@@ -283,7 +369,7 @@ async function compressWithSettings(
     }
     if (!source) continue;
 
-    const scale = Math.min(1, settings.maxEdge / Math.max(w, h));
+    const scale = imageScale(w, h, settings, placements?.get(`${w}x${h}`));
     const nw = Math.max(1, Math.round(w * scale));
     const nh = Math.max(1, Math.round(h * scale));
     const canvas = document.createElement("canvas");
@@ -325,7 +411,8 @@ export async function compressPDF(
   try {
     const settings = COMPRESS_SETTINGS[quality];
     const originalBytes = new Uint8Array(await file.arrayBuffer());
-    const imageBlob = await compressWithSettings(originalBytes, settings, onProgress);
+    const placements = await collectImagePlacements(originalBytes);
+    const imageBlob = await compressWithSettings(originalBytes, settings, onProgress, placements);
     // Structural pass (qpdf, in-browser): object streams + flate recompression
     // on top of the image re-encoding. Progressive enhancement — falls back to
     // the image-only result if qpdf can't load.
@@ -355,11 +442,11 @@ export async function compressPDF(
 
 /** A ladder of progressively more aggressive settings, tried in order until the target is hit. */
 const TARGET_SIZE_LADDER: CompressSettings[] = [
-  { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6 },
-  { maxEdge: 1600, quality: 0.65, flateMaxRatio: 0.68 },
-  { maxEdge: 1200, quality: 0.55, flateMaxRatio: 0.75 },
-  { maxEdge: 900, quality: 0.45, flateMaxRatio: 0.8 },
-  { maxEdge: 700, quality: 0.35, flateMaxRatio: 0.85 },
+  { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6, dpiTarget: 150, dpiThreshold: 200 },
+  { maxEdge: 1600, quality: 0.65, flateMaxRatio: 0.68, dpiTarget: 120, dpiThreshold: 160 },
+  { maxEdge: 1200, quality: 0.55, flateMaxRatio: 0.75, dpiTarget: 96, dpiThreshold: 130 },
+  { maxEdge: 900, quality: 0.45, flateMaxRatio: 0.8, dpiTarget: 72, dpiThreshold: 100 },
+  { maxEdge: 700, quality: 0.35, flateMaxRatio: 0.85, dpiTarget: 60, dpiThreshold: 80 },
 ];
 
 export interface LadderSearchResult {
@@ -431,6 +518,7 @@ export async function compressToTarget(
       };
     }
 
+    const placements = await collectImagePlacements(originalBytes);
     let bestBlob: Blob | null = null;
     const result = await searchCompressionLadder<CompressSettings>(
       async (settings, index) => {
@@ -439,7 +527,7 @@ export async function compressToTarget(
             ? "Trying recommended compression…"
             : `Trying stronger compression (${index + 1}/${TARGET_SIZE_LADDER.length})…`
         );
-        const blob = await compressWithSettings(originalBytes, settings);
+        const blob = await compressWithSettings(originalBytes, settings, undefined, placements);
         bestBlob = blob;
         return blob.size;
       },
