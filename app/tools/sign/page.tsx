@@ -537,6 +537,56 @@ export default function SignPage() {
 
   const onResizePtrUp = () => { setIsResizing(false); resizeData.current = null; };
 
+  // Duplicate the selected placement, nudged slightly so it's visible.
+  const duplicateSelected = () => {
+    const p = placements.find(pl => pl.id === selectedId);
+    if (!p) return;
+    const id = makeId();
+    setPlacements(ps => [...ps, { ...p, id, xFrac: Math.min(0.9, p.xFrac + 0.03), yFrac: Math.min(0.9, p.yFrac + 0.03) }]);
+    setSelectedId(id);
+  };
+
+  // Copy the selected placement onto every other page at the same spot/size —
+  // the common "sign every page" need.
+  const applyToAllPages = () => {
+    const p = placements.find(pl => pl.id === selectedId);
+    if (!p || pageUrls.length < 2) return;
+    setPlacements(ps => {
+      const additions: Placement[] = [];
+      for (let i = 0; i < pageUrls.length; i++) {
+        if (i === p.pageIndex) continue;
+        additions.push({ ...p, id: makeId(), pageIndex: i });
+      }
+      return [...ps, ...additions];
+    });
+  };
+
+  // Keyboard affordances for the selected placement: Delete removes, arrows
+  // nudge (Shift = bigger step), Esc deselects. Ignored while typing in a field.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        removePlacement(selectedId);
+      } else if (e.key === "Escape") {
+        setSelectedId(null);
+      } else if (e.key.startsWith("Arrow")) {
+        e.preventDefault();
+        const step = e.shiftKey ? 0.02 : 0.005;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        setPlacements(ps => ps.map(p => p.id === selectedId
+          ? { ...p, xFrac: Math.max(0, Math.min(0.97, p.xFrac + dx)), yFrac: Math.max(0, Math.min(0.97, p.yFrac + dy)) }
+          : p));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, removePlacement]);
+
   // Zoom
   const zoomIn = () => setZoom(z => Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], ZOOM_STEPS[ZOOM_STEPS.indexOf(z) + 1] ?? z * 1.25));
   const zoomOut = () => setZoom(z => Math.max(ZOOM_STEPS[0], ZOOM_STEPS[ZOOM_STEPS.indexOf(z) - 1] ?? z * 0.8));
@@ -792,6 +842,21 @@ export default function SignPage() {
                       <button onClick={() => removePlacement(selectedPlacement.id)}
                         className="text-xs text-red-500 hover:text-red-700 shrink-0">✕ Remove</button>
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={duplicateSelected}
+                        className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600 transition-colors">
+                        Duplicate
+                      </button>
+                      {selectedPlacement.kind === "signature" && pageUrls.length > 1 && (
+                        <button onClick={applyToAllPages}
+                          className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600 transition-colors">
+                          Place on every page
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 leading-snug">
+                      Drag to move · arrow keys to nudge (Shift for bigger steps) · Delete to remove · Esc to deselect
+                    </p>
                     {selectedPlacement.kind === "text" && (
                       <>
                         <input
