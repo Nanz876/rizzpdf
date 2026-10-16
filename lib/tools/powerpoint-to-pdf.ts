@@ -12,6 +12,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { PDFFont, PDFImage, PDFPage, RGB } from "pdf-lib";
 import type ZipFile from "jszip";
 import type { ToolResult } from "@/lib/pdf-tools";
+import { embedUnicodeFont } from "@/lib/tools/pdf-font";
 
 const EMU_PER_PT = 12700;
 /** 13.333in × 7.5in widescreen, in points — the modern PowerPoint default. */
@@ -205,7 +206,34 @@ const FOLD: Record<string, string> = {
   "‣": "•", "⁃": "•", " ": " ",
 };
 
-/** WinAnsi-safe text; anything unrepresentable is recorded in `dropped`. */
+// When a Unicode font (DejaVu) is embedded for a deck, this predicate reports
+// which extra characters it can actually draw, so sanitize keeps them instead of
+// replacing with "?". Scoped per conversion (set/reset in pptxToPdf).
+let unicodeCovers: ((ch: string) => boolean) | null = null;
+
+/** Pull the visible text out of slide XML (`<a:t>` runs), decoding numeric entities. */
+function extractSlideText(xml: string): string {
+  let text = "";
+  const re = /<a:t[^>]*>([\s\S]*?)<\/a:t>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml))) text += m[1];
+  return text.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)));
+}
+
+/** True if any character needs a Unicode font (not WinAnsi, not foldable, not whitespace). */
+function needsUnicodeFont(text: string): boolean {
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)!;
+    if (cp === 9 || cp === 10 || cp === 13 || cp === 32) continue;
+    if (isWinAnsi(cp)) continue;
+    if (FOLD[ch] !== undefined) continue;
+    return true;
+  }
+  return false;
+}
+
+/** Keeps characters the active fonts can draw; anything else is recorded in `dropped`. */
 function sanitize(text: string, dropped: Set<string>): string {
   let out = "";
   for (const ch of text) {
@@ -215,6 +243,7 @@ function sanitize(text: string, dropped: Set<string>): string {
     if (isWinAnsi(cp)) { out += ch; continue; }
     const folded = FOLD[ch];
     if (folded !== undefined) { out += folded; continue; }
+    if (unicodeCovers?.(ch)) { out += ch; continue; }
     dropped.add(ch);
     out += "?";
   }
@@ -710,12 +739,26 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
     }
 
     const pdf = await PDFDocument.create();
-    const fonts: Fonts = {
-      regular: await pdf.embedFont(StandardFonts.Helvetica),
-      bold: await pdf.embedFont(StandardFonts.HelveticaBold),
-      italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-      boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
-    };
+
+    // Read every slide's XML once, and decide up front whether the deck needs a
+    // Unicode font. If so, embed DejaVu (regular/bold) and let sanitize keep the
+    // characters it covers; otherwise keep the tiny built-in fonts.
+    const slideXmls = await Promise.all(paths.map((p) => zip.file(p)!.async("string")));
+    unicodeCovers = null;
+    let fonts: Fonts;
+    if (needsUnicodeFont(slideXmls.map(extractSlideText).join(""))) {
+      const uni = await embedUnicodeFont(pdf, false);
+      const uniBold = await embedUnicodeFont(pdf, true);
+      fonts = { regular: uni.font, bold: uniBold.font, italic: uni.font, boldItalic: uniBold.font };
+      unicodeCovers = uni.covers;
+    } else {
+      fonts = {
+        regular: await pdf.embedFont(StandardFonts.Helvetica),
+        bold: await pdf.embedFont(StandardFonts.HelveticaBold),
+        italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
+        boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
+      };
+    }
 
     const dropped = new Set<string>();
     const skippedImages = new Set<string>();
@@ -724,7 +767,7 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
     for (let i = 0; i < paths.length; i++) {
       const page = pdf.addPage([sizePt[0], sizePt[1]]);
       try {
-        const slide = parseXml(await zip.file(paths[i])!.async("string"));
+        const slide = parseXml(slideXmls[i]);
         const root = slide.documentElement;
         // Slide background, when it's a plain colour (theme fills are skipped).
         const bg = colorOf(path(kid(root, "cSld"), "bg", "bgPr"));
@@ -766,7 +809,7 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
     if (dropped.size) {
       const sample = [...dropped].slice(0, 8).join(" ");
       notes.push(
-        `Some characters (${sample}) aren't supported by the PDF's built-in fonts and were replaced with "?". Non-Latin scripts such as Chinese, Japanese, Arabic, Greek or Cyrillic need an embedded font, which this tool can't do yet.`
+        `Some characters (${sample}) can't be drawn yet and were replaced with "?". Latin, Cyrillic, Greek and Vietnamese are supported; complex scripts such as Chinese, Japanese, Korean, Arabic, Hebrew and Thai need text shaping, which this tool can't do yet.`
       );
     }
     if (skippedImages.size) {
@@ -786,5 +829,7 @@ export async function powerpointToPdf(file: File, opts: PowerPointToPdfOptions =
       success: false,
       error: err instanceof Error && err.message ? err.message : NOT_PPTX_MESSAGE,
     };
+  } finally {
+    unicodeCovers = null;
   }
 }

@@ -19,6 +19,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import type { Cell, Worksheet } from "exceljs";
 import { toolErrorMessage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
+import { canEncode, embedUnicodeFont } from "@/lib/tools/pdf-font";
 
 export const NOT_XLSX_MESSAGE =
   "Couldn't read this as an Excel workbook. Make sure it's a valid, unprotected .xlsx file.";
@@ -322,7 +323,7 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
 // raw "WinAnsi cannot encode..." error (or silently drop characters), scan
 // up front and fail with a clear message naming the offending character.
 
-function findUnencodableChar(sheets: Worksheet[], font: PDFFont): string | null {
+function findUnencodableChar(sheets: Worksheet[], covers: (ch: string) => boolean): string | null {
   for (const ws of sheets) {
     const range = usedRange(ws);
     if (!range) continue;
@@ -331,17 +332,8 @@ function findUnencodableChar(sheets: Worksheet[], font: PDFFont): string | null 
       for (let c = range.left; c <= range.right; c++) {
         const text = formatCellText(row.getCell(c));
         if (!text) continue;
-        try {
-          font.encodeText(text);
-        } catch {
-          for (const ch of text) {
-            try {
-              font.encodeText(ch);
-            } catch {
-              return ch;
-            }
-          }
-          return text[0] ?? "?";
+        for (const ch of text) {
+          if (ch.trim() && !covers(ch)) return ch;
         }
       }
     }
@@ -687,15 +679,24 @@ export async function excelToPdf(file: File, opts: ExcelToPdfOptions = {}): Prom
     }
 
     const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold);
+    let font = await pdf.embedFont(StandardFonts.Helvetica);
+    let boldFont = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-    const badChar = findUnencodableChar(sheets, font);
-    if (badChar) {
-      return {
-        success: false,
-        error: `This spreadsheet has a character standard PDF fonts can't display ("${badChar}"). Replace it with plain text and convert again.`,
-      };
+    // If every cell is WinAnsi, keep the built-in fonts (tiny output). Otherwise
+    // embed the DejaVu Unicode fallback so Cyrillic/Greek/Vietnamese cells render.
+    const winAnsiCovers = (ch: string) => canEncode(font, ch);
+    if (findUnencodableChar(sheets, winAnsiCovers)) {
+      const uni = await embedUnicodeFont(pdf, false);
+      const uniBold = await embedUnicodeFont(pdf, true);
+      font = uni.font;
+      boldFont = uniBold.font;
+      const badChar = findUnencodableChar(sheets, uni.covers);
+      if (badChar) {
+        return {
+          success: false,
+          error: `This spreadsheet uses a character we can't draw yet ("${badChar}") — e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai. Latin, Cyrillic, Greek and Vietnamese are supported.`,
+        };
+      }
     }
 
     const ctx: RenderCtx = {

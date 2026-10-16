@@ -1,6 +1,7 @@
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFImage, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
 import { loadPdf, saveToBlob, toolErrorMessage, displayedPage } from "@/lib/pdf-load";
 import { recordOutput } from "@/lib/handoff";
+import { canEncode, embedUnicodeFont } from "@/lib/tools/pdf-font";
 
 export interface ToolResult {
   success: boolean;
@@ -667,7 +668,7 @@ export interface WatermarkOptions {
 }
 
 const UNSUPPORTED_TEXT =
-  "Watermark and page-number text can use Latin letters, numbers and common symbols only.";
+  "This text uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.";
 
 export async function watermarkPDF(file: File, opts: WatermarkOptions): Promise<ToolResult> {
   try {
@@ -677,11 +678,14 @@ export async function watermarkPDF(file: File, opts: WatermarkOptions): Promise<
     if (!text.trim()) return { success: false, error: "Enter some watermark text." };
 
     const doc = await loadPdf(file);
-    const font = await doc.embedFont(StandardFonts.HelveticaBold);
-    try {
-      font.encodeText(text);
-    } catch {
-      return { success: false, error: UNSUPPORTED_TEXT };
+    // Use the built-in bold font when it covers the text; otherwise embed the
+    // DejaVu Unicode fallback so Cyrillic/Greek/Vietnamese watermarks draw too.
+    let font = await doc.embedFont(StandardFonts.HelveticaBold);
+    if (!canEncode(font, text)) {
+      const uni = await embedUnicodeFont(doc, true);
+      const missing = [...text].filter((ch) => ch.trim() && !uni.covers(ch));
+      if (missing.length) return { success: false, error: UNSUPPORTED_TEXT };
+      font = uni.font;
     }
 
     const fillColor = { gray: grayscale(0.5), red: rgb(0.8, 0.1, 0.1), blue: rgb(0.1, 0.1, 0.8) }[color];
@@ -854,7 +858,8 @@ export interface SignItem {
   fontSizeRatio?: number;
 }
 
-const LATIN_TEXT_ERROR = "Text can use Latin letters, numbers and common symbols only.";
+const LATIN_TEXT_ERROR =
+  "This text uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.";
 
 /** Place multiple signature images, dates and text items onto a PDF in one pass. */
 export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolResult> {
@@ -864,6 +869,9 @@ export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolR
     const pages = doc.getPages();
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const imageCache = new Map<string, PDFImage>();
+    // Unicode fallback embedded on demand (once) for non-Latin text stamps.
+    let uniFont: typeof font | null = null;
+    let uniCovers: ((ch: string) => boolean) | null = null;
 
     for (const item of items) {
       const target = pages[item.page - 1];
@@ -889,17 +897,23 @@ export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolR
       } else {
         const text = (item.text ?? "").trim();
         if (!text) continue;
-        try {
-          font.encodeText(text);
-        } catch {
-          return { success: false, error: LATIN_TEXT_ERROR };
+        let drawFont = font;
+        if (!canEncode(font, text)) {
+          if (!uniFont) {
+            const u = await embedUnicodeFont(doc, false);
+            uniFont = u.font;
+            uniCovers = u.covers;
+          }
+          const missing = [...text].filter((ch) => ch.trim() && !uniCovers!(ch));
+          if (missing.length) return { success: false, error: LATIN_TEXT_ERROR };
+          drawFont = uniFont;
         }
         const fontSize = (item.fontSizeRatio ?? 0.02) * view.height;
-        const ascent = font.heightAtSize(fontSize, { descender: false });
+        const ascent = drawFont.heightAtSize(fontSize, { descender: false });
         const dx = item.x * view.width;
         const dy = view.height - item.yFromTop * view.height - ascent;
         const pos = view.toUser(dx, dy);
-        target.drawText(text, { x: pos.x, y: pos.y, size: fontSize, font, color: rgb(0.25, 0.25, 0.28), rotate: degrees(view.rotation) });
+        target.drawText(text, { x: pos.x, y: pos.y, size: fontSize, font: drawFont, color: rgb(0.25, 0.25, 0.28), rotate: degrees(view.rotation) });
       }
     }
 
