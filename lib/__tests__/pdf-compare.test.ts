@@ -67,9 +67,50 @@ describe("buildCompare", () => {
   it("treats a page missing from one side as all-added or all-removed", () => {
     const r = buildCompare([page(["only in original"])], [page(["only in original"]), page(["brand new page"])]);
     expect(r.pages).toHaveLength(2);
+    expect(r.pages[1].status).toBe("added");
     expect(r.pages[1].changed).toBe(true);
     expect(r.added).toBe(3);
     expect(r.pages[1].left).toHaveLength(0);
+  });
+
+  it("aligns around an inserted page instead of cascading every page after it", () => {
+    const A = page(["alpha one two three"]);
+    const B = page(["bravo four five six"]);
+    const C = page(["charlie seven eight nine"]);
+    const X = page(["xray hundred thousand million"]);
+    // X is inserted between A and B in the changed document.
+    const r = buildCompare([A, B, C], [A, X, B, C]);
+
+    // Only the inserted page is a change — B and C still line up, not re-diffed.
+    expect(r.changedPages).toBe(1);
+    expect(r.removed).toBe(0);
+    expect(r.added).toBe(4); // just X's four words
+
+    const inserted = r.pages.find((p) => p.status === "added")!;
+    expect(inserted.rightPage).toBe(2);
+    expect(inserted.left).toHaveLength(0);
+
+    // B matched across the shift: original page 2 ↔ changed page 3, unchanged.
+    const b = r.pages.find((p) => p.leftPage === 2)!;
+    expect(b.status).toBe("same");
+    expect(b.rightPage).toBe(3);
+  });
+
+  it("aligns around a deleted page the same way", () => {
+    const A = page(["alpha one two three"]);
+    const B = page(["bravo four five six"]);
+    const C = page(["charlie seven eight nine"]);
+    const r = buildCompare([A, B, C], [A, C]); // B deleted
+
+    expect(r.changedPages).toBe(1);
+    expect(r.added).toBe(0);
+    const removedPage = r.pages.find((p) => p.status === "removed")!;
+    expect(removedPage.leftPage).toBe(2);
+    expect(removedPage.right).toHaveLength(0);
+    // C still matches, despite its index shifting from 3 to 2.
+    const c = r.pages.find((p) => p.leftPage === 3)!;
+    expect(c.status).toBe("same");
+    expect(c.rightPage).toBe(2);
   });
 });
 

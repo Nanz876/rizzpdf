@@ -129,7 +129,13 @@ export default function ComparePage() {
           {shownPages.map((p) => (
             <div key={p.page} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="px-5 py-2 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500">
-                Page {p.page}{!p.changed && " · unchanged"}
+                {p.status === "added"
+                  ? `Page ${p.rightPage} · added`
+                  : p.status === "removed"
+                  ? `Page ${p.leftPage} · removed`
+                  : p.leftPage !== p.rightPage
+                  ? `Page ${p.leftPage} → ${p.rightPage}${p.status === "same" ? " · unchanged" : ""}`
+                  : `Page ${p.leftPage}${p.status === "same" ? " · unchanged" : ""}`}
               </div>
               <div className="p-5 flex flex-col sm:flex-row gap-6">
                 <DiffColumn title="Original" tokens={p.left} side="left" />
