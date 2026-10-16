@@ -19,6 +19,7 @@ import {
 } from "pdf-lib";
 import { loadPdf, saveToBlob, toolErrorMessage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
+import { canEncode, embedUnicodeFont, type UnicodeFont } from "@/lib/tools/pdf-font";
 
 export interface FormFieldInfo {
   name: string;
@@ -38,7 +39,8 @@ const NO_FIELDS_ERROR =
 const XFA_ERROR =
   "This PDF uses XFA form fields (often from Adobe LiveCycle), which aren't supported. Try the Sign tool's Add text instead.";
 
-const latinTextError = (name: string) => `"${name}" can use Latin letters, numbers and common symbols only.`;
+const unsupportedScriptError = (name: string) =>
+  `"${name}" uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.`;
 const unknownOptionError = (name: string, option: string) => `"${name}" doesn't have an option called "${option}".`;
 const maxLengthError = (name: string, max: number) => `"${name}" allows at most ${max} character${max === 1 ? "" : "s"}.`;
 
@@ -189,20 +191,6 @@ export async function readFormFields(file: File): Promise<FormFieldInfo[]> {
   });
 }
 
-/**
- * Whether the Helvetica standard font can encode `text`. Checked line-by-line
- * (splitting on the newlines multiline text fields allow) since WinAnsiEncoding,
- * which standard fonts use, has no glyph for the newline control character itself.
- */
-function isEncodable(font: PDFFont, text: string): boolean {
-  try {
-    for (const line of text.split(/\r\n|\r|\n/)) if (line) font.encodeText(line);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /** Fill values into a PDF's form fields (and optionally flatten it afterwards). */
 export async function fillForm(
   file: File,
@@ -219,7 +207,28 @@ export async function fillForm(
       return { success: false, error: NO_FIELDS_ERROR };
     }
 
-    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const helv = await doc.embedFont(StandardFonts.Helvetica);
+    // The DejaVu Unicode fallback (Cyrillic/Greek/Vietnamese/extended Latin) is
+    // embedded once, on demand, only when the standard font can't draw a value.
+    let uni: UnicodeFont | null = null;
+    const unicodeFont = async (): Promise<UnicodeFont> => (uni ??= await embedUnicodeFont(doc, false));
+
+    // WinAnsi encodability, checked per line because WinAnsiEncoding (what the
+    // standard fonts use) has no glyph for the newline control char multiline
+    // fields allow.
+    const helvEncodes = (text: string) => text.split(/\r\n|\r|\n/).every((line) => !line || canEncode(helv, line));
+    // A character neither Helvetica nor the DejaVu fallback can draw (e.g. CJK), or
+    // null when every character is drawable by one of them.
+    const firstUndrawable = async (text: string): Promise<string | null> => {
+      if (helvEncodes(text)) return null;
+      const u = await unicodeFont();
+      for (const ch of text) if (ch.trim() && !u.covers(ch)) return ch;
+      return null;
+    };
+    // The font whose appearance stream can render `content`: Helvetica when it can,
+    // otherwise the embedded DejaVu fallback.
+    const fontFor = async (content: string): Promise<PDFFont> =>
+      helvEncodes(content) ? helv : (await unicodeFont()).font;
 
     for (const field of fields) {
       const name = field.getName();
@@ -233,8 +242,8 @@ export async function fillForm(
         if (maxLen !== undefined && text.length > maxLen) {
           return { success: false, error: maxLengthError(name, maxLen) };
         }
-        if (!isEncodable(font, text)) {
-          return { success: false, error: latinTextError(name) };
+        if (await firstUndrawable(text)) {
+          return { success: false, error: unsupportedScriptError(name) };
         }
         field.setText(text);
       } else if (field instanceof PDFCheckBox) {
@@ -246,10 +255,7 @@ export async function fillForm(
         if (!field.getOptions().includes(option)) {
           return { success: false, error: unknownOptionError(name, option) };
         }
-        if (!isEncodable(font, option)) {
-          return { success: false, error: latinTextError(name) };
-        }
-        field.select(option);
+        field.select(option); // a radio's appearance is a dot, not drawn text — no font needed
       } else if (field instanceof PDFDropdown || field instanceof PDFOptionList) {
         const selected = (Array.isArray(value) ? value : value ? [String(value)] : []).filter(Boolean);
         if (!selected.length) continue;
@@ -259,15 +265,30 @@ export async function fillForm(
           const bad = selected.find((v) => !options.includes(v));
           if (bad !== undefined) return { success: false, error: unknownOptionError(name, bad) };
         }
-        const badChars = selected.find((v) => !isEncodable(font, v));
-        if (badChars !== undefined) return { success: false, error: latinTextError(name) };
+        for (const v of selected) {
+          if (await firstUndrawable(v)) return { success: false, error: unsupportedScriptError(name) };
+        }
         field.select(selected);
       }
       // Signature, push button and unknown field types have nothing fillable — skip.
     }
 
-    form.updateFieldAppearances(font);
-    if (opts?.flatten) form.flatten();
+    // Generate each field's appearance with a font that can actually draw its value.
+    // The form-level updateFieldAppearances() applies one font to everything and
+    // throws on anything Helvetica can't encode, so drive it per field instead.
+    for (const field of fields) {
+      if (field instanceof PDFTextField) {
+        field.updateAppearances(await fontFor(field.getText() ?? ""));
+      } else if (field instanceof PDFDropdown || field instanceof PDFOptionList) {
+        field.updateAppearances(await fontFor(field.getSelected().join("\n")));
+      } else if (field instanceof PDFRadioGroup || field instanceof PDFCheckBox) {
+        field.updateAppearances();
+      }
+    }
+
+    // Appearances are already current; don't let flatten regenerate them with the
+    // default Helvetica, which would throw on the Unicode ones.
+    if (opts?.flatten) form.flatten({ updateFieldAppearances: false });
 
     return { success: true, blob: await saveToBlob(doc), filename: `${baseName(file)}_filled.pdf` };
   } catch (e) {
