@@ -656,10 +656,14 @@ export async function jpgToPdf(images: File[]): Promise<ToolResult> {
 export interface WatermarkOptions {
   text: string;
   opacity?: number;    // 0–1
-  rotation?: number;  // degrees counter-clockwise, used for "diagonal"
+  rotation?: number;  // degrees counter-clockwise; authoritative when provided
   fontSize?: number;
   color?: "gray" | "red" | "blue";
   position?: "center" | "diagonal";
+  /** Watermark centre as a fraction of page width from the left (0–1). Default 0.5. */
+  xFrac?: number;
+  /** Watermark centre as a fraction of page height from the top (0–1). Default 0.5. */
+  yFrac?: number;
 }
 
 const UNSUPPORTED_TEXT =
@@ -667,7 +671,9 @@ const UNSUPPORTED_TEXT =
 
 export async function watermarkPDF(file: File, opts: WatermarkOptions): Promise<ToolResult> {
   try {
-    const { text, opacity = 0.3, rotation = 30, fontSize = 60, color = "gray", position = "diagonal" } = opts;
+    const { text, opacity = 0.3, fontSize = 60, color = "gray", position = "diagonal", xFrac = 0.5, yFrac = 0.5 } = opts;
+    // Rotation is authoritative when given; otherwise fall back to the preset (diagonal = 30°).
+    const rotation = opts.rotation ?? (position === "diagonal" ? 30 : 0);
     if (!text.trim()) return { success: false, error: "Enter some watermark text." };
 
     const doc = await loadPdf(file);
@@ -679,19 +685,22 @@ export async function watermarkPDF(file: File, opts: WatermarkOptions): Promise<
     }
 
     const fillColor = { gray: grayscale(0.5), red: rgb(0.8, 0.1, 0.1), blue: rgb(0.1, 0.1, 0.8) }[color];
-    const angle = position === "diagonal" ? rotation : 0;
+    const angle = rotation;
     const rad = (angle * Math.PI) / 180;
 
     for (const page of doc.getPages()) {
       const view = displayedPage(page);
       // Shrink long text so it stays on the page.
-      const maxWidth = (position === "diagonal" ? Math.hypot(view.width, view.height) : view.width) * 0.85;
+      const maxWidth = (Math.abs(angle) > 1 ? Math.hypot(view.width, view.height) : view.width) * 0.85;
       const size = Math.min(fontSize, (fontSize * maxWidth) / Math.max(1, font.widthOfTextAtSize(text, fontSize)));
       const tw = font.widthOfTextAtSize(text, size);
       const halfCap = size * 0.35;
-      // Baseline start so the text's centre sits at the page centre.
-      const dx = view.width / 2 - (tw / 2) * Math.cos(rad) + halfCap * Math.sin(rad);
-      const dy = view.height / 2 - (tw / 2) * Math.sin(rad) - halfCap * Math.cos(rad);
+      // Baseline start so the text's centre sits at (xFrac, yFrac). yFrac is from
+      // the top; displayed coordinates run from the bottom, hence (1 - yFrac).
+      const cx = view.width * xFrac;
+      const cy = view.height * (1 - yFrac);
+      const dx = cx - (tw / 2) * Math.cos(rad) + halfCap * Math.sin(rad);
+      const dy = cy - (tw / 2) * Math.sin(rad) - halfCap * Math.cos(rad);
       const { x, y } = view.toUser(dx, dy);
       page.drawText(text, { x, y, size, font, color: fillColor, opacity, rotate: degrees(angle + view.rotation) });
     }
