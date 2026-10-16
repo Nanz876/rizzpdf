@@ -236,7 +236,7 @@ function mergeRow(items: TextItem[]): Line {
   };
 }
 
-async function buildDoc(file: File, docx: Any, pdfjsLib: Any) {
+async function buildDoc(file: File, docx: Any, pdfjsLib: Any, onProgress?: (done: number, total: number) => void) {
   const { Document, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
 
@@ -444,6 +444,7 @@ async function buildDoc(file: File, docx: Any, pdfjsLib: Any) {
         );
       }
     });
+    onProgress?.(pageNum, pdf.numPages);
   }
 
   if (totalChars === 0) return { doc: null, empty: true as const };
@@ -464,11 +465,14 @@ async function buildDoc(file: File, docx: Any, pdfjsLib: Any) {
   return { doc, empty: false as const };
 }
 
-export async function pdfToWord(file: File): Promise<ToolResult> {
+export async function pdfToWord(
+  file: File,
+  onProgress?: (done: number, total: number) => void
+): Promise<ToolResult> {
   try {
     const pdfjsLib = await getPdfjsLib();
     const docx = await import("docx");
-    const { doc, empty } = await buildDoc(file, docx, pdfjsLib);
+    const { doc, empty } = await buildDoc(file, docx, pdfjsLib, onProgress);
     if (empty || !doc) return { success: false, error: NO_TEXT_MESSAGE };
     return { success: true, blob: await docx.Packer.toBlob(doc), filename: file.name.replace(/\.pdf$/i, ".docx") };
   } catch (e) {

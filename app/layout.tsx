@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import PasswordPromptProvider from "@/components/PasswordPromptProvider";
+import ProgressProvider from "@/components/ProgressProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -143,7 +144,9 @@ export default function RootLayout({
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
           />
-          <PasswordPromptProvider>{children}</PasswordPromptProvider>
+          <ProgressProvider>
+            <PasswordPromptProvider>{children}</PasswordPromptProvider>
+          </ProgressProvider>
           <Analytics />
         </body>
       </html>

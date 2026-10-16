@@ -7,6 +7,7 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { downloadBlob } from "@/lib/pdf-tools";
 import { pdfToPptx } from "@/lib/tools/pdf-to-pptx";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -14,6 +15,7 @@ export default function PdfToPowerPointPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const { runWithProgress } = useProgress();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready"); setError("");
@@ -22,7 +24,9 @@ export default function PdfToPowerPointPage() {
   const handleConvert = async () => {
     if (!file) return;
     logTool("pdf-to-powerpoint"); setStatus("processing"); setError("");
-    const result = await pdfToPptx(file);
+    const result = await runWithProgress("Converting to PowerPoint", (report) =>
+      pdfToPptx(file, { onProgress: report })
+    );
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, ".pptx"));
       setStatus("done");

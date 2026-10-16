@@ -249,17 +249,28 @@ export interface CompressSettings {
  * graphics are never touched, so text stays selectable. Shared by `compressPDF`
  * (fixed low/medium/high presets) and `compressToTarget` (search over a ladder).
  */
-async function compressWithSettings(originalBytes: Uint8Array, settings: CompressSettings): Promise<Blob> {
+async function compressWithSettings(
+  originalBytes: Uint8Array,
+  settings: CompressSettings,
+  onProgress?: (done: number, total: number) => void
+): Promise<Blob> {
   const doc = await loadPdf(originalBytes);
   const context = doc.context;
 
-  for (const [ref, obj] of context.enumerateIndirectObjects()) {
+  // Collect the images worth re-encoding first, so progress has a real total.
+  const imageObjs = [...context.enumerateIndirectObjects()].filter(([, obj]) => {
+    if (!(obj instanceof PDFRawStream)) return false;
+    if (obj.dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") return false;
+    return (numberOf(obj.dict, "Width") ?? 0) >= 64 && (numberOf(obj.dict, "Height") ?? 0) >= 64;
+  });
+
+  let processed = 0;
+  for (const [ref, obj] of imageObjs) {
     if (!(obj instanceof PDFRawStream)) continue;
     const dict = obj.dict;
-    if (dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
     const w = numberOf(dict, "Width") ?? 0;
     const h = numberOf(dict, "Height") ?? 0;
-    if (w < 64 || h < 64) continue;
+    onProgress?.(++processed, imageObjs.length); // one image per iteration
 
     const filter = dict.get(PDFName.of("Filter"))?.toString();
     const original = obj.getContents();
@@ -307,12 +318,13 @@ async function compressWithSettings(originalBytes: Uint8Array, settings: Compres
 
 export async function compressPDF(
   file: File,
-  quality: "low" | "medium" | "high"
+  quality: "low" | "medium" | "high",
+  onProgress?: (done: number, total: number) => void
 ): Promise<ToolResult> {
   try {
     const settings = COMPRESS_SETTINGS[quality];
     const originalBytes = new Uint8Array(await file.arrayBuffer());
-    const imageBlob = await compressWithSettings(originalBytes, settings);
+    const imageBlob = await compressWithSettings(originalBytes, settings, onProgress);
     // Structural pass (qpdf, in-browser): object streams + flate recompression
     // on top of the image re-encoding. Progressive enhancement — falls back to
     // the image-only result if qpdf can't load.
@@ -714,7 +726,11 @@ export async function organizePDF(file: File, newOrder: number[]): Promise<ToolR
 }
 
 /** Render all pages of a PDF as thumbnail data URLs. Throws a user-facing message on failure. */
-export async function renderThumbnails(file: File, scale = 0.3): Promise<string[]> {
+export async function renderThumbnails(
+  file: File,
+  scale = 0.3,
+  onProgress?: (done: number, total: number) => void
+): Promise<string[]> {
   try {
     const pdfjsLib = await getPdfjsLib();
     const pdfJsDoc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
@@ -724,6 +740,7 @@ export async function renderThumbnails(file: File, scale = 0.3): Promise<string[
       thumbs.push(canvas.toDataURL("image/jpeg", 0.7));
       canvas.width = 0;
       canvas.height = 0;
+      onProgress?.(i, pdfJsDoc.numPages);
     }
     return thumbs;
   } catch (e) {

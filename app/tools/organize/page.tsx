@@ -7,6 +7,7 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import { downloadBlob, renderThumbnails, type ToolResult } from "@/lib/pdf-tools";
 import { runInWorker } from "@/lib/worker/run";
 import { logTool } from "@/lib/logTool";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Status = "idle" | "loading-thumbs" | "ready" | "saving" | "done";
 
@@ -17,6 +18,7 @@ export default function OrganizePage() {
   const [pageOrder, setPageOrder] = useState<number[]>([]);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const { runWithProgress } = useProgress();
 
   const handleFilesAdded = useCallback(async (files: File[]) => {
     const pdf = files[0];
@@ -25,7 +27,7 @@ export default function OrganizePage() {
     setStatus("loading-thumbs");
 
     try {
-      const thumbs = await renderThumbnails(pdf, 0.5);
+      const thumbs = await runWithProgress("Rendering pages", (report) => renderThumbnails(pdf, 0.5, report));
       setThumbnails(thumbs);
       setPageOrder(thumbs.map((_, i) => i));
       setStatus("ready");
@@ -33,7 +35,7 @@ export default function OrganizePage() {
       setError(e instanceof Error ? e.message : "Failed to load thumbnails.");
       setStatus("idle");
     }
-  }, []);
+  }, [runWithProgress]);
 
   function handleDragStart(e: React.DragEvent, index: number) {
     e.dataTransfer.setData("text/plain", String(index));

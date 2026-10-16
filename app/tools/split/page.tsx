@@ -7,6 +7,7 @@ import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, downloadResults, type ToolResult } from "@/lib/pdf-tools";
 import { runInWorker } from "@/lib/worker/run";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -36,12 +37,13 @@ export default function SplitPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [splitCount, setSplitCount] = useState(0);
+  const { runWithProgress } = useProgress();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading");
     let t: string[];
     try {
-      t = await renderThumbnails(files[0], 0.45);
+      t = await runWithProgress("Rendering pages", (report) => renderThumbnails(files[0], 0.45, report));
     } catch (e) {
       setFile(null); setStatus("idle");
       setError(e instanceof Error ? e.message : "This file couldn't be opened.");
@@ -49,7 +51,7 @@ export default function SplitPage() {
     }
     setThumbs(t); setStatus("ready");
     setSplitAfter(new Set());
-  }, []);
+  }, [runWithProgress]);
 
   const toggleSplit = (afterIdx: number) => {
     setSplitAfter(prev => {

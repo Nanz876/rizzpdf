@@ -1,9 +1,12 @@
 // @vitest-environment node
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { unlockFileIfNeeded } from "@/lib/pdf-unlock-file";
+import { unlockFileIfNeeded, clearSessionPassword } from "@/lib/pdf-unlock-file";
+
+// The session password cache is module-level; reset it between tests.
+beforeEach(() => clearSessionPassword());
 
 const FIX = path.resolve(__dirname, "../../test-fixtures");
 async function fixture(rel: string): Promise<File> {
@@ -55,6 +58,23 @@ describe("unlockFileIfNeeded", () => {
     const prompt = vi.fn(async () => null);
     const out = await unlockFileIfNeeded(await fixture("audit/user-password.pdf"), prompt);
     expect(out).toBeNull();
+  });
+
+  it("caches the session password so a second file with the same password doesn't prompt", async () => {
+    const prompt = vi.fn(async () => "rizz123");
+    const a = await unlockFileIfNeeded(await fixture("audit/user-password.pdf"), prompt);
+    const b = await unlockFileIfNeeded(await fixture("audit/user-password.pdf"), prompt);
+    expect(prompt).toHaveBeenCalledTimes(1); // only the first file prompted
+    expect(await opens(a!)).toBe(true);
+    expect(await opens(b!)).toBe(true);
+  });
+
+  it("re-prompts after the session password is cleared", async () => {
+    const prompt = vi.fn(async () => "rizz123");
+    await unlockFileIfNeeded(await fixture("audit/user-password.pdf"), prompt);
+    clearSessionPassword();
+    await unlockFileIfNeeded(await fixture("audit/user-password.pdf"), prompt);
+    expect(prompt).toHaveBeenCalledTimes(2);
   });
 
   it("leaves non-PDF files alone", async () => {

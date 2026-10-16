@@ -30,7 +30,11 @@ export interface RenderedPage {
   heightPt: number;
 }
 
-async function renderPages(file: File, dpi: number): Promise<RenderedPage[]> {
+async function renderPages(
+  file: File,
+  dpi: number,
+  onProgress?: (done: number, total: number) => void
+): Promise<RenderedPage[]> {
   const pdfjsLib = await getPdfjsLib();
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   const out: RenderedPage[] = [];
@@ -51,6 +55,7 @@ async function renderPages(file: File, dpi: number): Promise<RenderedPage[]> {
       canvas.width = 0;
       canvas.height = 0;
       page.cleanup();
+      onProgress?.(n, pdf.numPages);
     }
   } finally {
     await pdf.destroy();
@@ -168,11 +173,13 @@ export async function buildPptx(pages: RenderedPage[]): Promise<Blob> {
 export interface PdfToPptxOptions {
   /** Render resolution. Higher is sharper but larger. Default 150. */
   dpi?: number;
+  /** Per-page progress callback. */
+  onProgress?: (done: number, total: number) => void;
 }
 
 export async function pdfToPptx(file: File, opts: PdfToPptxOptions = {}): Promise<ToolResult> {
   try {
-    const pages = await renderPages(file, opts.dpi ?? 150);
+    const pages = await renderPages(file, opts.dpi ?? 150, opts.onProgress);
     if (!pages.length) return { success: false, error: "This PDF has no pages to convert." };
     const blob = await buildPptx(pages);
     return { success: true, blob, filename: file.name.replace(/\.pdf$/i, "") + ".pptx" };

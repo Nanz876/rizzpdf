@@ -18,6 +18,17 @@ import { decryptPdf, WrongPasswordError } from "@/lib/pdf-decrypt";
 /** Asked for a password for `filename`; `wrongPassword` is true after a failed attempt. Resolve null to cancel. */
 export type RequestPassword = (filename: string, wrongPassword: boolean) => Promise<string | null>;
 
+// A password the user has already entered this session. We try it silently before
+// prompting again, so unlocking several files that share a password only asks once
+// (matching the common case where a batch comes from the same source). It lives in
+// memory only and is cleared on a full page reload.
+let sessionPassword: string | null = null;
+
+/** Forget the cached session password (e.g. on sign-out or an explicit "clear"). */
+export function clearSessionPassword(): void {
+  sessionPassword = null;
+}
+
 function toFile(bytes: Uint8Array, name: string): File {
   return new File([bytes as Uint8Array<ArrayBuffer>], name, { type: "application/pdf" });
 }
@@ -54,6 +65,17 @@ export async function unlockFileIfNeeded(file: File, requestPassword: RequestPas
     }
   }
 
+  // Try a password already entered this session before asking again. A mismatch
+  // here just means this file uses a different password — we keep the cached one
+  // (it may still match other files) and fall through to prompt.
+  if (sessionPassword !== null) {
+    try {
+      return toFile(await decryptPdf(bytes, sessionPassword), file.name);
+    } catch (e) {
+      if (!(e instanceof WrongPasswordError)) return file;
+    }
+  }
+
   // An open password is required: prompt, retrying until correct or cancelled.
   let wrong = false;
   // eslint-disable-next-line no-constant-condition
@@ -61,7 +83,9 @@ export async function unlockFileIfNeeded(file: File, requestPassword: RequestPas
     const password = await requestPassword(file.name, wrong);
     if (password === null) return null; // cancelled
     try {
-      return toFile(await decryptPdf(bytes, password), file.name);
+      const out = toFile(await decryptPdf(bytes, password), file.name);
+      sessionPassword = password; // remember for the rest of this session
+      return out;
     } catch (e) {
       if (e instanceof WrongPasswordError) {
         wrong = true;
