@@ -7,6 +7,7 @@ import { getLastOutput, handOffLastOutput, subscribeOutput } from "@/lib/handoff
 /** Tools that accept a single PDF, in the order most people chain them. */
 const CHAIN_TARGETS = [
   { name: "Compress", href: "/tools/compress" },
+  { name: "Fast Web View", href: "/tools/linearize" },
   { name: "Protect", href: "/tools/protect" },
   { name: "Sign", href: "/tools/sign" },
   { name: "Fill form", href: "/tools/fill-form" },
@@ -22,7 +23,11 @@ const CHAIN_TARGETS = [
   { name: "Rotate", href: "/tools/rotate" },
   { name: "Split", href: "/tools/split" },
   { name: "Delete pages", href: "/tools/delete-pages" },
+  { name: "Extract pages", href: "/tools/extract-pages" },
   { name: "PDF to Word", href: "/tools/pdf-to-word" },
+  { name: "PDF to Excel", href: "/tools/pdf-to-excel" },
+  { name: "PDF to PowerPoint", href: "/tools/pdf-to-powerpoint" },
+  { name: "PDF to Markdown", href: "/tools/pdf-to-markdown" },
   { name: "PDF to JPG", href: "/tools/pdf-to-jpg" },
 ];
 

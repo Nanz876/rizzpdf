@@ -131,11 +131,20 @@ export default function RedactPage() {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); removeBox(selectedId); }
-      if (e.key === "Escape") setSelectedId(null);
+      else if (e.key === "Escape") setSelectedId(null);
+      else if (e.key.startsWith("Arrow")) {
+        e.preventDefault();
+        const step = e.shiftKey ? 0.02 : 0.005;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        changeBoxes(bs => bs.map(b => b.id === selectedId
+          ? { ...b, x: Math.max(0, Math.min(1 - b.w, b.x + dx)), y: Math.max(0, Math.min(1 - b.h, b.y + dy)) }
+          : b));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, removeBox]);
+  }, [selectedId, removeBox, changeBoxes]);
 
   const addFoundBoxes = (found: RedactBox[], label: string) => {
     let added = 0;

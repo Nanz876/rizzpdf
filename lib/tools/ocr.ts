@@ -28,6 +28,16 @@ import type { ToolResult } from "@/lib/pdf-tools";
 /** Pages a free (non-Pro) user may OCR per document. */
 export const FREE_OCR_PAGES = 10;
 
+/**
+ * Words below this confidence (0–100) are kept out of the invisible text layer.
+ * On a noisy scan tesseract emits low-confidence tokens for specks, rules and
+ * edge artefacts; left in, they turn into junk that a search of the "searchable"
+ * PDF surfaces as false hits. The cut-off is deliberately low so genuine but
+ * hard-to-read words still make it in, and the plain-text output keeps everything
+ * tesseract read regardless, so nothing recognised is ever lost outright.
+ */
+export const MIN_WORD_CONFIDENCE = 40;
+
 /** Resolution the page is rasterised at for tesseract. Output quality is unaffected. */
 export const OCR_DPI = 200;
 
@@ -57,6 +67,8 @@ export interface OcrOptions {
   onProgress?: (done: number, total: number, stage: string) => void;
   /** Tesseract language code, e.g. "eng", "deu", "fra". Default "eng". */
   language?: string;
+  /** Lowest word confidence (0–100) to put in the invisible layer. Default MIN_WORD_CONFIDENCE. */
+  minConfidence?: number;
   /** Injected renderer (tests / non-DOM environments). Defaults to a DOM canvas. */
   renderPage?: OcrPageRenderer;
 }
@@ -240,6 +252,7 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
     if (!targets.length) return { success: false, error: "Select at least one page to read." };
 
     const render = opts.renderPage ?? canvasRenderer;
+    const minConfidence = opts.minConfidence ?? MIN_WORD_CONFIDENCE;
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const pageTexts: string[] = Array.from({ length: total }, () => "");
 
@@ -271,6 +284,8 @@ export async function ocrPdf(file: File, opts: OcrOptions = {}): Promise<OcrResu
         for (const word of wordsOf(recognized.data)) {
           const text = winAnsiSafe(word.text ?? "");
           if (!text.trim() || !word.bbox || !encodable(font, text)) continue;
+          // Keep OCR noise out of the searchable layer (see MIN_WORD_CONFIDENCE).
+          if (typeof word.confidence === "number" && word.confidence < minConfidence) continue;
           const left = word.bbox.x0 * sx;
           const boxW = Math.max((word.bbox.x1 - word.bbox.x0) * sx, 0.1);
           // tesseract measures y downwards from the top of the image.

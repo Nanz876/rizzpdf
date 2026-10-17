@@ -8,6 +8,7 @@ export type WorkerFnName =
   | "rotatePages"
   | "organizePDF"
   | "deletePages"
+  | "extractPages"
   | "addPageNumbers"
   | "watermarkPDF"
   | "signPDFMulti"

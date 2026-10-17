@@ -6,8 +6,10 @@
 //   * pdf.js text extraction, for what the reader sees and where it sits;
 //   * the raw content stream, for which font each glyph run was drawn with.
 // Runs in the Node environment like the rest of the PDF suite.
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import zlib from "node:zlib";
+import fs from "node:fs";
+import path from "node:path";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { PDFDocument, PDFArray, PDFDict, PDFName, PDFRawStream, PDFRef, PDFString } from "pdf-lib";
@@ -23,6 +25,14 @@ vi.mock("pdfjs-dist", async () => {
 });
 
 import { wordToPdf, DOC_FORMAT_MESSAGE } from "@/lib/tools/word-to-pdf";
+import { setUnicodeFontLoader } from "@/lib/tools/pdf-font";
+
+// The browser fetches the Unicode font from /fonts; in Node, read it off disk.
+beforeAll(() => {
+  setUnicodeFontLoader(async (bold) =>
+    new Uint8Array(fs.readFileSync(path.resolve(__dirname, `../../public/fonts/DejaVuSans${bold ? "-Bold" : ""}.ttf`)))
+  );
+});
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const bytesOf = async (b: Blob) => new Uint8Array(await b.arrayBuffer());
@@ -488,7 +498,7 @@ describe("word to pdf: inputs it can't convert", () => {
     }));
     const r = await wordToPdf(file);
     expect(r.success).toBe(false);
-    expect(r.error).toMatch(/characters the built-in PDF fonts can't draw/);
+    expect(r.error).toMatch(/can't draw yet|complex scripts/);
     expect(r.error).toContain("会");
     expect(r.error).not.toMatch(/WinAnsi|Error:|undefined/);
   });
@@ -497,5 +507,34 @@ describe("word to pdf: inputs it can't convert", () => {
     const r = await wordToPdf(new File([new Uint8Array([1, 2, 3, 4, 5])], "notes.docx", { type: DOCX_MIME }));
     expect(r.success).toBe(false);
     expect(r.error).toMatch(/docx/i);
+  });
+});
+
+describe("Word to PDF — Unicode text (embedded DejaVu fallback)", () => {
+  it("renders Cyrillic + Greek + Vietnamese instead of rejecting them", async () => {
+    const sample = "Привет мир — Γειά σου κόσμε — Tiếng Việt";
+    const file = await makeDocx((d) => ({ children: [new d.Paragraph({ children: [new d.TextRun(sample)] })] }));
+    const r = await wordToPdf(file);
+    expect(r.success).toBe(true);
+    // Text stays selectable (not rasterised): pdf.js reads it back.
+    const text = (await pageTexts(await bytesOf(r.blob!))).join(" ");
+    expect(text).toContain("Привет");
+    expect(text).toContain("Γειά");
+    expect(text).toContain("Việt");
+  });
+
+  it("keeps a plain-Latin document on the built-in fonts (no embedding)", async () => {
+    const file = await makeDocx((d) => ({ children: [new d.Paragraph({ children: [new d.TextRun("Hello, world — café")] })] }));
+    const r = await wordToPdf(file);
+    expect(r.success).toBe(true);
+    const text = (await pageTexts(await bytesOf(r.blob!))).join(" ");
+    expect(text).toContain("Hello, world");
+  });
+
+  it("still reports scripts even DejaVu can't draw (e.g. CJK)", async () => {
+    const file = await makeDocx((d) => ({ children: [new d.Paragraph({ children: [new d.TextRun("你好世界")] })] }));
+    const r = await wordToPdf(file);
+    expect(r.success).toBe(false);
+    expect(r.error).toMatch(/can't draw|complex scripts/i);
   });
 });

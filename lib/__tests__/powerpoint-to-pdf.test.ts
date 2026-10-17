@@ -12,11 +12,19 @@ import { PDFDocument, PDFName, PDFDict, PDFRawStream } from "pdf-lib";
 
 const require = createRequire(import.meta.url);
 
+import fs from "node:fs";
+import path from "node:path";
+import { setUnicodeFontLoader } from "@/lib/tools/pdf-font";
+
 beforeAll(() => {
   // jsdom ships no type declarations; require() keeps TypeScript happy.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { JSDOM } = require("jsdom") as any;
   globalThis.DOMParser = new JSDOM("").window.DOMParser;
+  // The deck embeds DejaVu from /fonts in the browser; read it from disk in Node.
+  setUnicodeFontLoader(async (bold) =>
+    new Uint8Array(fs.readFileSync(path.resolve(__dirname, `../../public/fonts/DejaVuSans${bold ? "-Bold" : ""}.ttf`)))
+  );
 });
 
 vi.mock("pdfjs-dist", async () => {

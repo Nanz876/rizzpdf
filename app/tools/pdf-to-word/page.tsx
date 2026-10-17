@@ -6,6 +6,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { pdfToWord, downloadBlob } from "@/lib/pdf-tools";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Status = "idle" | "ready" | "processing" | "done" | "error";
 
@@ -13,6 +14,7 @@ export default function PdfToWordPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const { runWithProgress } = useProgress();
 
   const handleFile = useCallback((files: File[]) => {
     setFile(files[0]); setStatus("ready"); setError("");
@@ -21,7 +23,7 @@ export default function PdfToWordPage() {
   const handleConvert = async () => {
     if (!file) return;
     logTool("pdf-to-word"); setStatus("processing"); setError("");
-    const result = await pdfToWord(file);
+    const result = await runWithProgress("Converting to Word", (report) => pdfToWord(file, report));
     if (result.success && result.blob) {
       downloadBlob(result.blob, result.filename ?? file.name.replace(/\.pdf$/i, ".docx"));
       setStatus("done");

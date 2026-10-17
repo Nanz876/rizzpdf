@@ -47,7 +47,8 @@ export default function UnlockPage() {
       icon="🔓"
       steps={files.length > 0 ? undefined : ["Upload your PDF", "Enter the password", "Download unlocked file"]}
     >
-      <UploadZone onFilesAdded={handleFilesAdded} />
+      {/* autoUnlock off: this tool is the explicit password flow, so it takes the raw encrypted file. */}
+      <UploadZone onFilesAdded={handleFilesAdded} autoUnlock={false} />
 
       {files.length > 0 && (
         <div className="mt-4 border border-gray-200 rounded-2xl p-4 bg-white">

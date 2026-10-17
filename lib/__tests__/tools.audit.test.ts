@@ -2,9 +2,18 @@
 // Audit tests: each assertion encodes something the site advertises about a tool.
 // Tools that need a real browser canvas (compress, PDF to JPG/PNG, raster fallbacks)
 // are covered by the in-browser smoke test instead.
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { setUnicodeFontLoader } from "@/lib/tools/pdf-font";
+
+// Tools embed the DejaVu Unicode font from /fonts in the browser; read it from
+// disk here so the non-Latin coverage check (CJK rejection) runs in Node.
+beforeAll(() => {
+  setUnicodeFontLoader(async (bold) =>
+    new Uint8Array(await fs.readFile(path.resolve(__dirname, `../../public/fonts/DejaVuSans${bold ? "-Bold" : ""}.ttf`)))
+  );
+});
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { PDFDocument, PDFName, PDFDict, PDFRawStream } from "pdf-lib";
@@ -135,7 +144,7 @@ describe("watermark", () => {
   it("gives a clear error (not a generic failure) for unsupported characters", async () => {
     const r = await tools.watermarkPDF(await fixture("smoke/plain-text.pdf"), { text: "机密" });
     expect(r.success).toBe(false);
-    expect(r.error).toMatch(/Latin letters/i);
+    expect(r.error).toMatch(/can't draw yet|Chinese/i);
   });
 
   it("keeps the original text readable on a restriction-encrypted input", async () => {
@@ -416,7 +425,7 @@ describe("sign", () => {
       { page: 1, x: 0.1, yFromTop: 0.1, kind: "text", text: "こんにちは" },
     ]);
     expect(r.success).toBe(false);
-    expect(r.error).toMatch(/Latin letters/i);
+    expect(r.error).toMatch(/can't draw yet|Chinese/i);
   });
 
   it("signPDFMulti fails when given no items", async () => {

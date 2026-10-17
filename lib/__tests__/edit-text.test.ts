@@ -27,9 +27,11 @@ import {
   sampleBackgroundColor,
   closestStandardFont,
   NO_EDITS_MESSAGE,
+  UNSUPPORTED_TEXT_MESSAGE,
   type EditableTextLine,
   type TextRect,
 } from "@/lib/tools/edit-text";
+import { setUnicodeFontLoader } from "@/lib/tools/pdf-font";
 
 const FIX = path.resolve(__dirname, "../../test-fixtures");
 
@@ -122,6 +124,13 @@ beforeAll(async () => {
 
   lines = await findEditableText(sample);
   target = lines.find((l) => l.text === OLD_LINE)!;
+});
+
+// The DejaVu fallback is fetched from /fonts in the browser; read it off disk here.
+beforeAll(() => {
+  setUnicodeFontLoader(async (bold) =>
+    new Uint8Array(await fs.readFile(path.resolve(__dirname, `../../public/fonts/DejaVuSans${bold ? "-Bold" : ""}.ttf`)))
+  );
 });
 
 describe("findEditableText", () => {
@@ -262,6 +271,30 @@ describe("applyTextEdits", () => {
     expect(text).toContain(rows[0]);
     expect(text).toContain(rows[2]);
     expect(text).toContain("42.00"); // the neighbouring column shares the baseline
+  });
+
+  it("renders a Cyrillic replacement the built-in fonts can't encode", async () => {
+    const replacement = "Привет мир";
+    const r = await applyTextEdits(sample, [{ page: target.page, box: target.box, text: replacement }]);
+    expect(r.error).toBeUndefined();
+    expect(r.success).toBe(true);
+    const [text] = await pageTexts(await bytesOf(r.blob!));
+    expect(text).toContain(replacement); // real, selectable text — not dropped or "?"
+    expect(text).not.toContain(OLD_LINE);
+  });
+
+  it("renders Vietnamese (extended Latin beyond WinAnsi) via the fallback", async () => {
+    const replacement = "Tiếng Việt";
+    const r = await applyTextEdits(sample, [{ page: target.page, box: target.box, text: replacement }]);
+    expect(r.success).toBe(true);
+    expect((await pageTexts(await bytesOf(r.blob!)))[0]).toContain(replacement);
+  });
+
+  it("still reports a script neither font can draw (CJK)", async () => {
+    const r = await applyTextEdits(sample, [{ page: target.page, box: target.box, text: "请输入" }]);
+    expect(r.success).toBe(false);
+    expect(r.error).toBe(UNSUPPORTED_TEXT_MESSAGE);
+    expect(r.error).toMatch(/can't draw yet/i);
   });
 
   it("rejects an empty edit list", async () => {
