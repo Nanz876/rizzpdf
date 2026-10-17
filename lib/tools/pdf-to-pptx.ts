@@ -43,8 +43,13 @@ async function renderPages(
       canvas.height = Math.floor(viewport.height);
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas unavailable");
+      // pdf.js paints onto a transparent canvas; a page that draws no background of
+      // its own would come through transparent on the slide. Fill white so each
+      // slide shows the page as a reader sees it.
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await page.render({ canvasContext: ctx as any, viewport, canvas }).promise;
+      await page.render({ canvasContext: ctx as any, viewport, canvas, background: "#ffffff" }).promise;
       const blob = await canvasToBlob(canvas);
       out.push({ png: new Uint8Array(await blob.arrayBuffer()), widthPt: base.width, heightPt: base.height });
       canvas.width = 0;

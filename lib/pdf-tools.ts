@@ -66,8 +66,14 @@ async function renderPageToCanvas(
   canvas.width = Math.floor(viewport.width);
   canvas.height = Math.floor(viewport.height);
   const ctx = canvas.getContext("2d")!;
+  // A PDF page relies on the viewer's white page; pdf.js paints onto a transparent
+  // canvas, so without this fill a page that draws no background of its own exports
+  // with a transparent (PNG) — or, since JPEG has no alpha, solid black (JPG) —
+  // background. Fill white first so exported images look like the page does.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await page.render({ canvasContext: ctx as any, viewport, canvas }).promise;
+  await page.render({ canvasContext: ctx as any, viewport, canvas, background: "#ffffff" }).promise;
   return canvas;
 }
 
