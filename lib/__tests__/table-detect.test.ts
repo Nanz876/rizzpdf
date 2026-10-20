@@ -1,11 +1,11 @@
 // @vitest-environment node
-// Table detection is gutter-based: a column is a band of whitespace that every
-// row leaves open, and cells are placed by their horizontal centre. That makes
-// detection alignment-agnostic — right-aligned numeric columns (invoices,
-// statements) and centred columns line up as readily as left-aligned ones,
-// which the earlier start-x clustering could not do.
+// Table detection finds columns as the vertical whitespace stripes that run through
+// the WHOLE table block (a union, not a per-row intersection) and places each cell by
+// its horizontal centre. That makes detection alignment-agnostic — right-aligned
+// numeric and centred columns line up like left-aligned ones — and robust to sparse
+// rows (a lone SUBTOTAL) and wrapped headers that would otherwise collapse the columns.
 import { describe, it, expect } from "vitest";
-import { detectTableRuns, tableGrid, columnIndex, type Segment } from "@/lib/tools/pdf-text";
+import { detectTableRuns, tableGrid, columnIndex, mergeWrappedHeaderRows, type Segment } from "@/lib/tools/pdf-text";
 
 /** Build a segment with text occupying [x, x+width]. */
 const seg = (x: number, width: number, text: string): Segment => ({ x, end: x + width, text });
@@ -85,6 +85,67 @@ describe("detectTableRuns — alignment", () => {
     expect(runs).toHaveLength(2);
     expect(runs[0]).toMatchObject({ start: 0, end: 1 });
     expect(runs[1]).toMatchObject({ start: 3, end: 4 });
+  });
+});
+
+describe("sparse rows and stacked tables", () => {
+  const rightAt = (right: number, width: number, text: string) => seg(right - width, width, text);
+
+  it("keeps a lone SUBTOTAL row's cells in their own columns (not column A)", () => {
+    // Four columns: a left label, then three right-aligned money columns. The last
+    // row has values only in the final two columns — the case that used to collapse.
+    const rows: Segment[][] = [
+      [seg(54, 40, "Item"), rightAt(300, 30, "Unit"), rightAt(400, 30, "Less"), rightAt(520, 30, "Total")],
+      [seg(54, 90, "Physiotherapy"), rightAt(300, 44, "12,500.00"), rightAt(400, 40, "3,000.00"), rightAt(520, 40, "9,500.00")],
+      [seg(54, 60, "Follow-up"), rightAt(300, 36, "7,500.00"), rightAt(400, 6, "-"), rightAt(520, 36, "7,500.00")],
+      [rightAt(400, 60, "SUBTOTAL"), rightAt(520, 44, "18,500.00")],
+    ];
+    const runs = detectTableRuns(rows);
+    expect(runs).toHaveLength(1);
+    expect(runs[0].cols).toHaveLength(3); // four columns
+    const grid = tableGrid(rows, runs[0].cols);
+    // SUBTOTAL sits in the third column, its amount in the fourth — never column A.
+    expect(grid[3][0]).toBe("");
+    expect(grid[3][1]).toBe("");
+    expect(grid[3][2]).toBe("SUBTOTAL");
+    expect(grid[3][3]).toBe("18,500.00");
+  });
+
+  it("splits two stacked tables on the blank line between them", () => {
+    const ys = [100, 120, 140, 200, 220, 240]; // a big gap at index 3
+    const rows: Segment[][] = [
+      [seg(40, 30, "A1"), seg(200, 30, "B1")],
+      [seg(40, 30, "A2"), seg(200, 30, "B2")],
+      [seg(40, 30, "A3"), seg(200, 30, "B3")],
+      [seg(40, 30, "X1"), seg(150, 30, "Y1"), seg(300, 30, "Z1")],
+      [seg(40, 30, "X2"), seg(150, 30, "Y2"), seg(300, 30, "Z2")],
+      [seg(40, 30, "X3"), seg(150, 30, "Y3"), seg(300, 30, "Z3")],
+    ];
+    const runs = detectTableRuns(rows, ys);
+    expect(runs).toHaveLength(2);
+    expect(runs[0]).toMatchObject({ start: 0, end: 2 });
+    expect(runs[0].cols).toHaveLength(1); // first table: 2 columns
+    expect(runs[1]).toMatchObject({ start: 3, end: 5 });
+    expect(runs[1].cols).toHaveLength(2); // second table: 3 columns
+  });
+});
+
+describe("mergeWrappedHeaderRows", () => {
+  it("joins a two-line column header into one row, leaving data rows intact", () => {
+    const grid = [
+      ["DESCRIPTION OF", "UNIT PRICE", "LESS", "TOTAL"],
+      ["SERVICE", "RENDERED", "INSURANCE", ""],
+      ["Physiotherapy", "12,500.00", "3,000.00", "9,500.00"],
+    ];
+    expect(mergeWrappedHeaderRows(grid)).toEqual([
+      ["DESCRIPTION OF SERVICE", "UNIT PRICE RENDERED", "LESS INSURANCE", "TOTAL"],
+      ["Physiotherapy", "12,500.00", "3,000.00", "9,500.00"],
+    ]);
+  });
+
+  it("leaves a single-line header alone", () => {
+    const grid = [["Item", "Qty", "Price"], ["Widget", "3", "9.00"]];
+    expect(mergeWrappedHeaderRows(grid)).toEqual(grid);
   });
 });
 

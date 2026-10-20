@@ -11,7 +11,7 @@
 // note in lib/tools/excel-to-pdf.ts for the full explanation.
 import { toolErrorMessage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
-import { extractPageText, hasText, rowSegments, detectTableRuns, tableGrid, type PageText } from "@/lib/tools/pdf-text";
+import { extractPageText, hasText, rowSegments, detectTableRuns, tableGrid, mergeWrappedHeaderRows, type PageText } from "@/lib/tools/pdf-text";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -49,7 +49,7 @@ export function parseCell(text: string): CellValue {
 /** Turn one page's extracted text into a grid of rows. Tables keep their columns; other lines become a single cell. */
 export function pageToGrid(page: PageText): CellValue[][] {
   const segRows = page.rows.map((r) => rowSegments(r));
-  const runs = detectTableRuns(segRows);
+  const runs = detectTableRuns(segRows, page.rows.map((r) => r.y));
   const runAt = new Map<number, number>();
   runs.forEach((run, ri) => {
     for (let i = run.start; i <= run.end; i++) runAt.set(i, ri);
@@ -60,9 +60,8 @@ export function pageToGrid(page: PageText): CellValue[][] {
     const ri = runAt.get(i);
     if (ri !== undefined) {
       const run = runs[ri];
-      for (const cells of tableGrid(segRows.slice(run.start, run.end + 1), run.cols)) {
-        grid.push(cells.map(parseCell));
-      }
+      const cellRows = mergeWrappedHeaderRows(tableGrid(segRows.slice(run.start, run.end + 1), run.cols));
+      for (const cells of cellRows) grid.push(cells.map(parseCell));
       i = run.end;
       continue;
     }
