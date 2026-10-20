@@ -38,6 +38,10 @@ const WORD_SPECS = [
 ];
 const WORDS = WORD_SPECS.map((w) => w.text);
 
+/** A low-confidence token tesseract emits for a speck; it must not reach the text layer. */
+const NOISE_TEXT = "Smudge";
+const NOISE_CONFIDENCE = 8;
+
 const recognizedImages: string[] = [];
 const createdLangs: string[] = [];
 let terminated = 0;
@@ -61,6 +65,13 @@ vi.mock("tesseract.js", () => ({
             y1: Math.round(s.fy1 * h),
           },
         }));
+        // A speck tesseract read with low confidence: real code keeps it out of
+        // the searchable layer (but not the plain-text output below).
+        words.push({
+          text: NOISE_TEXT,
+          confidence: NOISE_CONFIDENCE,
+          bbox: { x0: Math.round(0.5 * w), x1: Math.round(0.56 * w), y0: Math.round(0.5 * h), y1: Math.round(0.53 * h) },
+        });
         return {
           jobId: "test",
           data: { text: WORDS.join(" "), blocks: [{ paragraphs: [{ lines: [{ words }] }] }] },
@@ -73,7 +84,7 @@ vi.mock("tesseract.js", () => ({
   },
 }));
 
-import { isScanned, ocrPdf, FREE_OCR_PAGES, OCR_DPI, type OcrPageRenderer } from "@/lib/tools/ocr";
+import { isScanned, ocrPdf, FREE_OCR_PAGES, OCR_DPI, MIN_WORD_CONFIDENCE, type OcrPageRenderer } from "@/lib/tools/ocr";
 
 const FIX = path.resolve(__dirname, "../../test-fixtures");
 
@@ -218,6 +229,23 @@ describe("ocrPdf", () => {
   it("passes the language through", async () => {
     await ocrPdf(await fixture("audit/scanned-no-text.pdf"), { renderPage: whiteRenderer, language: "deu" });
     expect(createdLangs).toEqual(["deu"]);
+  });
+
+  it("keeps low-confidence noise out of the searchable layer", async () => {
+    const r = await ocrPdf(await fixture("audit/scanned-no-text.pdf"), { renderPage: whiteRenderer });
+    expect(r.success).toBe(true);
+    const texts = await pageTexts(await bytesOf(r.blob!));
+    // Every confident word is searchable…
+    for (const word of WORDS) expect(texts[0]).toContain(word);
+    // …but the speck tesseract read with confidence 8 is not.
+    expect(texts[0]).not.toContain(NOISE_TEXT);
+    expect(MIN_WORD_CONFIDENCE).toBeGreaterThan(NOISE_CONFIDENCE);
+  });
+
+  it("can be told to keep every word, however faint", async () => {
+    const r = await ocrPdf(await fixture("audit/scanned-no-text.pdf"), { renderPage: whiteRenderer, minConfidence: 0 });
+    const texts = await pageTexts(await bytesOf(r.blob!));
+    expect(texts[0]).toContain(NOISE_TEXT);
   });
 
   it("reports per-page progress", async () => {

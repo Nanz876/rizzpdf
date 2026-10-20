@@ -1,6 +1,7 @@
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFImage, StandardFonts, degrees, rgb, grayscale } from "pdf-lib";
 import { loadPdf, saveToBlob, toolErrorMessage, displayedPage } from "@/lib/pdf-load";
 import { recordOutput } from "@/lib/handoff";
+import { canEncode, embedUnicodeFont } from "@/lib/tools/pdf-font";
 
 export interface ToolResult {
   success: boolean;
@@ -65,8 +66,14 @@ async function renderPageToCanvas(
   canvas.width = Math.floor(viewport.width);
   canvas.height = Math.floor(viewport.height);
   const ctx = canvas.getContext("2d")!;
+  // A PDF page relies on the viewer's white page; pdf.js paints onto a transparent
+  // canvas, so without this fill a page that draws no background of its own exports
+  // with a transparent (PNG) — or, since JPEG has no alpha, solid black (JPG) —
+  // background. Fill white first so exported images look like the page does.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await page.render({ canvasContext: ctx as any, viewport, canvas }).promise;
+  await page.render({ canvasContext: ctx as any, viewport, canvas, background: "#ffffff" }).promise;
   return canvas;
 }
 
@@ -171,9 +178,13 @@ export async function splitPDF(
 // ─── Compress ────────────────────────────────────────────────────────────────
 
 const COMPRESS_SETTINGS = {
-  low: { maxEdge: 1400, quality: 0.6, flateMaxRatio: 0.8 },     // "Extreme"
-  medium: { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6 }, // "Recommended"
-  high: { maxEdge: 3200, quality: 0.85, flateMaxRatio: 0.45 },  // "Less"
+  // dpiTarget/dpiThreshold drive the smart path: an image is only downsampled
+  // when its effective resolution ON THE PAGE exceeds dpiThreshold, and then only
+  // down to dpiTarget — so an image that's already a sensible size is never
+  // softened. maxEdge is the fallback when placement can't be determined.
+  low: { maxEdge: 1400, quality: 0.6, flateMaxRatio: 0.8, dpiTarget: 72, dpiThreshold: 110 },     // "Extreme"
+  medium: { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6, dpiTarget: 150, dpiThreshold: 200 }, // "Recommended"
+  high: { maxEdge: 3200, quality: 0.85, flateMaxRatio: 0.45, dpiTarget: 220, dpiThreshold: 300 },  // "Less"
 } as const;
 
 function numberOf(dict: PDFDict, key: string): number | undefined {
@@ -241,6 +252,87 @@ export interface CompressSettings {
   maxEdge: number;
   quality: number;
   flateMaxRatio: number;
+  /** Downsample an image only when its on-page DPI exceeds this. */
+  dpiThreshold?: number;
+  /** When downsampling, the DPI to aim for. */
+  dpiTarget?: number;
+}
+
+/** Image pixel-dims "WxH" → the largest size (in points) it's drawn at anywhere in the PDF. */
+export type ImagePlacements = Map<string, { wPt: number; hPt: number }>;
+
+/**
+ * Scale factor to apply to a `w`×`h` px image. With a known on-page placement and
+ * DPI settings, an image is left untouched (scale 1) unless its effective DPI
+ * exceeds `dpiThreshold`, in which case it's scaled down to `dpiTarget`. Without a
+ * placement it falls back to the flat `maxEdge` pixel cap. Pure; exported for tests.
+ */
+export function imageScale(
+  w: number,
+  h: number,
+  settings: CompressSettings,
+  place?: { wPt: number; hPt: number }
+): number {
+  if (place && settings.dpiTarget && settings.dpiThreshold && place.wPt > 0 && place.hPt > 0) {
+    const dpi = Math.max(w / (place.wPt / 72), h / (place.hPt / 72));
+    return dpi > settings.dpiThreshold ? Math.min(1, settings.dpiTarget / dpi) : 1;
+  }
+  return Math.min(1, settings.maxEdge / Math.max(w, h));
+}
+
+/**
+ * Find how large each image is actually drawn on the page, so compression can
+ * reason about effective DPI instead of raw pixel count. Keyed by pixel
+ * dimensions (unique enough to match back to the pdf-lib image XObject); the
+ * largest placement wins so a reused image keeps enough resolution. Best-effort:
+ * returns an empty map on any failure, and compression falls back to maxEdge.
+ */
+export async function collectImagePlacements(bytes: Uint8Array): Promise<ImagePlacements> {
+  const map: ImagePlacements = new Map();
+  try {
+    const pdfjsLib = await getPdfjsLib();
+    const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+    const OPS = pdfjsLib.OPS;
+    try {
+      for (let n = 1; n <= pdf.numPages; n++) {
+        const page = await pdf.getPage(n);
+        let ops: { fnArray: number[]; argsArray: unknown[][] };
+        try {
+          ops = await page.getOperatorList();
+        } catch {
+          page.cleanup();
+          continue;
+        }
+        const stack: number[][] = [];
+        let ctm: number[] = [1, 0, 0, 1, 0, 0];
+        for (let i = 0; i < ops.fnArray.length; i++) {
+          const fn = ops.fnArray[i];
+          if (fn === OPS.save) stack.push(ctm);
+          else if (fn === OPS.restore) ctm = stack.pop() ?? ctm;
+          else if (fn === OPS.transform) ctm = pdfjsLib.Util.transform(ctm, ops.argsArray[i]);
+          else if (fn === OPS.paintImageXObject) {
+            // pdf.js carries the image's intrinsic pixel size in the op args
+            // ([objId, width, height]) — no need to resolve page.objs.
+            const a = ops.argsArray[i];
+            const px = typeof a?.[1] === "number" ? a[1] : 0;
+            const py = typeof a?.[2] === "number" ? a[2] : 0;
+            if (!px || !py) continue;
+            const wPt = Math.hypot(ctm[0], ctm[1]);
+            const hPt = Math.hypot(ctm[2], ctm[3]);
+            const key = `${px}x${py}`;
+            const prev = map.get(key);
+            map.set(key, { wPt: Math.max(wPt, prev?.wPt ?? 0), hPt: Math.max(hPt, prev?.hPt ?? 0) });
+          }
+        }
+        page.cleanup();
+      }
+    } finally {
+      await pdf.destroy();
+    }
+  } catch {
+    // Placement unknown — compression will use the maxEdge fallback.
+  }
+  return map;
 }
 
 /**
@@ -249,17 +341,29 @@ export interface CompressSettings {
  * graphics are never touched, so text stays selectable. Shared by `compressPDF`
  * (fixed low/medium/high presets) and `compressToTarget` (search over a ladder).
  */
-async function compressWithSettings(originalBytes: Uint8Array, settings: CompressSettings): Promise<Blob> {
+async function compressWithSettings(
+  originalBytes: Uint8Array,
+  settings: CompressSettings,
+  onProgress?: (done: number, total: number) => void,
+  placements?: ImagePlacements
+): Promise<Blob> {
   const doc = await loadPdf(originalBytes);
   const context = doc.context;
 
-  for (const [ref, obj] of context.enumerateIndirectObjects()) {
+  // Collect the images worth re-encoding first, so progress has a real total.
+  const imageObjs = [...context.enumerateIndirectObjects()].filter(([, obj]) => {
+    if (!(obj instanceof PDFRawStream)) return false;
+    if (obj.dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") return false;
+    return (numberOf(obj.dict, "Width") ?? 0) >= 64 && (numberOf(obj.dict, "Height") ?? 0) >= 64;
+  });
+
+  let processed = 0;
+  for (const [ref, obj] of imageObjs) {
     if (!(obj instanceof PDFRawStream)) continue;
     const dict = obj.dict;
-    if (dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
     const w = numberOf(dict, "Width") ?? 0;
     const h = numberOf(dict, "Height") ?? 0;
-    if (w < 64 || h < 64) continue;
+    onProgress?.(++processed, imageObjs.length); // one image per iteration
 
     const filter = dict.get(PDFName.of("Filter"))?.toString();
     const original = obj.getContents();
@@ -271,7 +375,7 @@ async function compressWithSettings(originalBytes: Uint8Array, settings: Compres
     }
     if (!source) continue;
 
-    const scale = Math.min(1, settings.maxEdge / Math.max(w, h));
+    const scale = imageScale(w, h, settings, placements?.get(`${w}x${h}`));
     const nw = Math.max(1, Math.round(w * scale));
     const nh = Math.max(1, Math.round(h * scale));
     const canvas = document.createElement("canvas");
@@ -307,12 +411,23 @@ async function compressWithSettings(originalBytes: Uint8Array, settings: Compres
 
 export async function compressPDF(
   file: File,
-  quality: "low" | "medium" | "high"
+  quality: "low" | "medium" | "high",
+  onProgress?: (done: number, total: number) => void
 ): Promise<ToolResult> {
   try {
     const settings = COMPRESS_SETTINGS[quality];
     const originalBytes = new Uint8Array(await file.arrayBuffer());
-    const blob = await compressWithSettings(originalBytes, settings);
+    const placements = await collectImagePlacements(originalBytes);
+    const imageBlob = await compressWithSettings(originalBytes, settings, onProgress, placements);
+    // Structural pass (qpdf, in-browser): object streams + flate recompression
+    // on top of the image re-encoding. Progressive enhancement — falls back to
+    // the image-only result if qpdf can't load.
+    const { structurallyCompress } = await import("@/lib/tools/qpdf");
+    const structured = await structurallyCompress(new Uint8Array(await imageBlob.arrayBuffer()));
+    const blob =
+      structured.length < imageBlob.size
+        ? new Blob([structured as Uint8Array<ArrayBuffer>], { type: "application/pdf" })
+        : imageBlob;
     const filename = `${baseName(file)}_compressed.pdf`;
     if (blob.size >= originalBytes.length) {
       // Never hand back a bigger file.
@@ -333,11 +448,11 @@ export async function compressPDF(
 
 /** A ladder of progressively more aggressive settings, tried in order until the target is hit. */
 const TARGET_SIZE_LADDER: CompressSettings[] = [
-  { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6 },
-  { maxEdge: 1600, quality: 0.65, flateMaxRatio: 0.68 },
-  { maxEdge: 1200, quality: 0.55, flateMaxRatio: 0.75 },
-  { maxEdge: 900, quality: 0.45, flateMaxRatio: 0.8 },
-  { maxEdge: 700, quality: 0.35, flateMaxRatio: 0.85 },
+  { maxEdge: 2200, quality: 0.75, flateMaxRatio: 0.6, dpiTarget: 150, dpiThreshold: 200 },
+  { maxEdge: 1600, quality: 0.65, flateMaxRatio: 0.68, dpiTarget: 120, dpiThreshold: 160 },
+  { maxEdge: 1200, quality: 0.55, flateMaxRatio: 0.75, dpiTarget: 96, dpiThreshold: 130 },
+  { maxEdge: 900, quality: 0.45, flateMaxRatio: 0.8, dpiTarget: 72, dpiThreshold: 100 },
+  { maxEdge: 700, quality: 0.35, flateMaxRatio: 0.85, dpiTarget: 60, dpiThreshold: 80 },
 ];
 
 export interface LadderSearchResult {
@@ -409,6 +524,7 @@ export async function compressToTarget(
       };
     }
 
+    const placements = await collectImagePlacements(originalBytes);
     let bestBlob: Blob | null = null;
     const result = await searchCompressionLadder<CompressSettings>(
       async (settings, index) => {
@@ -417,7 +533,7 @@ export async function compressToTarget(
             ? "Trying recommended compression…"
             : `Trying stronger compression (${index + 1}/${TARGET_SIZE_LADDER.length})…`
         );
-        const blob = await compressWithSettings(originalBytes, settings);
+        const blob = await compressWithSettings(originalBytes, settings, undefined, placements);
         bestBlob = blob;
         return blob.size;
       },
@@ -635,42 +751,54 @@ export async function jpgToPdf(images: File[]): Promise<ToolResult> {
 export interface WatermarkOptions {
   text: string;
   opacity?: number;    // 0–1
-  rotation?: number;  // degrees counter-clockwise, used for "diagonal"
+  rotation?: number;  // degrees counter-clockwise; authoritative when provided
   fontSize?: number;
   color?: "gray" | "red" | "blue";
   position?: "center" | "diagonal";
+  /** Watermark centre as a fraction of page width from the left (0–1). Default 0.5. */
+  xFrac?: number;
+  /** Watermark centre as a fraction of page height from the top (0–1). Default 0.5. */
+  yFrac?: number;
 }
 
 const UNSUPPORTED_TEXT =
-  "Watermark and page-number text can use Latin letters, numbers and common symbols only.";
+  "This text uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.";
 
 export async function watermarkPDF(file: File, opts: WatermarkOptions): Promise<ToolResult> {
   try {
-    const { text, opacity = 0.3, rotation = 30, fontSize = 60, color = "gray", position = "diagonal" } = opts;
+    const { text, opacity = 0.3, fontSize = 60, color = "gray", position = "diagonal", xFrac = 0.5, yFrac = 0.5 } = opts;
+    // Rotation is authoritative when given; otherwise fall back to the preset (diagonal = 30°).
+    const rotation = opts.rotation ?? (position === "diagonal" ? 30 : 0);
     if (!text.trim()) return { success: false, error: "Enter some watermark text." };
 
     const doc = await loadPdf(file);
-    const font = await doc.embedFont(StandardFonts.HelveticaBold);
-    try {
-      font.encodeText(text);
-    } catch {
-      return { success: false, error: UNSUPPORTED_TEXT };
+    // Use the built-in bold font when it covers the text; otherwise embed the
+    // DejaVu Unicode fallback so Cyrillic/Greek/Vietnamese watermarks draw too.
+    let font = await doc.embedFont(StandardFonts.HelveticaBold);
+    if (!canEncode(font, text)) {
+      const uni = await embedUnicodeFont(doc, true);
+      const missing = [...text].filter((ch) => ch.trim() && !uni.covers(ch));
+      if (missing.length) return { success: false, error: UNSUPPORTED_TEXT };
+      font = uni.font;
     }
 
     const fillColor = { gray: grayscale(0.5), red: rgb(0.8, 0.1, 0.1), blue: rgb(0.1, 0.1, 0.8) }[color];
-    const angle = position === "diagonal" ? rotation : 0;
+    const angle = rotation;
     const rad = (angle * Math.PI) / 180;
 
     for (const page of doc.getPages()) {
       const view = displayedPage(page);
       // Shrink long text so it stays on the page.
-      const maxWidth = (position === "diagonal" ? Math.hypot(view.width, view.height) : view.width) * 0.85;
+      const maxWidth = (Math.abs(angle) > 1 ? Math.hypot(view.width, view.height) : view.width) * 0.85;
       const size = Math.min(fontSize, (fontSize * maxWidth) / Math.max(1, font.widthOfTextAtSize(text, fontSize)));
       const tw = font.widthOfTextAtSize(text, size);
       const halfCap = size * 0.35;
-      // Baseline start so the text's centre sits at the page centre.
-      const dx = view.width / 2 - (tw / 2) * Math.cos(rad) + halfCap * Math.sin(rad);
-      const dy = view.height / 2 - (tw / 2) * Math.sin(rad) - halfCap * Math.cos(rad);
+      // Baseline start so the text's centre sits at (xFrac, yFrac). yFrac is from
+      // the top; displayed coordinates run from the bottom, hence (1 - yFrac).
+      const cx = view.width * xFrac;
+      const cy = view.height * (1 - yFrac);
+      const dx = cx - (tw / 2) * Math.cos(rad) + halfCap * Math.sin(rad);
+      const dy = cy - (tw / 2) * Math.sin(rad) - halfCap * Math.cos(rad);
       const { x, y } = view.toUser(dx, dy);
       page.drawText(text, { x, y, size, font, color: fillColor, opacity, rotate: degrees(angle + view.rotation) });
     }
@@ -705,7 +833,11 @@ export async function organizePDF(file: File, newOrder: number[]): Promise<ToolR
 }
 
 /** Render all pages of a PDF as thumbnail data URLs. Throws a user-facing message on failure. */
-export async function renderThumbnails(file: File, scale = 0.3): Promise<string[]> {
+export async function renderThumbnails(
+  file: File,
+  scale = 0.3,
+  onProgress?: (done: number, total: number) => void
+): Promise<string[]> {
   try {
     const pdfjsLib = await getPdfjsLib();
     const pdfJsDoc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
@@ -715,6 +847,7 @@ export async function renderThumbnails(file: File, scale = 0.3): Promise<string[
       thumbs.push(canvas.toDataURL("image/jpeg", 0.7));
       canvas.width = 0;
       canvas.height = 0;
+      onProgress?.(i, pdfJsDoc.numPages);
     }
     return thumbs;
   } catch (e) {
@@ -724,8 +857,12 @@ export async function renderThumbnails(file: File, scale = 0.3): Promise<string[
 
 // ─── Page Numbers ─────────────────────────────────────────────────────────────
 
+export type PageNumberPosition =
+  | "top-left" | "top-center" | "top-right"
+  | "bottom-left" | "bottom-center" | "bottom-right";
+
 export interface PageNumberOptions {
-  position?: "bottom-center" | "bottom-right" | "bottom-left" | "top-center";
+  position?: PageNumberPosition;
   startFrom?: number;
   fontSize?: number;
   format?: "1" | "Page 1" | "1 / N";
@@ -746,10 +883,10 @@ export async function addPageNumbers(file: File, opts: PageNumberOptions = {}): 
       const view = displayedPage(page);
       const tw = font.widthOfTextAtSize(label, fontSize);
       const dx =
-        position === "bottom-right" ? view.width - tw - margin
-        : position === "bottom-left" ? margin
+        position.endsWith("-right") ? view.width - tw - margin
+        : position.endsWith("-left") ? margin
         : (view.width - tw) / 2;
-      const dy = position === "top-center" ? view.height - margin - fontSize : margin;
+      const dy = position.startsWith("top-") ? view.height - margin - fontSize : margin;
       const { x, y } = view.toUser(dx, dy);
       page.drawText(label, { x, y, size: fontSize, font, color: rgb(0.2, 0.2, 0.2), rotate: degrees(view.rotation) });
     });
@@ -815,7 +952,8 @@ export interface SignItem {
   fontSizeRatio?: number;
 }
 
-const LATIN_TEXT_ERROR = "Text can use Latin letters, numbers and common symbols only.";
+const LATIN_TEXT_ERROR =
+  "This text uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.";
 
 /** Place multiple signature images, dates and text items onto a PDF in one pass. */
 export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolResult> {
@@ -825,6 +963,9 @@ export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolR
     const pages = doc.getPages();
     const font = await doc.embedFont(StandardFonts.Helvetica);
     const imageCache = new Map<string, PDFImage>();
+    // Unicode fallback embedded on demand (once) for non-Latin text stamps.
+    let uniFont: typeof font | null = null;
+    let uniCovers: ((ch: string) => boolean) | null = null;
 
     for (const item of items) {
       const target = pages[item.page - 1];
@@ -850,17 +991,23 @@ export async function signPDFMulti(file: File, items: SignItem[]): Promise<ToolR
       } else {
         const text = (item.text ?? "").trim();
         if (!text) continue;
-        try {
-          font.encodeText(text);
-        } catch {
-          return { success: false, error: LATIN_TEXT_ERROR };
+        let drawFont = font;
+        if (!canEncode(font, text)) {
+          if (!uniFont) {
+            const u = await embedUnicodeFont(doc, false);
+            uniFont = u.font;
+            uniCovers = u.covers;
+          }
+          const missing = [...text].filter((ch) => ch.trim() && !uniCovers!(ch));
+          if (missing.length) return { success: false, error: LATIN_TEXT_ERROR };
+          drawFont = uniFont;
         }
         const fontSize = (item.fontSizeRatio ?? 0.02) * view.height;
-        const ascent = font.heightAtSize(fontSize, { descender: false });
+        const ascent = drawFont.heightAtSize(fontSize, { descender: false });
         const dx = item.x * view.width;
         const dy = view.height - item.yFromTop * view.height - ascent;
         const pos = view.toUser(dx, dy);
-        target.drawText(text, { x: pos.x, y: pos.y, size: fontSize, font, color: rgb(0.25, 0.25, 0.28), rotate: degrees(view.rotation) });
+        target.drawText(text, { x: pos.x, y: pos.y, size: fontSize, font: drawFont, color: rgb(0.25, 0.25, 0.28), rotate: degrees(view.rotation) });
       }
     }
 
@@ -888,6 +1035,29 @@ export async function deletePages(file: File, pagesToDelete: number[]): Promise<
   }
 }
 
+// ─── Extract Pages ────────────────────────────────────────────────────────────
+
+/**
+ * Keep only the given pages, in the order supplied, as a new PDF. `pages` are
+ * 1-based page numbers. Duplicates are allowed (the page is copied more than
+ * once); out-of-range numbers are ignored. Copies into a fresh document so the
+ * result carries only the kept pages.
+ */
+export async function extractPages(file: File, pages: number[]): Promise<ToolResult> {
+  try {
+    const src = await loadPdf(file);
+    const total = src.getPageCount();
+    const indices = pages.map((p) => p - 1).filter((i) => i >= 0 && i < total);
+    if (!indices.length) return { success: false, error: "Select at least one page to extract." };
+    const out = await PDFDocument.create();
+    const copied = await out.copyPages(src, indices);
+    copied.forEach((p) => out.addPage(p));
+    return { success: true, blob: await saveToBlob(out), filename: `${baseName(file)}_extracted.pdf` };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Failed to extract pages.") };
+  }
+}
+
 // ─── Repair PDF ───────────────────────────────────────────────────────────────
 
 export async function repairPDF(file: File): Promise<ToolResult> {
@@ -899,10 +1069,29 @@ export async function repairPDF(file: File): Promise<ToolResult> {
     return { success: true, blob: await saveToBlob(doc), filename: `${baseName(file)}_repaired.pdf` };
   } catch (e) {
     if ((e as Error)?.name === "PdfPasswordError") return { success: false, error: toolErrorMessage(e, "") };
-    // pdf-lib couldn't parse — fall through to rendering recovery
+    // pdf-lib couldn't parse — fall through to qpdf recovery
   }
 
-  // Pass 2: PDF.js is more tolerant; rebuild each page from a rendered image at its real size.
+  // Pass 2: qpdf (in-browser) reconstructs the xref table and object structure,
+  // keeping text selectable. Tried before the lossy raster rebuild. Progressive
+  // enhancement — skipped if qpdf can't load or can't recover the file.
+  try {
+    const { repairWithQpdf } = await import("@/lib/tools/qpdf");
+    const recovered = await repairWithQpdf(bytes);
+    if (recovered) {
+      // Confirm the result actually opens before handing it back.
+      await loadPdf(recovered);
+      return {
+        success: true,
+        blob: new Blob([recovered as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+        filename: `${baseName(file)}_repaired.pdf`,
+      };
+    }
+  } catch {
+    // qpdf unavailable or its output still won't open — fall through to raster rebuild.
+  }
+
+  // Pass 3: PDF.js is more tolerant; rebuild each page from a rendered image at its real size.
   try {
     const pdfjsLib = await getPdfjsLib();
     const pdfJsDoc = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
@@ -925,6 +1114,33 @@ export async function repairPDF(file: File): Promise<ToolResult> {
     };
   } catch (e) {
     return { success: false, error: toolErrorMessage(e, "Failed to repair PDF. The file may be too corrupted to recover.") };
+  }
+}
+
+// ─── Linearize (Fast Web View) ──────────────────────────────────────────────
+
+/**
+ * Linearise a PDF ("Fast Web View") so viewers can render the first page before
+ * the whole file downloads. Uses qpdf in the browser. Decrypts restriction-only
+ * files via loadPdf first (and gives the clear "unlock it first" message for
+ * password-protected ones). The output is often slightly larger — that's
+ * expected; linearisation trades a little size for streaming.
+ */
+export async function linearizePDF(file: File): Promise<ToolResult> {
+  try {
+    // Normalise/decrypt through pdf-lib first so qpdf gets an openable file and
+    // password-protected inputs produce the standard guidance message.
+    const doc = await loadPdf(file);
+    const normalized = new Uint8Array(await (await saveToBlob(doc)).arrayBuffer());
+    const { linearize } = await import("@/lib/tools/qpdf");
+    const out = await linearize(normalized);
+    return {
+      success: true,
+      blob: new Blob([out as Uint8Array<ArrayBuffer>], { type: "application/pdf" }),
+      filename: `${baseName(file)}_web.pdf`,
+    };
+  } catch (e) {
+    return { success: false, error: toolErrorMessage(e, "Couldn't optimize this PDF for web view. Make sure it's a valid PDF.") };
   }
 }
 

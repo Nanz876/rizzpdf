@@ -8,6 +8,7 @@ import ThumbnailGrid, { ThumbnailPage } from "@/components/pdf/ThumbnailGrid";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { renderThumbnails, downloadBlob, type ToolResult } from "@/lib/pdf-tools";
 import { runInWorker } from "@/lib/worker/run";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Status = "idle" | "loading" | "ready" | "processing" | "done" | "error";
 
@@ -17,19 +18,20 @@ export default function RotatePage() {
   const [rotations, setRotations] = useState<Record<number, number>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const { runWithProgress } = useProgress();
 
   const handleFile = useCallback(async (files: File[]) => {
     setFile(files[0]); setStatus("loading"); setRotations({});
     let t: string[];
     try {
-      t = await renderThumbnails(files[0], 0.5);
+      t = await runWithProgress("Rendering pages", (report) => renderThumbnails(files[0], 0.5, report));
     } catch (e) {
       setFile(null); setStatus("idle");
       setError(e instanceof Error ? e.message : "This file couldn't be opened.");
       return;
     }
     setThumbs(t); setStatus("ready");
-  }, []);
+  }, [runWithProgress]);
 
   const rotate = (pageNum: number, delta: number) =>
     setRotations(r => ({ ...r, [pageNum]: ((r[pageNum] ?? 0) + delta + 360) % 360 }));

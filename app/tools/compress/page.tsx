@@ -7,6 +7,7 @@ import UploadZone from "@/components/UploadZone";
 import WorkspaceBar from "@/components/pdf/WorkspaceBar";
 import PdfPreviewArea from "@/components/PdfPreviewArea";
 import { compressPDF, compressToTarget, downloadBlob } from "@/lib/pdf-tools";
+import { useProgress } from "@/components/ProgressProvider";
 
 type Quality = "low" | "medium" | "high";
 type Mode = Quality | "target";
@@ -43,6 +44,7 @@ const TARGET_CHIPS: { label: string; mb: number }[] = [
 ];
 
 export default function CompressPage() {
+  const { runWithProgress } = useProgress();
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<Mode>("medium");
   const [targetMB, setTargetMB] = useState(5);
@@ -105,7 +107,7 @@ export default function CompressPage() {
       return;
     }
 
-    const out = await compressPDF(file, mode);
+    const out = await runWithProgress("Compressing images", (report) => compressPDF(file, mode, report));
     if (out.success && out.blob) {
       setNewSize(out.blob.size);
       setResult({ blob: out.blob, filename: out.filename ?? file.name.replace(/\.pdf$/i, "_compressed.pdf") });

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -19,6 +19,14 @@ vi.mock("pdfjs-dist", async () => {
 });
 
 import { readFormFields, fillForm } from "@/lib/tools/fill-form";
+import { setUnicodeFontLoader } from "@/lib/tools/pdf-font";
+
+// The DejaVu Unicode fallback is fetched from /fonts in the browser; read it off disk here.
+beforeAll(() => {
+  setUnicodeFontLoader(async (bold) =>
+    new Uint8Array(await fs.readFile(path.resolve(__dirname, `../../public/fonts/DejaVuSans${bold ? "-Bold" : ""}.ttf`)))
+  );
+});
 
 const FIX = path.resolve(__dirname, "../../test-fixtures");
 const bytesOf = async (b: Blob) => new Uint8Array(await b.arrayBuffer());
@@ -255,11 +263,29 @@ describe("fillForm", () => {
     expect(r.error).toMatch(/zip/);
   });
 
-  it("errors naming the field for non-Latin text", async () => {
+  it("fills a Cyrillic value the standard font can't encode (DejaVu fallback)", async () => {
+    const r = await fillForm(await buildFormFixture(), { fullName: "Иван Петров" });
+    expect(r.error).toBeUndefined();
+    expect(r.success).toBe(true);
+    const doc = await PDFDocument.load(await bytesOf(r.blob!));
+    expect(doc.getForm().getTextField("fullName").getText()).toBe("Иван Петров");
+    // An appearance stream was generated (not left blank) for the Unicode value.
+    expect(widgetAppearanceText(doc, "fullName").length).toBeGreaterThan(0);
+  });
+
+  it("fills a Vietnamese value and keeps it visible after flatten", async () => {
+    const r = await fillForm(await buildFormFixture(), { fullName: "Tiếng Việt" }, { flatten: true });
+    expect(r.success).toBe(true);
+    const bytes = await bytesOf(r.blob!);
+    expect(await PDFDocument.load(bytes).then((d) => d.getForm().getFields())).toHaveLength(0);
+    expect((await pageTexts(bytes))[0]).toContain("Tiếng Việt");
+  });
+
+  it("still errors naming the field for a script neither font can draw (CJK)", async () => {
     const r = await fillForm(await buildFormFixture(), { fullName: "こんにちは" });
     expect(r.success).toBe(false);
     expect(r.error).toMatch(/fullName/);
-    expect(r.error).toMatch(/Latin letters/i);
+    expect(r.error).toMatch(/can't draw yet/i);
   });
 
   it("errors on an unknown dropdown option", async () => {

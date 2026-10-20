@@ -2,22 +2,31 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { takeHandedOffFile } from "@/lib/handoff";
+import { unlockFileIfNeeded } from "@/lib/pdf-unlock-file";
+import { usePasswordPrompt } from "@/components/PasswordPromptProvider";
 
 interface UploadZoneProps {
   onFilesAdded: (files: File[]) => void;
   disabled?: boolean;
+  /**
+   * When true (default), password-protected PDFs are unlocked inline on intake
+   * so the tool always receives a plain file. The Unlock tool sets this false —
+   * it does its own password handling.
+   */
+  autoUnlock?: boolean;
 }
 
 const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200MB — matches the copy below
 const BIG_FILE_BYTES = 50 * 1024 * 1024; // 50MB — shows the "stays responsive" note
 
-export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) {
+export default function UploadZone({ onFilesAdded, disabled, autoUnlock = true }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [rejected, setRejected] = useState("");
   const [hasBigFile, setHasBigFile] = useState(false);
+  const requestPassword = usePasswordPrompt();
 
   const handleFiles = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files) return;
       const all = Array.from(files);
       const pdfs = all.filter((f) => f.type === "application/pdf");
@@ -35,10 +44,33 @@ export default function UploadZone({ onFilesAdded, disabled }: UploadZoneProps) 
       }
 
       if (sized.some((f) => f.size > BIG_FILE_BYTES)) setHasBigFile(true);
+      if (!sized.length) return;
 
-      if (sized.length) onFilesAdded(sized);
+      if (!autoUnlock) {
+        onFilesAdded(sized);
+        return;
+      }
+
+      // Decrypt any password-protected PDFs up front (prompting once per file),
+      // so every downstream tool — including worker-based ones — gets a plain
+      // file. Files the user cancels out of are dropped with a note.
+      const unlocked: File[] = [];
+      let cancelled = 0;
+      for (const f of sized) {
+        const out = await unlockFileIfNeeded(f, requestPassword);
+        if (out) unlocked.push(out);
+        else cancelled++;
+      }
+      if (cancelled) {
+        setRejected((prev) =>
+          [prev, `${cancelled} locked file${cancelled > 1 ? "s" : ""} skipped — no password entered`]
+            .filter(Boolean)
+            .join(" · ")
+        );
+      }
+      if (unlocked.length) onFilesAdded(unlocked);
     },
-    [onFilesAdded]
+    [onFilesAdded, autoUnlock, requestPassword]
   );
 
   // Tool chaining: load a PDF handed over from the previous tool, once.

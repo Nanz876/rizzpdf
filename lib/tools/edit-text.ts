@@ -13,6 +13,7 @@ import {
 import type { PDFPageProxy } from "pdfjs-dist";
 import { loadPdf, saveToBlob, toolErrorMessage, displayedPage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
+import { canEncode, embedUnicodeFont, type UnicodeFont } from "@/lib/tools/pdf-font";
 
 /**
  * Edit PDF text — honest, cover-and-redraw editing.
@@ -89,7 +90,7 @@ export interface TextEdit {
 
 export const NO_EDITS_MESSAGE = "Replace or add some text first.";
 export const UNSUPPORTED_TEXT_MESSAGE =
-  "Replacement text can use Latin letters, numbers and common symbols only.";
+  "This text uses characters we can't draw yet (e.g. Chinese, Japanese, Korean, Arabic, Hebrew or Thai). Latin, Cyrillic, Greek and Vietnamese are supported.";
 export const MISSING_PAGE_MESSAGE = "One of the edits is on a page that doesn't exist.";
 
 const WHITE: Rgb = { r: 1, g: 1, b: 1 };
@@ -871,6 +872,17 @@ export async function applyTextEdits(file: File, edits: TextEdit[]): Promise<Too
       }
       return font;
     };
+    // DejaVu Unicode fallback (regular/bold), embedded once on demand, for text the
+    // WinAnsi standard fonts can't encode (Cyrillic, Greek, Vietnamese, extended Latin).
+    const uniFonts = new Map<boolean, UnicodeFont>();
+    const embedUnicode = async (bold: boolean) => {
+      let u = uniFonts.get(bold);
+      if (!u) {
+        u = await embedUnicodeFont(doc, bold);
+        uniFonts.set(bold, u);
+      }
+      return u;
+    };
 
     for (const edit of edits) {
       const index = Math.round(edit.page) - 1;
@@ -915,11 +927,15 @@ export async function applyTextEdits(file: File, edits: TextEdit[]): Promise<Too
       const text = edit.text ?? "";
       if (!text.trim()) continue; // covering only: the line is simply removed
 
-      const font = await embed(closestStandardFont(edit.family, edit.bold, edit.italic));
-      try {
-        font.encodeText(text);
-      } catch {
-        return { success: false, error: UNSUPPORTED_TEXT_MESSAGE };
+      let font = await embed(closestStandardFont(edit.family, edit.bold, edit.italic));
+      if (!canEncode(font, text)) {
+        // Fall back to embedded DejaVu. It has no serif/mono or italic cut, so the
+        // typeface match is dropped for these characters — a far better outcome than
+        // refusing the whole edit. Reject only what DejaVu itself can't draw (CJK, …).
+        const uni = await embedUnicode(!!edit.bold);
+        const missing = [...text].filter((ch) => ch.trim() && !uni.covers(ch));
+        if (missing.length) return { success: false, error: UNSUPPORTED_TEXT_MESSAGE };
+        font = uni.font;
       }
 
       const requested = edit.fontSize && edit.fontSize > 0 ? edit.fontSize : bh > 0 ? bh / (PAD_ABOVE + PAD_BELOW) : 12;
