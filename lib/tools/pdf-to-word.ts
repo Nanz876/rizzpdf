@@ -4,6 +4,14 @@
 // browser — see imageObjectToPng).
 import { toolErrorMessage } from "@/lib/pdf-load";
 import type { ToolResult } from "@/lib/pdf-tools";
+import {
+  rowSegments,
+  detectTableRuns,
+  tableGrid,
+  mergeWrappedHeaderRows,
+  type Segment,
+  type TableRun,
+} from "@/lib/tools/pdf-text";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -18,14 +26,9 @@ const BULLET_GLYPH_RE = /^[•●▪◦‣∙·]\s+/;
 type TextItem = { str: string; x: number; y: number; w: number; size: number; bold: boolean; italic: boolean };
 type Line = { text: string; x: number; y: number; size: number; bold: boolean; italic: boolean };
 /** One baseline's worth of raw items, kept (unmerged) so table columns can be detected. */
-type Row = { y: number; size: number; items: TextItem[]; cols: number[] };
+type Row = { y: number; size: number; items: TextItem[] };
 type Para = { lines: Line[]; bullet: boolean };
 type ImageBlock = { y: number; widthPt: number; heightPt: number; png: Uint8Array };
-interface TableRun {
-  start: number; // inclusive index into `rows`/`lines`
-  end: number; // inclusive
-  cols: number[]; // shared column start x-positions, ascending
-}
 type Block =
   | { y: number; kind: "para"; para: Para }
   | { y: number; kind: "table"; run: TableRun }
@@ -38,71 +41,25 @@ async function getPdfjsLib() {
 }
 
 // ─── Table detection ────────────────────────────────────────────────────────
-// Rows are grouped by shared baseline (same tolerance as line-grouping below).
-// A row's "columns" are the x-positions where a new run of text starts after a
-// gap wide enough that the paragraph-merge logic would also treat it as a tab
-// stop — ordinary prose has one such position (the left margin), so it can
-// never look like a table on its own. Two or more consecutive rows that share
-// two or more of those positions (within a small tolerance) become a table;
-// everything else stays as paragraphs. This under-detects rather than over-detects
-// on purpose — a missed table just falls back to plain text.
-const COL_TOL = 4; // pt
+// Detection, grid assignment and wrapped-header merging are shared with PDF to
+// Excel / Markdown via lib/tools/pdf-text.ts, so all three tools reconstruct
+// tables the same way: columns are the vertical whitespace stripes running
+// through the whole table block (robust to right-aligned numbers, sparse rows
+// like a lone SUBTOTAL, and headers wrapped onto several lines). Here we only add
+// the .docx-specific column widths derived from those column cut lines.
 
-function columnStarts(items: TextItem[]): number[] {
-  const cols: number[] = [];
-  let prevEnd = -Infinity;
-  for (const it of items) {
-    if (cols.length === 0 || it.x - prevEnd > it.size * 2) cols.push(it.x);
-    prevEnd = it.x + it.w;
-  }
-  return cols;
-}
-
-function intersectCols(a: number[], b: number[]): number[] {
-  return a.filter((x) => b.some((y) => Math.abs(x - y) <= COL_TOL));
-}
-
-function detectTableRuns(rows: Row[]): TableRun[] {
-  const runs: TableRun[] = [];
-  if (!rows.length) return runs;
-  let runStart = 0;
-  let common = rows[0].cols;
-  for (let i = 1; i <= rows.length; i++) {
-    const next = i < rows.length ? intersectCols(common, rows[i].cols) : [];
-    if (i < rows.length && next.length >= 2) {
-      common = next;
-      continue;
+/** Proportional column widths (in twips) from the run's cut lines, summing to the content width. */
+function columnWidthsTwips(blockSegRows: Segment[][], cuts: number[], contentWidthPt: number): number[] {
+  let left = Infinity;
+  let right = -Infinity;
+  for (const segs of blockSegRows)
+    for (const s of segs) {
+      left = Math.min(left, s.x);
+      right = Math.max(right, s.end);
     }
-    if (i - runStart >= 2 && common.length >= 2) runs.push({ start: runStart, end: i - 1, cols: common });
-    runStart = i;
-    common = i < rows.length ? rows[i].cols : [];
-  }
-  return runs;
-}
-
-/** Assigns each row's items to the nearest column boundary, joining items that land in the same cell. */
-function tableGrid(rows: Row[], run: TableRun): string[][] {
-  const bounds = run.cols;
-  return Array.from({ length: run.end - run.start + 1 }, (_, r) => {
-    const cells: string[][] = Array.from({ length: bounds.length }, () => []);
-    for (const it of rows[run.start + r].items) {
-      let idx = 0;
-      for (let c = 0; c < bounds.length; c++) if (it.x + COL_TOL >= bounds[c]) idx = c;
-      cells[idx].push(it.str);
-    }
-    return cells.map((parts) => parts.join(" ").replace(/\s{2,}/g, " ").trim());
-  });
-}
-
-/** Proportional column widths (in twips) that sum to the page's content width. */
-function tableColumnWidthsTwips(rows: Row[], run: TableRun, contentWidthPt: number): number[] {
-  const bounds = run.cols;
-  let maxRight = bounds[bounds.length - 1] + 20;
-  for (let r = run.start; r <= run.end; r++) {
-    for (const it of rows[r].items) maxRight = Math.max(maxRight, it.x + it.w);
-  }
-  const edges = [...bounds, maxRight];
-  const raw = bounds.map((_, c) => Math.max(20, edges[c + 1] - edges[c]));
+  if (!Number.isFinite(left) || right <= left) return cuts.map(() => 0).concat(Math.round(contentWidthPt * 20));
+  const edges = [left, ...cuts, right];
+  const raw = edges.slice(1).map((e, i) => Math.max(20, e - edges[i]));
   const total = raw.reduce((s, w) => s + w, 0) || 1;
   return raw.map((w) => Math.round((w / total) * contentWidthPt * 20));
 }
@@ -312,7 +269,7 @@ async function buildDoc(file: File, docx: Any, pdfjsLib: Any, onProgress?: (done
     const rows: Row[] = rawRows
       .map((r) => {
         r.sort((p, q) => p.x - q.x);
-        return { y: r[0].y, size: Math.max(...r.map((i) => i.size)), items: r, cols: columnStarts(r) };
+        return { y: r[0].y, size: Math.max(...r.map((i) => i.size)), items: r };
       })
       .sort((p, q) => p.y - q.y);
     const lines: Line[] = rows.map((r) => mergeRow(r.items));
@@ -322,8 +279,10 @@ async function buildDoc(file: File, docx: Any, pdfjsLib: Any, onProgress?: (done
 
     if (!filteredLines.length && !images.length) continue;
 
-    // 3. Detect tables from the (row, column) grid; the rest reads as plain paragraphs.
-    const tableRuns = detectTableRuns(filteredRows);
+    // 3. Detect tables with the shared whole-block-column engine; the rest reads as
+    // plain paragraphs. segRows is 1:1 with filteredRows, so run indices match.
+    const segRows: Segment[][] = filteredRows.map((r) => rowSegments(r));
+    const tableRuns = detectTableRuns(segRows, filteredRows.map((r) => r.y));
     const consumed = new Set<number>();
     for (const run of tableRuns) for (let i = run.start; i <= run.end; i++) consumed.add(i);
     const proseLines = filteredLines.filter((_, i) => !consumed.has(i));
@@ -399,8 +358,9 @@ async function buildDoc(file: File, docx: Any, pdfjsLib: Any, onProgress?: (done
           })
         );
       } else if (block.kind === "table") {
-        const grid = tableGrid(filteredRows, block.run);
-        const colWidths = tableColumnWidthsTwips(filteredRows, block.run, contentWidthPt);
+        const blockSegRows = segRows.slice(block.run.start, block.run.end + 1);
+        const grid = mergeWrappedHeaderRows(tableGrid(blockSegRows, block.run.cols));
+        const colWidths = columnWidthsTwips(blockSegRows, block.run.cols, contentWidthPt);
         if (pageBreakBefore) children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
         children.push(
           new Table({
