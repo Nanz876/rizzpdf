@@ -274,6 +274,9 @@ export default function Home() {
                 </>
               )}
             </div>
+            {notifyState === "error" && (
+              <p className="text-sm text-red-600 mt-2">Something went wrong — please try again.</p>
+            )}
           </div>
         </section>
       </main>
