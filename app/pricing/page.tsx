@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import Navbar from "@/components/Navbar";
 
 function CheckIcon({ color }: { color: "green" | "red" | "amber" | "gray" }) {
   const styles = {
@@ -42,26 +43,48 @@ function FeatureItem({
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
 
-  async function handleProClick() {
-    if (!isSignedIn) {
-      window.location.href = "/sign-up?redirect=/pricing";
-      return;
-    }
+  // Signing up from here sends the visitor back with ?checkout=<plan>, so the
+  // purchase they started picks up where it left off instead of dropping them.
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || resumed.current) return;
+    const plan = new URLSearchParams(window.location.search).get("checkout");
+    if (plan !== "monthly" && plan !== "annual") return;
+    resumed.current = true;
+    window.history.replaceState(null, "", "/pricing");
+    setAnnual(plan === "annual");
+    startCheckout(plan === "annual");
+  }, [isLoaded, isSignedIn]);
+
+  async function startCheckout(isAnnual: boolean) {
     setLoading(true);
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing: annual ? "annual" : "monthly" }),
+        body: JSON.stringify({ billing: isAnnual ? "annual" : "monthly" }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      alert(data.error ?? "Something went wrong. Please try again.");
     } catch {
       alert("Something went wrong. Please try again.");
-      setLoading(false);
     }
+    setLoading(false);
+  }
+
+  function handleProClick() {
+    if (!isSignedIn) {
+      const back = `/pricing?checkout=${annual ? "annual" : "monthly"}`;
+      window.location.href = `/sign-up?redirect_url=${encodeURIComponent(back)}`;
+      return;
+    }
+    startCheckout(annual);
   }
 
   const proMonthlyDisplay = annual ? "$4" : "$5";
@@ -73,29 +96,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f9]">
-      {/* Nav */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="text-xl font-black">
-            <span className="text-gray-900">Rizz</span>
-            <span className="text-red-600">PDF</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/sign-in"
-              className="text-[13px] font-semibold text-gray-600 border border-gray-300 px-4 py-1.5 rounded-full hover:border-red-400 hover:text-red-600 transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="text-[13px] font-bold bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full transition-colors"
-            >
-              Sign up free
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <div className="bg-white border-b border-gray-100 text-center py-14 px-6">
@@ -167,9 +168,9 @@ export default function PricingPage() {
                 </span>
               </div>
               <div className="text-[12px] text-gray-400 mb-5 h-4">&nbsp;</div>
-              <button className="w-full py-3 rounded-xl text-[14px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+              <Link href="/" className="block text-center w-full py-3 rounded-xl text-[14px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                 Get started free
-              </button>
+              </Link>
             </div>
             <div className="h-px bg-gray-100" />
             <div className="p-7">
