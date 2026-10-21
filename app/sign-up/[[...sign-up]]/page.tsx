@@ -1,9 +1,17 @@
 import { SignUp } from "@clerk/nextjs";
+import { safeRedirect } from "@/lib/safe-redirect";
 
-export default function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string }>;
+}) {
+  // Send the visitor back to what they were doing (e.g. a Pro checkout they
+  // started on /pricing) instead of the Clerk default of the homepage.
+  const { redirect_url } = await searchParams;
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-      <SignUp />
+      <SignUp forceRedirectUrl={safeRedirect(redirect_url)} />
     </div>
   );
 }
