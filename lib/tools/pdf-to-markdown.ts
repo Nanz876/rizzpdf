@@ -10,6 +10,7 @@ import {
   rowText,
   detectTableRuns,
   tableGrid,
+  mergeWrappedHeaderRows,
   type PageText,
   type TextRow,
 } from "@/lib/tools/pdf-text";
@@ -74,7 +75,7 @@ function joinWrapped(lines: Line[]): string {
 
 function pageBlocks(page: PageText, body: number): Block[] {
   const segRows = page.rows.map((r) => rowSegments(r));
-  const runs = detectTableRuns(segRows);
+  const runs = detectTableRuns(segRows, page.rows.map((r) => r.y));
   const inTable = new Map<number, number>(); // row index → run index
   runs.forEach((run, ri) => {
     for (let i = run.start; i <= run.end; i++) inTable.set(i, ri);
@@ -85,7 +86,7 @@ function pageBlocks(page: PageText, body: number): Block[] {
     const ri = inTable.get(i);
     if (ri !== undefined) {
       const run = runs[ri];
-      blocks.push({ kind: "table", grid: tableGrid(segRows.slice(run.start, run.end + 1), run.cols) });
+      blocks.push({ kind: "table", grid: mergeWrappedHeaderRows(tableGrid(segRows.slice(run.start, run.end + 1), run.cols)) });
       i = run.end;
       continue;
     }

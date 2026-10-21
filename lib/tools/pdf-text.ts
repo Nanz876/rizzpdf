@@ -70,8 +70,9 @@ export function rowSegments(row: TextRow, gapFactor = 2): Segment[] {
   return segs.map((s) => ({ x: s.x, end: s.end, text: rowText({ y: row.y, size: row.size, items: s.items }) }));
 }
 
-const COL_TOL = 4; // pt
-const MIN_GUTTER = 3; // pt — a column separator must survive a gap at least this wide in every row
+const COL_TOL = 4; // pt — segments closer than this are treated as one occupied band
+const MIN_SEP = 4; // pt — a column separator must be at least this wide
+const ROW_SPLIT_FACTOR = 1.8; // a vertical gap this many × the median row pitch starts a new table
 
 /**
  * A run of consecutive rows (inclusive indices) that form a table.
@@ -87,67 +88,87 @@ export interface TableRun {
 
 type Interval = [number, number];
 
-/** The internal gaps of a row: the whitespace bands that sit between two of its segments. */
-function rowGaps(segs: Segment[]): Interval[] {
-  const gaps: Interval[] = [];
-  for (let i = 0; i < segs.length - 1; i++) {
-    const lo = segs[i].end;
-    const hi = segs[i + 1].x;
-    if (hi - lo > COL_TOL) gaps.push([lo, hi]);
+/**
+ * Column separators for a block of rows: the vertical whitespace stripes that run
+ * through the WHOLE block (no row has any text in them). Computed from the union of
+ * every segment's x-span, not a per-row intersection — so a sparse row (a lone
+ * "SUBTOTAL … 18,500") or a wrapped header can't collapse the columns, and each
+ * value still lands in its own column. Returns the gap midpoints, ascending.
+ */
+function columnCuts(rows: Segment[][]): number[] {
+  const spans: Interval[] = [];
+  for (const segs of rows) for (const s of segs) if (s.end > s.x) spans.push([s.x, s.end]);
+  if (spans.length < 2) return [];
+  spans.sort((a, b) => a[0] - b[0]);
+  const merged: Interval[] = [[spans[0][0], spans[0][1]]];
+  for (let k = 1; k < spans.length; k++) {
+    const last = merged[merged.length - 1];
+    if (spans[k][0] <= last[1] + COL_TOL) last[1] = Math.max(last[1], spans[k][1]);
+    else merged.push([spans[k][0], spans[k][1]]);
   }
-  return gaps;
+  const cuts: number[] = [];
+  for (let k = 1; k < merged.length; k++) {
+    if (merged[k][0] - merged[k - 1][1] >= MIN_SEP) cuts.push((merged[k - 1][1] + merged[k][0]) / 2);
+  }
+  return cuts;
 }
 
-/** Intersect two sets of ascending, disjoint intervals into the bands common to both. */
-function intersectIntervals(a: Interval[], b: Interval[]): Interval[] {
-  const out: Interval[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < a.length && j < b.length) {
-    const lo = Math.max(a[i][0], b[j][0]);
-    const hi = Math.min(a[i][1], b[j][1]);
-    if (hi - lo > COL_TOL) out.push([lo, hi]);
-    if (a[i][1] < b[j][1]) i++;
-    else j++;
-  }
-  return out;
-}
-
-/** Cut lines (gutter midpoints) wide enough to act as column separators. */
-function cutsFrom(gutters: Interval[]): number[] {
-  return gutters.filter(([lo, hi]) => hi - lo >= MIN_GUTTER).map(([lo, hi]) => (lo + hi) / 2);
+function median(xs: number[]): number {
+  if (!xs.length) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
 /**
- * Find table-like runs: two or more consecutive rows that share at least one vertical
- * gutter — a band of whitespace that every row in the run leaves open between its
- * segments. Columns are the bands between those gutters, so right-aligned numeric
- * columns and centred columns are detected as readily as left-aligned ones. Ordinary
- * prose has a single segment (and so no internal gap) per row, so it never qualifies.
- * Under-detects on purpose; a missed table just reads as text.
+ * Split a contiguous block of row indices wherever the vertical gap between two rows
+ * is an outlier (> ROW_SPLIT_FACTOR × the median gap) — a blank line that separates
+ * two stacked tables, so they don't merge into one mis-columned block. `ys` is each
+ * row's baseline (top-down); without it the block stays whole.
  */
-export function detectTableRuns(segRows: Segment[][]): TableRun[] {
-  const runs: TableRun[] = [];
-  if (!segRows.length) return runs;
-  const gaps = segRows.map(rowGaps);
+function splitByRowGap(indices: number[], ys?: number[]): number[][] {
+  if (!ys || indices.length < 3) return [indices];
+  const gaps: number[] = [];
+  for (let k = 1; k < indices.length; k++) gaps.push(Math.abs(ys[indices[k]] - ys[indices[k - 1]]));
+  const med = median(gaps.filter((g) => g > 0));
+  if (!med) return [indices];
+  const groups: number[][] = [];
+  let cur = [indices[0]];
+  for (let k = 1; k < indices.length; k++) {
+    if (Math.abs(ys[indices[k]] - ys[indices[k - 1]]) > ROW_SPLIT_FACTOR * med) {
+      groups.push(cur);
+      cur = [indices[k]];
+    } else cur.push(indices[k]);
+  }
+  groups.push(cur);
+  return groups;
+}
 
-  let runStart = 0;
-  let common = gaps[0];
-  const flush = (endExclusive: number) => {
-    const cuts = cutsFrom(common);
-    if (endExclusive - runStart >= 2 && cuts.length >= 1) {
-      runs.push({ start: runStart, end: endExclusive - 1, cols: cuts });
-    }
-  };
-  for (let i = 1; i <= gaps.length; i++) {
-    const next = i < gaps.length && common.length ? intersectIntervals(common, gaps[i]) : [];
-    if (i < gaps.length && cutsFrom(next).length >= 1) {
-      common = next;
+/**
+ * Find table-like runs: maximal spans of consecutive rows that each have ≥2 segments
+ * (ordinary prose is one segment per row, so it never qualifies), split on blank-line
+ * boundaries, each needing ≥2 rows and ≥1 column separator. Under-detects on purpose;
+ * a missed table just reads as text. Pass `ys` (row baselines) to separate stacked
+ * tables.
+ */
+export function detectTableRuns(segRows: Segment[][], ys?: number[]): TableRun[] {
+  const runs: TableRun[] = [];
+  const n = segRows.length;
+  let i = 0;
+  while (i < n) {
+    if (segRows[i].length < 2) {
+      i++;
       continue;
     }
-    flush(i);
-    runStart = i;
-    common = i < gaps.length ? gaps[i] : [];
+    let j = i;
+    while (j < n && segRows[j].length >= 2) j++;
+    const block = Array.from({ length: j - i }, (_, k) => i + k);
+    for (const grp of splitByRowGap(block, ys)) {
+      if (grp.length < 2) continue;
+      const cuts = columnCuts(grp.map((k) => segRows[k]));
+      if (cuts.length >= 1) runs.push({ start: grp[0], end: grp[grp.length - 1], cols: cuts });
+    }
+    i = j;
   }
   return runs;
 }
@@ -170,6 +191,31 @@ export function tableGrid(segRows: Segment[][], cuts: number[]): string[][] {
     for (const s of segs) cells[columnIndex(cuts, (s.x + s.end) / 2)].push(s.text);
     return cells.map((parts) => parts.join(" ").trim());
   });
+}
+
+/** A cell that reads as a number (so a row holding one is data, not a wrapped header). */
+const NUMERIC_CELL = /\d/;
+function isNumericCell(s: string): boolean {
+  return NUMERIC_CELL.test(s) && /^[\s$€£¥()+\-%,.\d]+$/.test(s.trim());
+}
+
+/**
+ * Merge a table's leading wrapped-header rows into one. A column header that wraps
+ * onto two or three lines ("DESCRIPTION OF" / "SERVICE") arrives as separate rows;
+ * join the leading rows that contain no numeric cell, per column, so the header is a
+ * single row above the data. Only runs while every leading row is non-numeric and at
+ * least two of them are, so a normal one-line header or the first data row is left
+ * alone.
+ */
+export function mergeWrappedHeaderRows(grid: string[][]): string[][] {
+  let h = 0;
+  while (h < grid.length && grid[h].every((c) => !isNumericCell(c))) h++;
+  if (h < 2) return grid;
+  const cols = grid[0].length;
+  const header = Array.from({ length: cols }, (_, c) =>
+    grid.slice(0, h).map((r) => r[c] ?? "").filter(Boolean).join(" ").trim()
+  );
+  return [header, ...grid.slice(h)];
 }
 
 /**
