@@ -21,7 +21,7 @@ export default function Footer() {
               <li><Link href="/tools/merge" className="hover:text-white transition-colors">Merge PDF</Link></li>
               <li><Link href="/tools/split" className="hover:text-white transition-colors">Split PDF</Link></li>
               <li><Link href="/tools/compress" className="hover:text-white transition-colors">Compress PDF</Link></li>
-              <li><Link href="/" className="hover:text-white transition-colors">Unlock PDF</Link></li>
+              <li><Link href="/tools/unlock" className="hover:text-white transition-colors">Unlock PDF</Link></li>
               <li><Link href="/tools/rotate" className="hover:text-white transition-colors">Rotate PDF</Link></li>
             </ul>
           </div>
@@ -36,7 +36,7 @@ export default function Footer() {
           <div>
             <p className="text-white font-bold text-sm uppercase tracking-widest mb-4">Company</p>
             <ul className="space-y-2 text-sm">
-              <li><a href="mailto:mcalaa7@gmail.com" className="hover:text-white transition-colors">Support</a></li>
+              <li><a href="mailto:support@rizzpdf.com" className="hover:text-white transition-colors">Support</a></li>
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
             </ul>
           </div>
@@ -48,10 +48,6 @@ export default function Footer() {
             Rizz<span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">PDF</span>
           </p>
           <p className="text-sm">© {new Date().getFullYear()} RizzPDF. All processing happens in your browser.</p>
-          <div className="flex gap-4">
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors text-sm">Twitter</a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors text-sm">GitHub</a>
-          </div>
         </div>
       </div>
     </footer>
