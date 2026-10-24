@@ -43,3 +43,10 @@ next-env.d.ts
 # agent worktrees and Clerk dev cache
 .claude/worktrees/
 .clerk/
+
+# local tool output
+.playwright-mcp/
+.claude/scheduled_tasks.lock
+.superpowers/
+__pycache__/
+*.log
